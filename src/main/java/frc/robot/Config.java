@@ -30,4 +30,14 @@ public interface Config {
 
     }
 
+    /**
+     * Configuration for the Limelight and related functionality
+     */
+    interface Limelight {
+
+        /** Name of the LL in NetworkTables */
+        String limelightName = "Limelight";
+
+    }
+
 }
