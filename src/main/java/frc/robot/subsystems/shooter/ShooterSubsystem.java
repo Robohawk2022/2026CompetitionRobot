@@ -27,16 +27,31 @@ public class ShooterSubsystem implements Subsystem {
     double targetRps;
     double targetFps;
     double targetVolts;
+    boolean brakeMode;
 
     public ShooterSubsystem(ShooterHardware hardware) {
 
         this.hardware = hardware;
+        this.brakeMode = false;
 
         SmartDashboard.putData("ShooterSubsystem", builder -> {
             builder.addDoubleProperty("FeetPerSecond", () -> currentFps, null);
             builder.addDoubleProperty("RevolutionsPerSecond", () -> currentRps, null);
+            builder.addBooleanProperty("Brake?", () -> brakeMode, this::setBrakeMode);
             // TODO what else would be useful to display?
         });
+    }
+
+    /*
+     * We don't want to call the motor every cycle to fetch or update the
+     * brake mode. So we will "remember"" it in a variable, and only send
+     * commands to the hardware when it changes.
+     */
+    private void setBrakeMode(boolean newMode) {
+        if (newMode != brakeMode) {
+            brakeMode = newMode;
+            hardware.setBrakeMode(brakeMode);
+        }
     }
 
     @Override
@@ -58,7 +73,7 @@ public class ShooterSubsystem implements Subsystem {
 
         // clamp and apply the target voltage
         targetVolts = Util.clampVolts(volts);
-        hardware.applyVoltage(targetVolts);
+        hardware.applyVolts(targetVolts);
     }
 
     public void closedLoop(double feetPerSecond) {

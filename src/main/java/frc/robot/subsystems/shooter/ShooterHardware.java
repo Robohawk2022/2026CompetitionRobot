@@ -48,7 +48,7 @@ public interface ShooterHardware {
     /**
      * Drive the wheels at a specific speed. This should use the SparkMax
      * kVelocity closed loop mode to achieve the desired velocity in motor
-     * revolutions per second. Either this or {@link #applyVoltage(double)}
+     * revolutions per second. Either this or {@link #applyVolts(double)}
      * will be called every cycle to drive the motors.
      *
      * @param revolutionsPerSecond desired motor RPS
@@ -61,8 +61,8 @@ public interface ShooterHardware {
      * {@link #applySpeed(double)}} will be called every cycle to drive the
      * motors.
      *
-     * @param voltage desired motor voltage (-12 to 12)
+     * @param volts desired motor voltage (-12 to 12)
      */
-    void applyVoltage(double voltage);
+    void applyVolts(double volts);
 
 }
