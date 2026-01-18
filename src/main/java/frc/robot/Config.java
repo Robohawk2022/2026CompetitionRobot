@@ -67,7 +67,7 @@ public interface Config {
         //=======================================================================
 
         // Chassis dimensions (inches) - measure from wheel center to wheel center
-        double WHEEL_BASE_INCHES = 26.25;       // Front-to-back distance
+        double WHEEL_BASE_INCHES = 30.25;       // Front-to-back distance
         double TRACK_WIDTH_INCHES = 26.5;       // Left-to-right distance
 
         // CAN IDs - Module order: FL (Front Left), FR, BL, BR
@@ -80,17 +80,17 @@ public interface Config {
         int BL_DRIVE_ID = 11;
         int BL_TURN_ID = 12;
         int BL_ENCODER_ID = 13;
-        int BR_DRIVE_ID = 21;
-        int BR_TURN_ID = 22;
-        int BR_ENCODER_ID = 23;
+        int BR_DRIVE_ID = 31;
+        int BR_TURN_ID = 32;
+        int BR_ENCODER_ID = 33;
         int PIGEON_ID = 10;
 
         // Module angular offsets (radians) - Calibrate by pointing all wheels forward
         // and reading the CANcoder values, then negate them here
-        double FL_ANGULAR_OFFSET = 0.0;
-        double FR_ANGULAR_OFFSET = 0.0;
-        double BL_ANGULAR_OFFSET = 0.0;
-        double BR_ANGULAR_OFFSET = 0.0;
+        double FL_ANGULAR_OFFSET = 0;
+        double FR_ANGULAR_OFFSET = 0;
+        double BL_ANGULAR_OFFSET = 0;
+        double BR_ANGULAR_OFFSET = 0;
 
         //=======================================================================
         // Tunable values (adjustable via dashboard/preferences)
@@ -105,16 +105,16 @@ public interface Config {
         DoubleSupplier driveKS = pref("Swerve/Drive/kS", 0.0);
 
         // Turn motor PID (position control)
-        DoubleSupplier turnKP = pref("Swerve/Turn/kP", 50.0);
-        DoubleSupplier turnKD = pref("Swerve/Turn/kD", 0.5);
+        DoubleSupplier turnKP = pref("Swerve/Turn/kP", 0.0);
+        DoubleSupplier turnKD = pref("Swerve/Turn/kD", 0.0);
 
         //=======================================================================
         // Physical constants (change only if hardware changes)
         //=======================================================================
 
         double WHEEL_DIAMETER_METERS = 0.1016;  // 4 inch wheels
-        double DRIVE_GEAR_RATIO = 6.75;         // L2 gearing for SDS MK4i
-        double TURN_GEAR_RATIO = 150.0 / 7.0;   // MK4i turn ratio
+        double DRIVE_GEAR_RATIO = 6.12;         // L3 gearing for SDS MK4i
+        double TURN_GEAR_RATIO =  287.0 / 11.0;   // MK4i turn ratio
 
         // Derived constants (do not modify)
         double WHEEL_BASE_METERS = Units.inchesToMeters(WHEEL_BASE_INCHES);

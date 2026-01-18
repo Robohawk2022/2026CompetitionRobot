@@ -64,6 +64,8 @@ public class SwerveSubsystem extends SubsystemBase {
     private final OdometryThread odometryThread;
     private final OdometryDiagnostics diagnostics;
 
+    ChassisSpeeds latistspeed = Util.ZERO_SPEED;
+
     /**
      * Creates a {@link SwerveSubsystem}.
      *
@@ -114,6 +116,9 @@ public class SwerveSubsystem extends SubsystemBase {
             builder.addDoubleProperty("HeadingDeg", () -> getHeading().getDegrees(), null);
             builder.addDoubleProperty("PoseXFeet", () -> Units.metersToFeet(getPose().getX()), null);
             builder.addDoubleProperty("PoseYFeet", () -> Units.metersToFeet(getPose().getY()), null);
+            builder.addDoubleProperty("Speedx", () -> latistspeed.vxMetersPerSecond, null);
+            builder.addDoubleProperty("Speedy", () -> latistspeed.vyMetersPerSecond, null);
+            builder.addDoubleProperty("SpeedO", () -> latistspeed.omegaRadiansPerSecond, null);
 
             // reset odometry button - click to reset pose and heading to origin
             builder.addBooleanProperty("ResetOdometry", () -> false, (value) -> {
@@ -280,6 +285,7 @@ public class SwerveSubsystem extends SubsystemBase {
         SwerveModuleState[] states = KINEMATICS.toSwerveModuleStates(speeds);
         SwerveDriveKinematics.desaturateWheelSpeeds(states, maxSpeedMps);
         hardware.setModuleStates(states);
+        latistspeed = speeds;
     }
 
     /**

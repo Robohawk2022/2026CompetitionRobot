@@ -65,7 +65,7 @@ public class SwerveModule {
 
         configureDriveMotor();
         configureTurnMotor();
-        configureCANcoder();
+        //configureCANcoder();
 
         // store status signals for high-frequency odometry
         drivePositionSignal = driveMotor.getPosition();
@@ -178,17 +178,21 @@ public class SwerveModule {
      */
     public void setDesiredState(SwerveModuleState state) {
         // optimize the state to avoid spinning more than 90 degrees
+       
         state.optimize(Rotation2d.fromRadians(getTurnPositionRadians()));
 
         // set drive velocity (in rotations per second)
         double velocityRps = state.speedMetersPerSecond / WHEEL_CIRCUMFERENCE_METERS;
-        driveMotor.setControl(driveRequest.withVelocity(velocityRps));
+        System.out.println(velocityRps);
+        // driveMotor.setControl(driveRequest.withVelocity(velocityRps));
 
         // set turn position (in rotations)
         double positionRotations = state.angle.getRotations();
+        System.out.println(positionRotations);
         turnMotor.setControl(turnRequest.withPosition(positionRotations));
 
         desiredState = state;
+      
     }
 
     /**
