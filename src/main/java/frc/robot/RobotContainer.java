@@ -6,9 +6,18 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.util.CommandLogger;
 
 public class RobotContainer {
+
+  final CommandXboxController driver = new CommandXboxController(0);
+  final CommandXboxController operator = new CommandXboxController(1);
+
   public RobotContainer() {
+    CommandLogger.enable();
+    CommandLogger.addController("Driver", driver);
+    CommandLogger.addController("Operator", operator);
     configureBindings();
   }
 

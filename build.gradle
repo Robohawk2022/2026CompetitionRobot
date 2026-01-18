@@ -1,6 +1,6 @@
 plugins {
     id "java"
-    id "edu.wpi.first.GradleRIO" version "2026.1.1"
+    id "edu.wpi.first.GradleRIO" version "2026.2.1"
 }
 
 java {
@@ -83,6 +83,13 @@ test {
 // Simulation configuration (e.g. environment variables).
 wpi.sim.addGui().defaultEnabled = true
 wpi.sim.addDriverstation()
+
+// Support for testbot selection via -Probot=XxxTestbot
+if (project.hasProperty('robot')) {
+    def robotClass = project.property('robot')
+    wpi.sim.envVar("ROBOT_CLASS", "frc.robot.testbots.${robotClass}")
+    println ">>> Using robot class: frc.robot.testbots.${robotClass}"
+}
 
 // Setting up my Jar File. In this case, adding all libraries into the main jar ('fat jar')
 // in order to make them all available at runtime. Also adding the manifest so WPILib
