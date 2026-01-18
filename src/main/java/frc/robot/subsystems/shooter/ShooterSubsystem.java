@@ -115,16 +115,7 @@ public class ShooterSubsystem implements Subsystem {
      * volts to the motor
      */
     public Command idleCommand() {
-        return voltsCommand(0.0);
-    }
-
-    /**
-     * @param volts a voltage level (range is [-12, 12])
-     * @return a command that will continuously apply the specified number of
-     * volts to the motors
-     */
-    public Command voltsCommand(double volts) {
-        throw new UnsupportedOperationException("TODO implement me");
+        return run(() -> openLoop(0.0));
     }
 
     /**
@@ -133,8 +124,7 @@ public class ShooterSubsystem implements Subsystem {
      * the corresponding voltage
      */
     public Command teleopCommand(DoubleSupplier input) {
-        return run(() -> openLoop(input.getAsDouble() * 12.0));
-        // throw new UnsupportedOperationException("TODO implement me");
+        return run(() -> openLoop(input.getAsDouble() * Util.MAX_VOLTS));
     }
 
     /**
