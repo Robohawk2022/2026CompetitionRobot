@@ -89,7 +89,7 @@ public class ShooterSubsystem implements Subsystem {
         if (targetFps != feetPerSecond) {
 
             targetFps = feetPerSecond;
-            targetRps = feetPerSecond / (gearRatio * wheelCircumference)
+            targetRps = feetPerSecond / (gearRatio * wheelCircumference);
 
             // if we notice that our setpoint has changed, and we're not in a
             // competition, we're probably in the lab tuning the robot. this is
