@@ -62,10 +62,10 @@ public class SwerveTestbot extends TimedRobot {
         // controller.pov(180).onTrue(logButton("DPad-Down"));
         // controller.pov(270).onTrue(logButton("DPad-Left"));
 
-        // // Odometry reset when both thumbsticks are clicked
-        // controller.leftStick()
-        //         .and(controller.rightStick())
-        //         .onTrue(logButton("BothSticks").andThen(swerve.resetPoseCommand()));
+        // Odometry reset when both thumbsticks are clicked
+        controller.leftStick()
+                .and(controller.rightStick())
+                .onTrue(logButton("BothSticks").andThen(swerve.resetPoseCommand()));
 
         // publish button tracking to Shuffleboard
         SmartDashboard.putData("ButtonLog", builder -> {

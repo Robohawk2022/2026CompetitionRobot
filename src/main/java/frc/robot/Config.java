@@ -67,8 +67,8 @@ public interface Config {
         //=======================================================================
 
         // Chassis dimensions (inches) - measure from wheel center to wheel center
-        double WHEEL_BASE_INCHES = 30.25;       // Front-to-back distance
-        double TRACK_WIDTH_INCHES = 26.5;       // Left-to-right distance
+        double WHEEL_BASE_INCHES = 25.0;       // Front-to-back distance
+        double TRACK_WIDTH_INCHES = 30.5;       // Left-to-right distance
 
         // CAN IDs - Module order: FL (Front Left), FR, BL, BR
         int FL_DRIVE_ID = 41;
@@ -105,8 +105,8 @@ public interface Config {
         DoubleSupplier driveKS = pref("Swerve/Drive/kS", 0.0);
 
         // Turn motor PID (position control)
-        DoubleSupplier turnKP = pref("Swerve/Turn/kP", 0.0);
-        DoubleSupplier turnKD = pref("Swerve/Turn/kD", 0.0);
+        DoubleSupplier turnKP = pref("Swerve/Turn/kP", 6.0);
+        DoubleSupplier turnKD = pref("Swerve/Turn/kD", 0.001);
 
         //=======================================================================
         // Physical constants (change only if hardware changes)
@@ -350,7 +350,7 @@ public interface Config {
     interface Odometry {
 
         /** High-frequency odometry update rate (Hz) */
-        double HF_FREQUENCY = 250.0;
+        double HF_FREQUENCY = 100.0;
 
         /** Number of poses to keep in history (~200ms at 250Hz) */
         int POSE_HISTORY_SIZE = 50;

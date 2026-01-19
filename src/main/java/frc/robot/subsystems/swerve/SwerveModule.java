@@ -65,7 +65,7 @@ public class SwerveModule {
 
         configureDriveMotor();
         configureTurnMotor();
-        //configureCANcoder();
+        configureCANcoder();
 
         // store status signals for high-frequency odometry
         drivePositionSignal = driveMotor.getPosition();
@@ -92,7 +92,7 @@ public class SwerveModule {
 
         // motor output
         config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
         // current limits
         config.CurrentLimits.StatorCurrentLimit = 60;
@@ -116,7 +116,7 @@ public class SwerveModule {
 
         // motor output
         config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
         // current limits
         config.CurrentLimits.StatorCurrentLimit = 40;
@@ -184,7 +184,7 @@ public class SwerveModule {
         // set drive velocity (in rotations per second)
         double velocityRps = state.speedMetersPerSecond / WHEEL_CIRCUMFERENCE_METERS;
         System.out.println(velocityRps);
-        // driveMotor.setControl(driveRequest.withVelocity(velocityRps));
+        driveMotor.setControl(driveRequest.withVelocity(velocityRps));
 
         // set turn position (in rotations)
         double positionRotations = state.angle.getRotations();
