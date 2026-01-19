@@ -55,7 +55,7 @@ public class SwerveModule {
      * @param encoderId     CAN ID of the CANcoder
      * @param angularOffset angular offset of the module in radians
      */
-    public SwerveModule(String name, int driveId, int turnId, int encoderId, double angularOffset) {
+    public SwerveModule(String name, int driveId, int turnId, int encoderId, double angularOffset, InvertedValue driveInvertedValue) {
         this.name = name;
         this.angularOffset = angularOffset;
 
@@ -63,9 +63,9 @@ public class SwerveModule {
         turnMotor = new TalonFX(turnId);
         turnEncoder = new CANcoder(encoderId);
 
-        configureDriveMotor();
+        configureDriveMotor(driveInvertedValue);
         configureTurnMotor();
-        configureCANcoder();
+        // configureCANcoder();
 
         // store status signals for high-frequency odometry
         drivePositionSignal = driveMotor.getPosition();
@@ -87,12 +87,12 @@ public class SwerveModule {
         });
     }
 
-    private void configureDriveMotor() {
+    private void configureDriveMotor(InvertedValue driveInvertedValue) {
         TalonFXConfiguration config = new TalonFXConfiguration();
 
         // motor output
         config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        config.MotorOutput.Inverted = driveInvertedValue;
 
         // current limits
         config.CurrentLimits.StatorCurrentLimit = 60;

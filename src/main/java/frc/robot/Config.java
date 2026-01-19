@@ -3,6 +3,8 @@ package frc.robot;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
+import com.ctre.phoenix6.signals.InvertedValue;
+
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.util.Units;
@@ -67,8 +69,8 @@ public interface Config {
         //=======================================================================
 
         // Chassis dimensions (inches) - measure from wheel center to wheel center
-        double WHEEL_BASE_INCHES = 25.0;       // Front-to-back distance
-        double TRACK_WIDTH_INCHES = 30.5;       // Left-to-right distance
+        double WHEEL_BASE_INCHES = 19.0 + 7.0 / 16.0;       // Front-to-back distance
+        double TRACK_WIDTH_INCHES = 25.0;       // Left-to-right distance
 
         // CAN IDs - Module order: FL (Front Left), FR, BL, BR
         int FL_DRIVE_ID = 41;
@@ -91,6 +93,13 @@ public interface Config {
         double FR_ANGULAR_OFFSET = 0;
         double BL_ANGULAR_OFFSET = 0;
         double BR_ANGULAR_OFFSET = 0;
+
+        // The modules on one side of the robot are inverted with respect to the other,
+        // so we need to make sure the drive motors spin in the correct direction
+        InvertedValue FL_DRIVE_INVERTED = InvertedValue.Clockwise_Positive;
+        InvertedValue FR_DRIVE_INVERTED = InvertedValue.CounterClockwise_Positive;
+        InvertedValue BL_DRIVE_INVERTED = InvertedValue.Clockwise_Positive;
+        InvertedValue BR_DRIVE_INVERTED = InvertedValue.CounterClockwise_Positive;
 
         //=======================================================================
         // Tunable values (adjustable via dashboard/preferences)

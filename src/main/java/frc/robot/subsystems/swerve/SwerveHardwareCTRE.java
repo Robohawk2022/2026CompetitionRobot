@@ -39,28 +39,32 @@ public class SwerveHardwareCTRE implements SwerveHardware {
                 FL_DRIVE_ID,
                 FL_TURN_ID,
                 FL_ENCODER_ID,
-                FL_ANGULAR_OFFSET);
+                FL_ANGULAR_OFFSET,
+                FL_DRIVE_INVERTED);
 
         frontRight = new SwerveModule(
                 "FR",
                 FR_DRIVE_ID,
                 FR_TURN_ID,
                 FR_ENCODER_ID,
-                FR_ANGULAR_OFFSET);
+                FR_ANGULAR_OFFSET,
+                FR_DRIVE_INVERTED);
 
         backLeft = new SwerveModule(
                 "BL",
                 BL_DRIVE_ID,
                 BL_TURN_ID,
                 BL_ENCODER_ID,
-                BL_ANGULAR_OFFSET);
+                BL_ANGULAR_OFFSET,
+                BL_DRIVE_INVERTED);
 
         backRight = new SwerveModule(
                 "BR",
                 BR_DRIVE_ID,
                 BR_TURN_ID,
                 BR_ENCODER_ID,
-                BR_ANGULAR_OFFSET);
+                BR_ANGULAR_OFFSET,
+                BR_DRIVE_INVERTED);
 
         pigeon = new Pigeon2(PIGEON_ID);
         configurePigeon();
