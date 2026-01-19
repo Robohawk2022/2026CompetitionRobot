@@ -100,8 +100,7 @@ public class SwerveSubsystem extends SubsystemBase {
         if (hardware.supportsHighFrequencyOdometry() && enableHF.getAsBoolean()) {
             odometryThread = new OdometryThread(hardware, HF_FREQUENCY, POSE_HISTORY_SIZE);
             // the high-frequency odometry thread overwhelms our CAN bus
-            // TODO - fix me
-            // odometryThread.start();
+            //odometryThread.start();
             Util.log("High-frequency odometry enabled at %.0f Hz", HF_FREQUENCY);
         } else {
             odometryThread = null;
