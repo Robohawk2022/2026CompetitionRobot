@@ -3,6 +3,7 @@ package frc.robot.subsystems.swerve;
 import java.util.Objects;
 import java.util.function.DoubleSupplier;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -12,6 +13,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -22,7 +24,8 @@ import frc.robot.util.PosePublisher;
 import frc.robot.util.Util;
 
 import static frc.robot.Config.Swerve.*;
-import static frc.robot.Config.Odometry.*;
+import static frc.robot.Config.Odometry.enableDiagnostics;
+import static frc.robot.Config.Odometry.driftWarning;
 
 /**
  * Swerve drive subsystem with odometry and pose estimation.
@@ -44,6 +47,8 @@ public class SwerveSubsystem extends SubsystemBase {
     private final Field2d field2d;
 
     private String currentMode = "idle";
+    private boolean turboActive = false;
+    private boolean sniperActive = false;
 
     private double maxSpeedMps;
     private double maxRotationRps;
@@ -60,8 +65,6 @@ public class SwerveSubsystem extends SubsystemBase {
     // periodic logging counter (logs every 50 cycles = 1 second)
     private int logCounter = 0;
 
-    // high-frequency odometry (may be null if not supported or disabled)
-    private final OdometryThread odometryThread;
     private final OdometryDiagnostics diagnostics;
 
     ChassisSpeeds latistspeed = Util.ZERO_SPEED;
@@ -96,24 +99,12 @@ public class SwerveSubsystem extends SubsystemBase {
         // initialize diagnostics
         diagnostics = new OdometryDiagnostics();
 
-        // initialize high-frequency odometry if supported and enabled
-        if (hardware.supportsHighFrequencyOdometry() && enableHF.getAsBoolean()) {
-            odometryThread = new OdometryThread(hardware, HF_FREQUENCY, POSE_HISTORY_SIZE);
-            // the high-frequency odometry thread overwhelms our CAN bus
-            //odometryThread.start();
-            Util.log("High-frequency odometry enabled at %.0f Hz", HF_FREQUENCY);
-        } else {
-            odometryThread = null;
-            if (!hardware.supportsHighFrequencyOdometry()) {
-                Util.log("High-frequency odometry not supported by hardware");
-            } else {
-                Util.log("High-frequency odometry disabled by config");
-            }
-        }
-
         // dashboard telemetry
         SmartDashboard.putData(getName(), builder -> {
             builder.addStringProperty("Mode", () -> currentMode, null);
+            builder.addBooleanProperty("Enabled?", DriverStation::isEnabled, null);
+            builder.addBooleanProperty("TurboActive?", () -> turboActive, null);
+            builder.addBooleanProperty("SniperActive?", () -> sniperActive, null);
             builder.addDoubleProperty("HeadingDeg", () -> getHeading().getDegrees(), null);
             builder.addDoubleProperty("PoseXFeet", () -> Units.metersToFeet(getPose().getX()), null);
             builder.addDoubleProperty("PoseYFeet", () -> Units.metersToFeet(getPose().getY()), null);
@@ -151,20 +142,15 @@ public class SwerveSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // update odometry - use HF thread if available, otherwise standard 50Hz
+        // refresh all hardware signals in a single CAN transaction (reduces CAN bus traffic)
+        hardware.refreshSignals();
+
+        // update odometry (standard 50Hz)
         Rotation2d heading = hardware.getHeading();
         SwerveModulePosition[] positions = hardware.getModulePositions();
 
-        if (odometryThread != null) {
-            // HF thread handles odometry at 250Hz
-            // Update the standard odometry too for comparison/fallback
-            odometry.update(heading, positions);
-            latestOdometryPose = odometryThread.getLatestPose();
-        } else {
-            // standard 50Hz odometry update
-            odometry.update(heading, positions);
-            latestOdometryPose = odometry.getPoseMeters();
-        }
+        odometry.update(heading, positions);
+        latestOdometryPose = odometry.getPoseMeters();
 
         // always update the pose estimator (vision integration happens here)
         poseEstimator.update(heading, positions);
@@ -179,11 +165,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
         // update diagnostics
         if (enableDiagnostics.getAsBoolean()) {
-            Pose2d odomPose = odometryThread != null
-                    ? odometryThread.getLatestPose()
-                    : odometry.getPoseMeters();
-            diagnostics.update(odomPose, poseEstimator.getEstimatedPosition(),
-                    latestVisionResult, odometryThread);
+            diagnostics.update(latestOdometryPose, poseEstimator.getEstimatedPosition(),
+                    latestVisionResult);
             diagnostics.publishTelemetry();
 
             // warn if drift exceeds threshold
@@ -198,10 +181,7 @@ public class SwerveSubsystem extends SubsystemBase {
         field2d.setRobotPose(poseEstimator.getEstimatedPosition());
 
         // publish poses for AdvantageScope
-        Pose2d odomPose = odometryThread != null
-                ? odometryThread.getLatestPose()
-                : odometry.getPoseMeters();
-        PosePublisher.publish("Odometry", odomPose);
+        PosePublisher.publish("Odometry", latestOdometryPose);
         PosePublisher.publish("Estimated", poseEstimator.getEstimatedPosition());
 
         // publish vision pose if valid
@@ -250,11 +230,6 @@ public class SwerveSubsystem extends SubsystemBase {
         poseEstimator.resetPosition(currentHeading, currentPositions, newPose);
         latestFusedPose = newPose;
 
-        // reset high-frequency odometry thread if present
-        if (odometryThread != null) {
-            odometryThread.resetPose(newPose);
-        }
-
         // reset vision baseline for jump detection
         LimelightEstimator.resetLastPose();
 
@@ -279,12 +254,23 @@ public class SwerveSubsystem extends SubsystemBase {
      * @param fieldRelative whether speeds are field-relative
      */
     public void drive(ChassisSpeeds speeds, boolean fieldRelative) {
+        drive(speeds, fieldRelative, maxSpeedMps);
+    }
+
+    /**
+     * Drives the robot using the given speeds with a custom max speed limit.
+     *
+     * @param speeds        chassis speeds (vx, vy in m/s, omega in rad/s)
+     * @param fieldRelative whether speeds are field-relative
+     * @param maxSpeed      maximum wheel speed for desaturation (m/s)
+     */
+    public void drive(ChassisSpeeds speeds, boolean fieldRelative, double maxSpeed) {
         if (fieldRelative) {
-            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getHeading());
+            speeds = Util.fromDriverRelativeSpeeds(speeds, getHeading());
         }
 
         SwerveModuleState[] states = KINEMATICS.toSwerveModuleStates(speeds);
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, maxSpeedMps);
+        SwerveDriveKinematics.desaturateWheelSpeeds(states, maxSpeed);
         hardware.setModuleStates(states);
         latistspeed = speeds;
     }
@@ -322,33 +308,6 @@ public class SwerveSubsystem extends SubsystemBase {
      */
     public OdometryDiagnostics getDiagnostics() {
         return diagnostics;
-    }
-
-    /**
-     * @return the high-frequency odometry thread (may be null if not supported)
-     */
-    public OdometryThread getOdometryThread() {
-        return odometryThread;
-    }
-
-    /**
-     * @return true if high-frequency odometry is running
-     */
-    public boolean isHighFrequencyOdometryEnabled() {
-        return odometryThread != null && odometryThread.isRunning();
-    }
-
-    /**
-     * Gets the odometry pose at a specific timestamp for latency compensation.
-     *
-     * @param timestamp the FPGA timestamp in seconds
-     * @return the interpolated pose at that time, or current pose if HF not available
-     */
-    public Pose2d getOdometryPoseAtTime(double timestamp) {
-        if (odometryThread != null) {
-            return odometryThread.getPoseAtTime(timestamp);
-        }
-        return odometry.getPoseMeters();
     }
 
 //endregion
@@ -389,6 +348,80 @@ public class SwerveSubsystem extends SubsystemBase {
             double omega = rotSupplier.getAsDouble() * maxRotationRps;
 
             drive(new ChassisSpeeds(vx, vy, omega), fieldRelative);
+        });
+    }
+
+    /**
+     * Creates a teleop drive command with turbo and sniper speed modes.
+     * <p>
+     * Speed modes are activated by triggers:
+     * <ul>
+     *   <li>Sniper (left trigger > 0.5): Slow, precise movement</li>
+     *   <li>Turbo (right trigger > 0.5): Fast movement</li>
+     *   <li>Sniper takes priority if both triggers are pressed</li>
+     * </ul>
+     *
+     * @param xSupplier      forward/backward speed (-1 to 1)
+     * @param ySupplier      left/right speed (-1 to 1)
+     * @param rotSupplier    rotation speed (-1 to 1)
+     * @param sniperTrigger  sniper mode trigger axis (0 to 1)
+     * @param turboTrigger   turbo mode trigger axis (0 to 1)
+     * @param fieldRelative  whether to drive field-relative
+     * @return the drive command
+     */
+    public Command driveCommand(
+            DoubleSupplier xSupplier,
+            DoubleSupplier ySupplier,
+            DoubleSupplier rotSupplier,
+            DoubleSupplier sniperTrigger,
+            DoubleSupplier turboTrigger,
+            boolean fieldRelative) {
+
+        return run(() -> {
+            updateSpeedLimits();
+
+            double x = xSupplier.getAsDouble();
+            double y = ySupplier.getAsDouble();
+            double rot = rotSupplier.getAsDouble();
+
+            // check trigger thresholds
+            sniperActive = sniperTrigger.getAsDouble() > 0.5;
+            turboActive = turboTrigger.getAsDouble() > 0.5;
+
+            // clamp inputs to [-1, 1]
+            x = MathUtil.clamp(x, -1.0, 1.0);
+            y = MathUtil.clamp(y, -1.0, 1.0);
+            rot = MathUtil.clamp(rot, -1.0, 1.0);
+
+            // convert to velocities
+            double vx = x * maxSpeedMps;
+            double vy = y * maxSpeedMps;
+            double omega = rot * maxRotationRps;
+
+            // track effective max speed for desaturation
+            double effectiveMaxSpeed = maxSpeedMps;
+
+            // apply speed modifiers (sniper takes priority)
+            if (sniperActive) {
+                double sf = sniperFactor.getAsDouble();
+                vx *= sf;
+                vy *= sf;
+                effectiveMaxSpeed *= sf;
+                if (applySniperToRotation.getAsBoolean()) {
+                    omega *= sf;
+                }
+                currentMode = fieldRelative ? "teleop-sniper" : "teleop-sniper-robot";
+            } else if (turboActive) {
+                double tf = turboFactor.getAsDouble();
+                vx *= tf;
+                vy *= tf;
+                effectiveMaxSpeed *= tf;
+                currentMode = fieldRelative ? "teleop-turbo" : "teleop-turbo-robot";
+            } else {
+                currentMode = fieldRelative ? "teleop-field" : "teleop-robot";
+            }
+
+            drive(new ChassisSpeeds(vx, vy, omega), fieldRelative, effectiveMaxSpeed);
         });
     }
 

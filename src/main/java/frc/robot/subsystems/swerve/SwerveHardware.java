@@ -1,7 +1,5 @@
 package frc.robot.subsystems.swerve;
 
-import com.ctre.phoenix6.BaseStatusSignal;
-
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -62,16 +60,11 @@ public interface SwerveHardware {
     void resetEncoders();
 
     /**
-     * @return all status signals for synchronized odometry reads, or empty array if not supported
+     * Refreshes all hardware signals in a single CAN transaction.
+     * Call once per periodic cycle before reading encoder/gyro values.
+     * Default implementation does nothing (for simulation).
      */
-    default BaseStatusSignal[] getAllSignals() {
-        return new BaseStatusSignal[0];
-    }
-
-    /**
-     * @return true if high-frequency synchronized reads are supported
-     */
-    default boolean supportsHighFrequencyOdometry() {
-        return getAllSignals().length > 0;
+    default void refreshSignals() {
+        // no-op for simulation
     }
 }

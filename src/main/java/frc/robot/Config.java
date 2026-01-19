@@ -108,6 +108,17 @@ public interface Config {
         DoubleSupplier maxSpeedFps = pref("Swerve/MaxSpeedFPS", 15.0);
         DoubleSupplier maxRotationDps = pref("Swerve/MaxRotationDPS", 360.0);
 
+        // Speed mode factors (turbo/sniper)
+        DoubleSupplier sniperFactor = pref("Swerve/SniperFactor", 0.25);
+        DoubleSupplier turboFactor = pref("Swerve/TurboFactor", 1.5);
+        BooleanSupplier applySniperToRotation = pref("Swerve/SniperRotation?", true);
+
+        // Joystick deadzone
+        DoubleSupplier deadzone = pref("Swerve/Deadzone", 0.1);
+
+        // Controller type: false = 8BitDo (real robot), true = Xbox (simulation)
+        BooleanSupplier useXboxMapping = pref("Swerve/UseXboxMapping?", false);
+
         // Drive motor PID (velocity control)
         DoubleSupplier driveKP = pref("Swerve/Drive/kP", 0.1);
         DoubleSupplier driveKV = pref("Swerve/Drive/kV", 0.12);
@@ -116,6 +127,12 @@ public interface Config {
         // Turn motor PID (position control)
         DoubleSupplier turnKP = pref("Swerve/Turn/kP", 6.0);
         DoubleSupplier turnKD = pref("Swerve/Turn/kD", 0.001);
+
+        // Module optimization settings
+        /** Enable cosine compensation - scales drive output by cos(angle error) */
+        BooleanSupplier cosineCompensation = pref("Swerve/CosineCompensation?", true);
+        /** Minimum speed (m/s) to command the angle motor - prevents jitter when stationary */
+        DoubleSupplier minSpeedForAngle = pref("Swerve/MinSpeedForAngle", 0.01);
 
         //=======================================================================
         // Physical constants (change only if hardware changes)
@@ -354,18 +371,9 @@ public interface Config {
     }
 
     /**
-     * Configuration for high-frequency odometry and diagnostics.
+     * Configuration for odometry diagnostics.
      */
     interface Odometry {
-
-        /** High-frequency odometry update rate (Hz) */
-        double HF_FREQUENCY = 100.0;
-
-        /** Number of poses to keep in history (~200ms at 250Hz) */
-        int POSE_HISTORY_SIZE = 50;
-
-        /** Enable high-frequency odometry (CTRE synchronized reads) */
-        BooleanSupplier enableHF = pref("Odometry/EnableHF?", true);
 
         /** Enable odometry diagnostics publishing to dashboard */
         BooleanSupplier enableDiagnostics = pref("Odometry/Diagnostics?", true);

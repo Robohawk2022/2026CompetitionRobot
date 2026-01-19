@@ -1,6 +1,5 @@
 package frc.robot.testbots;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -9,6 +8,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.swerve.SwerveHardwareCTRE;
 import frc.robot.subsystems.swerve.SwerveSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.subsystems.swerve.SwerveTeleopSpeedSupplier;
 
 /**
  * Standalone test program for the swerve drive subsystem.
@@ -16,8 +16,6 @@ import frc.robot.subsystems.swerve.SwerveSubsystem;
  * Run with: {@code ./gradlew simulateJava -Probot=SwerveTestbot}
  */
 public class SwerveTestbot extends TimedRobot {
-
-    private static final double DEADZONE = 0.27;
 
     private SwerveSubsystem swerve;
     private CommandXboxController controller;
@@ -30,19 +28,17 @@ public class SwerveTestbot extends TimedRobot {
     public void robotInit() {
         System.out.println(">>> SwerveTestbot starting...");
 
-        // use simulation hardware
-        // swerve = new SwerveSubsystem(new SwerveSim());
-        swerve = new SwerveSubsystem(new SwerveHardwareCTRE());
+        // use appropriate hardware based on environment
+        swerve = new SwerveSubsystem(
+                isSimulation() ? new SwerveSim() : new SwerveHardwareCTRE());
         controller = new CommandXboxController(0);
 
         System.out.println(">>> Button bindings configured - press A, B, X, Y, Start, Back, etc.");
 
-        // default to field-relative driving
-        swerve.setDefaultCommand(swerve.driveCommand(
-                () -> -MathUtil.applyDeadband(controller.getLeftY(), DEADZONE),
-                () -> -MathUtil.applyDeadband(controller.getLeftX(), DEADZONE),
-                () -> -MathUtil.applyDeadband(controller.getRightX(), DEADZONE),
-                true));
+        // default to field-relative driving with turbo/sniper modes
+        // Uses SwerveTeleopSpeedSupplier which respects Config.Swerve.useXboxMapping toggle
+        SwerveTeleopSpeedSupplier driverInput = new SwerveTeleopSpeedSupplier(controller);
+        swerve.setDefaultCommand(driverInput.driveCommand(swerve));
 
         // // button bindings with logging
         // controller.start().onTrue(logButton("Start").andThen(swerve.zeroHeadingCommand()));

@@ -30,6 +30,9 @@ public class SwerveHardwareCTRE implements SwerveHardware {
     private final StatusSignal<Angle> yawSignal;
     private final BaseStatusSignal[] allSignals;
 
+    // cached heading (updated in refreshSignals)
+    private Rotation2d cachedHeading = new Rotation2d();
+
     /**
      * Creates the CTRE swerve hardware using CAN IDs from Config.
      */
@@ -73,19 +76,23 @@ public class SwerveHardwareCTRE implements SwerveHardware {
         yawSignal = pigeon.getYaw();
         yawSignal.setUpdateFrequency(HF_UPDATE_FREQUENCY);
 
-        // collect all signals for synchronized reads (9 signals total):
-        // 8 module signals (drive + turn per module) + 1 gyro yaw
-        allSignals = new BaseStatusSignal[] {
-                frontLeft.getDrivePositionSignal(),
-                frontLeft.getTurnPositionSignal(),
-                frontRight.getDrivePositionSignal(),
-                frontRight.getTurnPositionSignal(),
-                backLeft.getDrivePositionSignal(),
-                backLeft.getTurnPositionSignal(),
-                backRight.getDrivePositionSignal(),
-                backRight.getTurnPositionSignal(),
-                yawSignal
-        };
+        // collect all signals for synchronized reads (13 signals total):
+        // 12 module signals (drive position, drive velocity, turn per module) + 1 gyro yaw
+        BaseStatusSignal[] flSignals = frontLeft.getSignals();
+        BaseStatusSignal[] frSignals = frontRight.getSignals();
+        BaseStatusSignal[] blSignals = backLeft.getSignals();
+        BaseStatusSignal[] brSignals = backRight.getSignals();
+
+        allSignals = new BaseStatusSignal[flSignals.length + frSignals.length + blSignals.length + brSignals.length + 1];
+        int idx = 0;
+        for (BaseStatusSignal signal : flSignals) allSignals[idx++] = signal;
+        for (BaseStatusSignal signal : frSignals) allSignals[idx++] = signal;
+        for (BaseStatusSignal signal : blSignals) allSignals[idx++] = signal;
+        for (BaseStatusSignal signal : brSignals) allSignals[idx++] = signal;
+        allSignals[idx] = yawSignal;
+
+        // initial refresh to populate cached values
+        refreshSignals();
     }
 
     private void configurePigeon() {
@@ -95,7 +102,22 @@ public class SwerveHardwareCTRE implements SwerveHardware {
 
     @Override
     public Rotation2d getHeading() {
-        return pigeon.getRotation2d();
+        return cachedHeading;
+    }
+
+    @Override
+    public void refreshSignals() {
+        // batch refresh all signals in a single CAN transaction
+        BaseStatusSignal.refreshAll(allSignals);
+
+        // update cached values in each module
+        frontLeft.refreshSignals();
+        frontRight.refreshSignals();
+        backLeft.refreshSignals();
+        backRight.refreshSignals();
+
+        // update cached heading from the yaw signal (yaw is in degrees)
+        cachedHeading = Rotation2d.fromDegrees(yawSignal.getValueAsDouble());
     }
 
     @Override
@@ -155,10 +177,5 @@ public class SwerveHardwareCTRE implements SwerveHardware {
         frontRight.resetEncoder();
         backLeft.resetEncoder();
         backRight.resetEncoder();
-    }
-
-    @Override
-    public BaseStatusSignal[] getAllSignals() {
-        return allSignals;
     }
 }

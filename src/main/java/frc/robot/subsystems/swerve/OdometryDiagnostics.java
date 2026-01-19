@@ -39,11 +39,6 @@ public class OdometryDiagnostics {
     private final Map<String, Integer> rejectionCounts = new HashMap<>();
     private double latestVisionLatency = 0.0;
 
-    // odometry stats
-    private double odometryFrequency = 0.0;
-    private int lastUpdateCount = 0;
-    private double lastFrequencyCalcTime = 0.0;
-
     /**
      * Creates a new OdometryDiagnostics instance.
      */
@@ -66,11 +61,8 @@ public class OdometryDiagnostics {
      * @param odometryPose the raw odometry pose
      * @param fusedPose the fused/estimated pose (with vision corrections)
      * @param visionResult the latest vision result (may be null)
-     * @param odomThread the odometry thread (may be null if not using HF odometry)
      */
-    public void update(Pose2d odometryPose, Pose2d fusedPose,
-                       VisionEstimateResult visionResult, OdometryThread odomThread) {
-
+    public void update(Pose2d odometryPose, Pose2d fusedPose, VisionEstimateResult visionResult) {
         // update drift tracking
         currentDrift = Util.metersBetween(odometryPose, fusedPose);
         driftHistory.add(currentDrift);
@@ -87,11 +79,6 @@ public class OdometryDiagnostics {
                 rejectionCounts.merge(reason, 1, Integer::sum);
             }
         }
-
-        // update odometry frequency from thread
-        if (odomThread != null) {
-            updateFrequencyEstimate(odomThread);
-        }
     }
 
     /**
@@ -103,27 +90,6 @@ public class OdometryDiagnostics {
             return (now - result.estimate.timestampSeconds) * 1000.0; // convert to ms
         }
         return 0.0;
-    }
-
-    /**
-     * Updates the odometry frequency estimate from the thread.
-     */
-    private void updateFrequencyEstimate(OdometryThread thread) {
-        double now = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
-        int currentCount = thread.getUpdateCount();
-
-        if (lastFrequencyCalcTime > 0.0) {
-            double elapsed = now - lastFrequencyCalcTime;
-            if (elapsed >= 1.0) { // update every second
-                int updates = currentCount - lastUpdateCount;
-                odometryFrequency = updates / elapsed;
-                lastUpdateCount = currentCount;
-                lastFrequencyCalcTime = now;
-            }
-        } else {
-            lastFrequencyCalcTime = now;
-            lastUpdateCount = currentCount;
-        }
     }
 
     /**
@@ -176,9 +142,6 @@ public class OdometryDiagnostics {
         SmartDashboard.putNumber(PREFIX + "VisionAccepted", visionAccepted);
         SmartDashboard.putNumber(PREFIX + "VisionRejected", visionRejected);
 
-        // odometry frequency
-        SmartDashboard.putNumber(PREFIX + "OdomFrequency_Hz", odometryFrequency);
-
         // rejection counts
         for (Map.Entry<String, Integer> entry : rejectionCounts.entrySet()) {
             SmartDashboard.putNumber(PREFIX + "Reject/" + entry.getKey(), entry.getValue());
@@ -225,13 +188,6 @@ public class OdometryDiagnostics {
     }
 
     /**
-     * @return the odometry update frequency in Hz
-     */
-    public double getOdometryFrequency() {
-        return odometryFrequency;
-    }
-
-    /**
      * @return the number of accepted vision measurements
      */
     public int getVisionAcceptedCount() {
@@ -263,8 +219,5 @@ public class OdometryDiagnostics {
         visionRejected = 0;
         rejectionCounts.replaceAll((k, v) -> 0);
         latestVisionLatency = 0.0;
-        odometryFrequency = 0.0;
-        lastUpdateCount = 0;
-        lastFrequencyCalcTime = 0.0;
     }
 }

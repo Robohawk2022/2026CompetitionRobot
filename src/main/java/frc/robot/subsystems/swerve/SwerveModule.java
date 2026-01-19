@@ -17,7 +17,9 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Config;
 
 import static frc.robot.Config.Swerve.*;
 
@@ -37,14 +39,25 @@ public class SwerveModule {
     private final double angularOffset;
     private final String name;
 
+    // CAN IDs for verbose logging
+    private final int driveId;
+    private final int turnId;
+    private final int encoderId;
+
     private final VelocityVoltage driveRequest = new VelocityVoltage(0);
     private final PositionVoltage turnRequest = new PositionVoltage(0);
 
     private SwerveModuleState desiredState = new SwerveModuleState();
 
-    // status signals for high-frequency odometry
+    // status signals for high-frequency odometry (cached, refreshed once per cycle)
     private final StatusSignal<Angle> drivePositionSignal;
+    private final StatusSignal<AngularVelocity> driveVelocitySignal;
     private final StatusSignal<Angle> turnPositionSignal;
+
+    // cached values (updated in refreshSignals)
+    private double cachedDrivePositionMeters;
+    private double cachedDriveVelocityMps;
+    private double cachedTurnPositionRad;
 
     /**
      * Creates a new SwerveModule.
@@ -58,6 +71,9 @@ public class SwerveModule {
     public SwerveModule(String name, int driveId, int turnId, int encoderId, double angularOffset, InvertedValue driveInvertedValue) {
         this.name = name;
         this.angularOffset = angularOffset;
+        this.driveId = driveId;
+        this.turnId = turnId;
+        this.encoderId = encoderId;
 
         driveMotor = new TalonFX(driveId);
         turnMotor = new TalonFX(turnId);
@@ -69,11 +85,16 @@ public class SwerveModule {
 
         // store status signals for high-frequency odometry
         drivePositionSignal = driveMotor.getPosition();
+        driveVelocitySignal = driveMotor.getVelocity();
         turnPositionSignal = turnEncoder.getAbsolutePosition();
 
         // set update frequency for high-frequency odometry (250Hz)
         drivePositionSignal.setUpdateFrequency(HF_UPDATE_FREQUENCY);
+        driveVelocitySignal.setUpdateFrequency(HF_UPDATE_FREQUENCY);
         turnPositionSignal.setUpdateFrequency(HF_UPDATE_FREQUENCY);
+
+        // initialize cached values
+        refreshSignals();
 
         // initialize desired state to current position
         desiredState.angle = Rotation2d.fromRadians(getTurnPositionRadians());
@@ -84,6 +105,17 @@ public class SwerveModule {
             builder.addDoubleProperty("Angle", () -> getState().angle.getDegrees(), null);
             builder.addDoubleProperty("DesiredVelocity", () -> desiredState.speedMetersPerSecond, null);
             builder.addDoubleProperty("DesiredAngle", () -> desiredState.angle.getDegrees(), null);
+
+            // verbose logging (gated by config)
+            if (Config.Logging.isEnabled(Config.Logging.swerveLogging)) {
+                builder.addDoubleProperty("DriveRotations",
+                    () -> drivePositionSignal.getValueAsDouble(), null);
+                builder.addDoubleProperty("TurnRotations",
+                    () -> turnPositionSignal.getValueAsDouble(), null);
+                builder.addIntegerProperty("DriveCANID", () -> driveId, null);
+                builder.addIntegerProperty("TurnCANID", () -> turnId, null);
+                builder.addIntegerProperty("EncoderCANID", () -> encoderId, null);
+            }
         });
     }
 
@@ -147,28 +179,34 @@ public class SwerveModule {
     }
 
     /**
-     * @return the current turn position in radians
+     * Refreshes cached values from the status signals.
+     * Call this once per cycle after BaseStatusSignal.refreshAll().
+     */
+    public void refreshSignals() {
+        cachedDrivePositionMeters = drivePositionSignal.getValueAsDouble() * WHEEL_CIRCUMFERENCE_METERS;
+        cachedDriveVelocityMps = driveVelocitySignal.getValueAsDouble() * WHEEL_CIRCUMFERENCE_METERS;
+        cachedTurnPositionRad = turnPositionSignal.getValueAsDouble() * 2 * Math.PI;
+    }
+
+    /**
+     * @return the current turn position in radians (cached)
      */
     private double getTurnPositionRadians() {
-        return turnEncoder.getAbsolutePosition().getValueAsDouble() * 2 * Math.PI;
+        return cachedTurnPositionRad;
     }
 
     /**
-     * @return the current state of the module (velocity + angle)
+     * @return the current state of the module (velocity + angle) using cached values
      */
     public SwerveModuleState getState() {
-        double velocity = driveMotor.getVelocity().getValueAsDouble() * WHEEL_CIRCUMFERENCE_METERS;
-        Rotation2d angle = Rotation2d.fromRadians(getTurnPositionRadians());
-        return new SwerveModuleState(velocity, angle);
+        return new SwerveModuleState(cachedDriveVelocityMps, Rotation2d.fromRadians(cachedTurnPositionRad));
     }
 
     /**
-     * @return the current position of the module (distance + angle)
+     * @return the current position of the module (distance + angle) using cached values
      */
     public SwerveModulePosition getPosition() {
-        double distance = driveMotor.getPosition().getValueAsDouble() * WHEEL_CIRCUMFERENCE_METERS;
-        Rotation2d angle = Rotation2d.fromRadians(getTurnPositionRadians());
-        return new SwerveModulePosition(distance, angle);
+        return new SwerveModulePosition(cachedDrivePositionMeters, Rotation2d.fromRadians(cachedTurnPositionRad));
     }
 
     /**
@@ -177,22 +215,37 @@ public class SwerveModule {
      * @param state the desired state (velocity + angle)
      */
     public void setDesiredState(SwerveModuleState state) {
+        Rotation2d currentAngle = Rotation2d.fromRadians(getTurnPositionRadians());
+
+        // if drive speed is below threshold, don't move the angle motor
+        // this prevents jitter when stationary
+        if (Math.abs(state.speedMetersPerSecond) < minSpeedForAngle.getAsDouble()) {
+            driveMotor.setControl(driveRequest.withVelocity(0));
+            desiredState = new SwerveModuleState(0, currentAngle);
+            return;
+        }
+
         // optimize the state to avoid spinning more than 90 degrees
-       
-        state.optimize(Rotation2d.fromRadians(getTurnPositionRadians()));
+        state.optimize(currentAngle);
+
+        // apply cosine compensation: scale drive output by cos(angle error)
+        // this accounts for the fact that only part of the wheel's velocity
+        // contributes to the desired direction when the wheel is misaligned
+        double speedMps = state.speedMetersPerSecond;
+        if (cosineCompensation.getAsBoolean()) {
+            double angleErrorRad = state.angle.minus(currentAngle).getRadians();
+            speedMps *= Math.cos(angleErrorRad);
+        }
 
         // set drive velocity (in rotations per second)
-        double velocityRps = state.speedMetersPerSecond / WHEEL_CIRCUMFERENCE_METERS;
-        System.out.println(velocityRps);
+        double velocityRps = speedMps / WHEEL_CIRCUMFERENCE_METERS;
         driveMotor.setControl(driveRequest.withVelocity(velocityRps));
 
         // set turn position (in rotations)
         double positionRotations = state.angle.getRotations();
-        System.out.println(positionRotations);
         turnMotor.setControl(turnRequest.withPosition(positionRotations));
 
         desiredState = state;
-      
     }
 
     /**
@@ -203,23 +256,9 @@ public class SwerveModule {
     }
 
     /**
-     * @return the drive position status signal for synchronized reads
-     */
-    public StatusSignal<Angle> getDrivePositionSignal() {
-        return drivePositionSignal;
-    }
-
-    /**
-     * @return the turn position status signal for synchronized reads
-     */
-    public StatusSignal<Angle> getTurnPositionSignal() {
-        return turnPositionSignal;
-    }
-
-    /**
-     * @return all status signals for this module (drive position, turn position)
+     * @return all status signals for this module (drive position, velocity, turn position)
      */
     public BaseStatusSignal[] getSignals() {
-        return new BaseStatusSignal[] { drivePositionSignal, turnPositionSignal };
+        return new BaseStatusSignal[] { drivePositionSignal, driveVelocitySignal, turnPositionSignal };
     }
 }
