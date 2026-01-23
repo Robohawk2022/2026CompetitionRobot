@@ -3,8 +3,6 @@ package frc.robot;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
-import com.ctre.phoenix6.signals.InvertedValue;
-
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.util.Units;
@@ -60,46 +58,10 @@ public interface Config {
     /**
      * Configuration for the swerve drive subsystem.
      * <p>
-     * IMPORTANT: Update the placeholder values below for your specific robot!
+     * Hardware-specific constants (CAN IDs, offsets, PID gains) are in
+     * {@link frc.robot.subsystems.swerve.SwerveHardwareConfig}.
      */
     interface Swerve {
-
-        //=======================================================================
-        // PLACEHOLDER VALUES - UPDATE THESE FOR YOUR ROBOT
-        //=======================================================================
-
-        // Chassis dimensions (inches) - measure from wheel center to wheel center
-        double WHEEL_BASE_INCHES = 19.0 + 7.0 / 16.0;       // Front-to-back distance
-        double TRACK_WIDTH_INCHES = 25.0;       // Left-to-right distance
-
-        // CAN IDs - Module order: FL (Front Left), FR, BL, BR
-        int FL_DRIVE_ID = 41;
-        int FL_TURN_ID = 42;
-        int FL_ENCODER_ID = 43;
-        int FR_DRIVE_ID = 21;
-        int FR_TURN_ID = 22;
-        int FR_ENCODER_ID = 23;
-        int BL_DRIVE_ID = 11;
-        int BL_TURN_ID = 12;
-        int BL_ENCODER_ID = 13;
-        int BR_DRIVE_ID = 31;
-        int BR_TURN_ID = 32;
-        int BR_ENCODER_ID = 33;
-        int PIGEON_ID = 10;
-
-        // Module angular offsets (radians) - Calibrate by pointing all wheels forward
-        // and reading the CANcoder values, then negate them here
-        double FL_ANGULAR_OFFSET = 0;
-        double FR_ANGULAR_OFFSET = 0;
-        double BL_ANGULAR_OFFSET = 0;
-        double BR_ANGULAR_OFFSET = 0;
-
-        // The modules on one side of the robot are inverted with respect to the other,
-        // so we need to make sure the drive motors spin in the correct direction
-        InvertedValue FL_DRIVE_INVERTED = InvertedValue.Clockwise_Positive;
-        InvertedValue FR_DRIVE_INVERTED = InvertedValue.CounterClockwise_Positive;
-        InvertedValue BL_DRIVE_INVERTED = InvertedValue.Clockwise_Positive;
-        InvertedValue BR_DRIVE_INVERTED = InvertedValue.CounterClockwise_Positive;
 
         //=======================================================================
         // Tunable values (adjustable via dashboard/preferences)
@@ -119,15 +81,6 @@ public interface Config {
         // Controller type: false = 8BitDo (real robot), true = Xbox (simulation)
         BooleanSupplier useXboxMapping = pref("Swerve/UseXboxMapping?", false);
 
-        // Drive motor PID (velocity control)
-        DoubleSupplier driveKP = pref("Swerve/Drive/kP", 0.1);
-        DoubleSupplier driveKV = pref("Swerve/Drive/kV", 0.12);
-        DoubleSupplier driveKS = pref("Swerve/Drive/kS", 0.0);
-
-        // Turn motor PID (position control)
-        DoubleSupplier turnKP = pref("Swerve/Turn/kP", 6.0);
-        DoubleSupplier turnKD = pref("Swerve/Turn/kD", 0.001);
-
         // Module optimization settings
         /** Enable cosine compensation - scales drive output by cos(angle error) */
         BooleanSupplier cosineCompensation = pref("Swerve/CosineCompensation?", true);
@@ -137,6 +90,10 @@ public interface Config {
         //=======================================================================
         // Physical constants (change only if hardware changes)
         //=======================================================================
+
+        // Chassis dimensions (inches) - measure from wheel center to wheel center
+        double WHEEL_BASE_INCHES = 19.0 + 7.0 / 16.0;       // Front-to-back distance
+        double TRACK_WIDTH_INCHES = 25.0;       // Left-to-right distance
 
         double WHEEL_DIAMETER_METERS = 0.1016;  // 4 inch wheels
         double DRIVE_GEAR_RATIO = 6.12;         // L3 gearing for SDS MK4i

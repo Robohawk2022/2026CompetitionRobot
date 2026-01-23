@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Config;
 
 import static frc.robot.Config.Swerve.*;
+import static frc.robot.subsystems.swerve.SwerveHardwareConfig.*;
 
 /**
  * Represents a single swerve module with CTRE TalonFX drive and turn motors,
@@ -136,9 +137,9 @@ public class SwerveModule {
         config.Feedback.SensorToMechanismRatio = DRIVE_GEAR_RATIO;
 
         // PID for velocity control
-        config.Slot0.kP = driveKP.getAsDouble();
-        config.Slot0.kV = driveKV.getAsDouble();
-        config.Slot0.kS = driveKS.getAsDouble();
+        config.Slot0.kP = DRIVE_KP;
+        config.Slot0.kV = DRIVE_KV;
+        config.Slot0.kS = DRIVE_KS;
 
         driveMotor.getConfigurator().apply(config);
     }
@@ -162,8 +163,8 @@ public class SwerveModule {
         config.Feedback.RotorToSensorRatio = TURN_GEAR_RATIO;
 
         // PID for position control
-        config.Slot0.kP = turnKP.getAsDouble();
-        config.Slot0.kD = turnKD.getAsDouble();
+        config.Slot0.kP = TURN_KP;
+        config.Slot0.kD = TURN_KD;
 
         // enable continuous input for wrap-around
         config.ClosedLoopGeneral.ContinuousWrap = true;

@@ -10,7 +10,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.Angle;
 
-import static frc.robot.Config.Swerve.*;
+import static frc.robot.subsystems.swerve.SwerveHardwareConfig.*;
 
 /**
  * Implements {@link SwerveHardware} using CTRE TalonFX motors,
