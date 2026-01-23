@@ -20,7 +20,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.vision.LimelightEstimator;
 import frc.robot.subsystems.vision.VisionEstimateResult;
-import frc.robot.util.PosePublisher;
 import frc.robot.util.Util;
 
 import static frc.robot.Config.Swerve.*;
@@ -62,12 +61,9 @@ public class SwerveSubsystem extends SubsystemBase {
     // reset tracking for dashboard
     private int resetCount = 0;
 
-    // periodic logging counter (logs every 50 cycles = 1 second)
-    private int logCounter = 0;
-
     private final OdometryDiagnostics diagnostics;
 
-    ChassisSpeeds latistspeed = Util.ZERO_SPEED;
+    ChassisSpeeds latestSpeed = Util.ZERO_SPEED;
 
     /**
      * Creates a {@link SwerveSubsystem}.
@@ -105,12 +101,14 @@ public class SwerveSubsystem extends SubsystemBase {
             builder.addBooleanProperty("Enabled?", DriverStation::isEnabled, null);
             builder.addBooleanProperty("TurboActive?", () -> turboActive, null);
             builder.addBooleanProperty("SniperActive?", () -> sniperActive, null);
-            builder.addDoubleProperty("HeadingDeg", () -> getHeading().getDegrees(), null);
-            builder.addDoubleProperty("PoseXFeet", () -> Units.metersToFeet(getPose().getX()), null);
-            builder.addDoubleProperty("PoseYFeet", () -> Units.metersToFeet(getPose().getY()), null);
-            builder.addDoubleProperty("Speedx", () -> latistspeed.vxMetersPerSecond, null);
-            builder.addDoubleProperty("Speedy", () -> latistspeed.vyMetersPerSecond, null);
-            builder.addDoubleProperty("SpeedO", () -> latistspeed.omegaRadiansPerSecond, null);
+            if (verboseLogging) {
+                builder.addDoubleProperty("PoseX", () -> Units.metersToFeet(getPose().getX()), null);
+                builder.addDoubleProperty("PoseY", () -> Units.metersToFeet(getPose().getY()), null);
+                builder.addDoubleProperty("PoseOmega", () -> getHeading().getDegrees(), null);
+                builder.addDoubleProperty("SpeedX", () -> Units.metersToFeet(latestSpeed.vxMetersPerSecond), null);
+                builder.addDoubleProperty("SpeedY", () -> Units.metersToFeet(latestSpeed.vyMetersPerSecond), null);
+                builder.addDoubleProperty("SpeedOmega", () -> Units.radiansToDegrees(latestSpeed.omegaRadiansPerSecond), null);
+            }
 
             // reset odometry button - click to reset pose and heading to origin
             builder.addBooleanProperty("ResetOdometry", () -> false, (value) -> {
@@ -123,11 +121,6 @@ public class SwerveSubsystem extends SubsystemBase {
 
             // reset counter to verify resets are happening
             builder.addIntegerProperty("ResetCount", () -> resetCount, null);
-
-            if (verboseLogging) {
-                builder.addDoubleProperty("MaxSpeedFPS", () -> Units.metersToFeet(maxSpeedMps), null);
-                builder.addDoubleProperty("MaxRotationDPS", () -> Math.toDegrees(maxRotationRps), null);
-            }
         });
     }
 
@@ -181,12 +174,12 @@ public class SwerveSubsystem extends SubsystemBase {
         field2d.setRobotPose(poseEstimator.getEstimatedPosition());
 
         // publish poses for AdvantageScope
-        PosePublisher.publish("Odometry", latestOdometryPose);
-        PosePublisher.publish("Estimated", poseEstimator.getEstimatedPosition());
+        Util.publishPose("Odometry", latestOdometryPose);
+        Util.publishPose("Estimated", poseEstimator.getEstimatedPosition());
 
         // publish vision pose if valid
         if (latestVisionResult != null && latestVisionResult.accepted && latestVisionResult.getPose() != null) {
-            PosePublisher.publish("Vision", latestVisionResult.getPose());
+            Util.publishPose("Vision", latestVisionResult.getPose());
         }
     }
 
@@ -272,7 +265,7 @@ public class SwerveSubsystem extends SubsystemBase {
         SwerveModuleState[] states = KINEMATICS.toSwerveModuleStates(speeds);
         SwerveDriveKinematics.desaturateWheelSpeeds(states, maxSpeed);
         hardware.setModuleStates(states);
-        latistspeed = speeds;
+        latestSpeed = speeds;
     }
 
     /**

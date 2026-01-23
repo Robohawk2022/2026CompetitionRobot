@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Config;
 
@@ -333,7 +334,7 @@ public class CommandLogger {
         }
 
         String names = requirements.stream()
-                .map(s -> s.getName())
+                .map(Subsystem::getName)
                 .collect(Collectors.joining(", "));
 
         return " [" + names + "]";
@@ -358,7 +359,7 @@ public class CommandLogger {
     private static void setupTelemetry() {
         SmartDashboard.putData("CommandLogger", builder -> {
             builder.addIntegerProperty("ActiveCount",
-                    () -> activeCommands.size(), null);
+                    activeCommands::size, null);
             builder.addStringProperty("ActiveCommands",
                     () -> String.join(", ", activeCommands), null);
             builder.addIntegerProperty("TotalRun",

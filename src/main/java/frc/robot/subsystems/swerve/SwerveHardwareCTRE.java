@@ -38,7 +38,7 @@ public class SwerveHardwareCTRE implements SwerveHardware {
      */
     public SwerveHardwareCTRE() {
         frontLeft = new SwerveModule(
-                "FL",
+                "FrontLeft",
                 FL_DRIVE_ID,
                 FL_TURN_ID,
                 FL_ENCODER_ID,
@@ -46,7 +46,7 @@ public class SwerveHardwareCTRE implements SwerveHardware {
                 FL_DRIVE_INVERTED);
 
         frontRight = new SwerveModule(
-                "FR",
+                "FrontRight",
                 FR_DRIVE_ID,
                 FR_TURN_ID,
                 FR_ENCODER_ID,
@@ -54,7 +54,7 @@ public class SwerveHardwareCTRE implements SwerveHardware {
                 FR_DRIVE_INVERTED);
 
         backLeft = new SwerveModule(
-                "BL",
+                "BackLeft",
                 BL_DRIVE_ID,
                 BL_TURN_ID,
                 BL_ENCODER_ID,
@@ -62,7 +62,7 @@ public class SwerveHardwareCTRE implements SwerveHardware {
                 BL_DRIVE_INVERTED);
 
         backRight = new SwerveModule(
-                "BR",
+                "BackRight",
                 BR_DRIVE_ID,
                 BR_TURN_ID,
                 BR_ENCODER_ID,

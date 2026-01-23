@@ -28,18 +28,6 @@ public interface Config {
         /** Log controller button presses and stick values */
         BooleanSupplier controllerLogging = pref("Logging/Controller?", true);
 
-        /** Log swerve module states and PID values */
-        BooleanSupplier swerveLogging = pref("Logging/Swerve?", false);
-
-        /** Log vision estimates and rejection reasons */
-        BooleanSupplier visionLogging = pref("Logging/Vision?", true);
-
-        /** Log odometry diagnostics */
-        BooleanSupplier odometryLogging = pref("Logging/Odometry?", true);
-
-        /** Log shooter state and speeds */
-        BooleanSupplier shooterLogging = pref("Logging/Shooter?", false);
-
         /** Log command scheduling and lifecycle events */
         BooleanSupplier commandLogging = pref("Logging/Commands?", true);
 

@@ -16,10 +16,10 @@ import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Config;
 
 import static frc.robot.Config.Swerve.*;
 import static frc.robot.subsystems.swerve.SwerveHardwareConfig.*;
@@ -100,23 +100,16 @@ public class SwerveModule {
         // initialize desired state to current position
         desiredState.angle = Rotation2d.fromRadians(getTurnPositionRadians());
 
-        // dashboard telemetry
-        SmartDashboard.putData("Swerve/Module-" + name, builder -> {
-            builder.addDoubleProperty("Velocity", () -> getState().speedMetersPerSecond, null);
-            builder.addDoubleProperty("Angle", () -> getState().angle.getDegrees(), null);
-            builder.addDoubleProperty("DesiredVelocity", () -> desiredState.speedMetersPerSecond, null);
-            builder.addDoubleProperty("DesiredAngle", () -> desiredState.angle.getDegrees(), null);
-
-            // verbose logging (gated by config)
-            if (Config.Logging.isEnabled(Config.Logging.swerveLogging)) {
-                builder.addDoubleProperty("DriveRotations",
-                    () -> drivePositionSignal.getValueAsDouble(), null);
-                builder.addDoubleProperty("TurnRotations",
-                    () -> turnPositionSignal.getValueAsDouble(), null);
-                builder.addIntegerProperty("DriveCANID", () -> driveId, null);
-                builder.addIntegerProperty("TurnCANID", () -> turnId, null);
-                builder.addIntegerProperty("EncoderCANID", () -> encoderId, null);
-            }
+        // dashboard telemetry (uses cached values to avoid allocations)
+        SmartDashboard.putData("SwerveModules/" + name, builder -> {
+            builder.addDoubleProperty("VelocityCurrent", () -> Units.metersToFeet(cachedDriveVelocityMps), null);
+            builder.addDoubleProperty("VelocityDesired", () -> Units.metersToFeet(desiredState.speedMetersPerSecond), null);
+            builder.addDoubleProperty("VelocityError",
+                () -> Units.metersToFeet(desiredState.speedMetersPerSecond - cachedDriveVelocityMps), null);
+            builder.addDoubleProperty("AngleCurrent", () -> Math.toDegrees(cachedTurnPositionRad), null);
+            builder.addDoubleProperty("AngleDesired", () -> desiredState.angle.getDegrees(), null);
+            builder.addDoubleProperty("AngleError",
+                () -> desiredState.angle.getDegrees() - Math.toDegrees(cachedTurnPositionRad), null);
         });
     }
 

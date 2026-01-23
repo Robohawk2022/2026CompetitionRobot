@@ -1,0 +1,151 @@
+SmartDashboard Logging Inventory
+=================================
+
+Legend:
+  [always]              - always logged
+  [Config.Logging.*]    - toggled by Config.Logging flag (respects master switch)
+  [Config.Odometry.*]   - toggled by Config.Odometry flag
+  [verboseLogging]      - toggled by local verboseLogging constant in file
+  [interactive]         - can be set from dashboard
+  [testbot]             - only in testbot, not production code
+
+================================================================================
+SwerveModule.java (one per module: FL, FR, BL, BR)
+================================================================================
+Swerve/Module-FL/VelocityCurrent             rename to SwerveModule/FrontLeft/xxx
+Swerve/Module-FL/VelocityDesired             rename to SwerveModule/FrontLeft/xxx
+Swerve/Module-FL/VelocityError               rename to SwerveModule/FrontLeft/xxx
+Swerve/Module-FL/AngleCurrent                rename to SwerveModule/FrontLeft/xxx
+Swerve/Module-FL/AngleDesired                rename to SwerveModule/FrontLeft/xxx
+Swerve/Module-FL/AngleError                  rename to SwerveModule/FrontLeft/xxx
+(same for FR, BL, BR)                        rename to SwerveModule/FrontRight/xxx, etc.
+
+================================================================================
+SwerveSubsystem.java
+================================================================================
+Field                                        remove
+SwerveSubsystem/Mode                         [always]
+SwerveSubsystem/Enabled?                     remove
+SwerveSubsystem/TurboActive?                 always
+SwerveSubsystem/SniperActive?                always
+SwerveSubsystem/HeadingDeg                   rename to SwerveSubsystem/PoseOmega; only with verbose logging
+SwerveSubsystem/PoseXFeet                    rename to SwerveSubsystem/PoseX; only with verbose logging
+SwerveSubsystem/PoseYFeet                    rename to SwerveSubsystem/PoseY; only with verbose logging
+SwerveSubsystem/Speedx                       rename to SwerveSubsystem/SpeedX; only with verbose logging
+SwerveSubsystem/Speedy                       rename to SwerveSubsystem/SpeedY; only with verbose logging
+SwerveSubsystem/SpeedO                       rename to SwerveSubsystem/SpeedOmega; only with verbose logging
+SwerveSubsystem/ResetOdometry                [always] [interactive]
+SwerveSubsystem/ResetCount                   [always]
+SwerveSubsystem/MaxSpeedFPS                  remove
+SwerveSubsystem/MaxRotationDPS               remove
+
+================================================================================
+OdometryDiagnostics.java (gated by Config.Odometry.enableDiagnostics)
+================================================================================
+Odom/DriftCurrent_m                          [Config.Odometry.enableDiagnostics]
+Odom/DriftMax_m                              [Config.Odometry.enableDiagnostics]
+Odom/DriftAvg_m                              [Config.Odometry.enableDiagnostics]
+Odom/VisionAcceptRate_%                      [Config.Odometry.enableDiagnostics]
+Odom/VisionLatency_ms                        [Config.Odometry.enableDiagnostics]
+Odom/VisionAccepted                          [Config.Odometry.enableDiagnostics]
+Odom/VisionRejected                          [Config.Odometry.enableDiagnostics]
+Odom/Reject/NoTags                           [Config.Odometry.enableDiagnostics]
+Odom/Reject/Ambiguity                        [Config.Odometry.enableDiagnostics]
+Odom/Reject/TooFar                           [Config.Odometry.enableDiagnostics]
+Odom/Reject/OutOfBounds                      [Config.Odometry.enableDiagnostics]
+Odom/Reject/PoseJump                         [Config.Odometry.enableDiagnostics]
+Odom/Reject/HighYawRate                      [Config.Odometry.enableDiagnostics]
+Odom/Reject/SmallTags                        [Config.Odometry.enableDiagnostics]
+Odom/Reject/Disabled                         [Config.Odometry.enableDiagnostics]
+Odom/Reject/Other                            [Config.Odometry.enableDiagnostics]
+
+================================================================================
+ShooterSubsystem.java
+================================================================================
+ShooterSubsystem/FeetPerSecond               [always]
+ShooterSubsystem/RevolutionsPerSecond        [always]
+ShooterSubsystem/Brake?                      [always] [interactive]
+
+================================================================================
+LimelightEstimator.java
+================================================================================
+Vision/ActivePOI                             [always]
+Vision/Valid                                 [always]
+Vision/Status                                [always]
+Vision/TagCount                              [always]
+Vision/AvgTagDist                            [always]
+Vision/StdDevXY                              [always]
+Vision/IsMegaTag2                            [always]
+Vision/PoseX                                 [always]
+Vision/PoseY                                 [always]
+Vision/PoseRot                               [always]
+Vision/RejectionReason                       [always]
+Vision/ClassicValid                          [always] (deprecated method)
+Vision/MT2Valid                              [always] (deprecated method)
+Vision/TagArea                               [always] (deprecated method)
+
+================================================================================
+CommandLogger.java
+================================================================================
+CommandLogger/ActiveCount                    [always] (value depends on Config.Logging.commandLogging)
+CommandLogger/ActiveCommands                 [always] (value depends on Config.Logging.commandLogging)
+CommandLogger/TotalRun                       [always] (value depends on Config.Logging.commandLogging)
+CommandLogger/Enabled                        [always]
+
+================================================================================
+LimelightHardwareSim.java (simulation only)
+================================================================================
+LimelightHardwareSim/FPS                     [always]
+LimelightHardwareSim/TagCount                [always]
+
+================================================================================
+Util.publishPose (NetworkTables struct, not SmartDashboard)
+================================================================================
+SmartDashboard/SwervePoses/Odometry          [always]
+SmartDashboard/SwervePoses/Estimated         [always]
+SmartDashboard/SwervePoses/Vision            [always] (when valid)
+
+================================================================================
+TESTBOTS (only active when running specific testbot)
+================================================================================
+
+--- SwerveTestbot.java ---
+ButtonLog/Last                               [testbot]
+ButtonLog/Previous                           [testbot]
+LastButton                                   [testbot]
+PreviousButton                               [testbot]
+
+--- VisionSimTestbot.java ---
+VisionTest/PoseX                             [testbot]
+VisionTest/PoseY                             [testbot]
+VisionTest/HeadingDeg                        [testbot]
+VisionTest/VisionValid                       [testbot]
+
+--- LimelightTestbot.java ---
+LimelightTestbot/Target/Count                [testbot]
+LimelightTestbot/Target/TagId                [testbot]
+LimelightTestbot/Target/TA                   [testbot]
+LimelightTestbot/Target/TX                   [testbot]
+LimelightTestbot/Target/TXNC                 [testbot]
+LimelightTestbot/Target/TYNC                 [testbot]
+LimelightTestbot/AprilTagIds                 [testbot]
+
+--- ShooterTestbot.java ---
+ShooterTestbot/DesiredFeetPerSecond          [testbot] [interactive]
+
+================================================================================
+Config.Logging FLAGS (in Config.java)
+================================================================================
+Logging/VerboseEnabled?     - Master switch for all verbose logging
+Logging/Controller?         - Log controller button presses (CommandLogger)
+Logging/Swerve?             - Log swerve module states and PID values
+Logging/Vision?             - Log vision estimates and rejection reasons
+Logging/Odometry?           - Log odometry diagnostics
+Logging/Shooter?            - Log shooter state and speeds
+Logging/Commands?           - Log command scheduling and lifecycle events
+Logging/CommandExecute?     - Log every command execute call (very verbose)
+
+================================================================================
+Other Config Flags That Control Logging
+================================================================================
+Config.Odometry.enableDiagnostics  - Enable odometry diagnostics publishing
