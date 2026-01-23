@@ -15,7 +15,7 @@ import static frc.robot.Config.Swerve.*;
  * over time. No physics simulation is performed - modules instantly
  * achieve their desired states.
  */
-public class SwerveSim implements SwerveHardware {
+public class SwerveHardwareSim implements SwerveHardware {
 
     private Rotation2d heading = new Rotation2d();
     private double yawRateDps = 0.0;

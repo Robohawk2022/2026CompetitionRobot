@@ -8,14 +8,14 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.subsystems.swerve.SwerveSim;
+import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
-import frc.robot.subsystems.vision.LimelightSim;
+import frc.robot.subsystems.vision.LimelightHardwareSim;
 
 /**
  * Standalone test program for the vision simulation.
  * <p>
- * Tests the LimelightSim by driving around and observing:
+ * Tests the LimelightHardwareSim by driving around and observing:
  * <ul>
  *   <li>Tag detection based on position and orientation</li>
  *   <li>tx/ty angles changing as robot moves</li>
@@ -29,7 +29,7 @@ public class VisionSimTestbot extends TimedRobot {
     private static final double DEADZONE = 0.05;
 
     private SwerveSubsystem swerve;
-    private LimelightSim limelightSim;
+    private LimelightHardwareSim limelightSim;
     private CommandXboxController controller;
 
     @Override
@@ -37,11 +37,11 @@ public class VisionSimTestbot extends TimedRobot {
         System.out.println(">>> VisionSimTestbot starting...");
 
         // create swerve with simulation hardware
-        swerve = new SwerveSubsystem(new SwerveSim());
+        swerve = new SwerveSubsystem(new SwerveHardwareSim());
         controller = new CommandXboxController(0);
 
         // create limelight simulation
-        limelightSim = new LimelightSim();
+        limelightSim = new LimelightHardwareSim();
 
         System.out.println(">>> Vision simulation initialized");
         System.out.println(">>> Drive around to test tag detection");

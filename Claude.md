@@ -69,7 +69,7 @@ This is an **FRC robot codebase** - software for controlling a competition robot
 │   ├── subsystems/xxx/       # One package per mechanism
 │   │   ├── XxxSubsystem.java # Business logic + command factories
 │   │   ├── XxxHardware.java  # Hardware interface
-│   │   └── XxxSim.java       # Simulation implementation
+│   │   └── XxxHardwareSim.java # Simulation implementation
 │   ├── commands/             # Multi-subsystem commands only
 │   ├── util/                 # Reusable utilities (Util, PDController, Trapezoid)
 │   └── testbots/             # Standalone test programs
@@ -183,7 +183,7 @@ double radians = Units.degreesToRadians(degrees);
 |------|---------|---------|
 | Subsystem | `XxxSubsystem.java` | `ArmSubsystem.java` |
 | Hardware Interface | `XxxHardware.java` | `ArmHardware.java` |
-| Simulation | `XxxSim.java` | `ArmSim.java` |
+| Simulation | `XxxHardwareSim.java` | `ArmHardwareSim.java` |
 | Command | `XxxCommand.java` | `SwerveTeleopCommand.java` |
 | Testbot | `XxxTestbot.java` | `ArmTestbot.java` |
 
@@ -372,12 +372,12 @@ public interface XxxHardware {
 /**
  * Implements {@link XxxHardware} for simulation.
  */
-public class XxxSim implements XxxHardware {
+public class XxxHardwareSim implements XxxHardware {
 
     final SomeWPILibSim sim;
     final DoubleConsumer widget;
 
-    public XxxSim() {
+    public XxxHardwareSim() {
         this.sim = new SomeWPILibSim(
             DCMotor.getNEO(1),
             GEAR_RATIO,
@@ -389,7 +389,7 @@ public class XxxSim implements XxxHardware {
     private DoubleConsumer createWidget() {
         Mechanism2d mech = new Mechanism2d(4, 4);
         // ... configure visualization
-        SmartDashboard.putData("XxxSim", mech);
+        SmartDashboard.putData("XxxHardwareSim", mech);
         return value -> { /* update widget */ };
     }
 
@@ -643,8 +643,8 @@ public class RobotContainer {
     public RobotContainer() {
         // Create hardware and subsystems
         if (Robot.isSimulation()) {
-            arm = new ArmSubsystem(new ArmSim());
-            intake = new IntakeSubsystem(new IntakeSim());
+            arm = new ArmSubsystem(new ArmHardwareSim());
+            intake = new IntakeSubsystem(new IntakeHardwareSim());
         } else {
             arm = new ArmSubsystem(new ArmSparkMax());
             intake = new IntakeSubsystem(new IntakeTalonFX());
@@ -700,12 +700,12 @@ SmartDashboard.putData(getName(), builder -> {
  */
 public class ArmTestbot extends TimedRobot {
 
-    ArmSim sim;
+    ArmHardwareSim sim;
     ArmSubsystem arm;
     CommandXboxController controller;
 
     public ArmTestbot() {
-        sim = new ArmSim();
+        sim = new ArmHardwareSim();
         arm = new ArmSubsystem(sim);
         controller = new CommandXboxController(0);
 
@@ -855,7 +855,7 @@ When reading existing code, watch for these issues:
 
 ### Simulation Issues
 
-- Check that `XxxSim` implements all `XxxHardware` methods
+- Check that `XxxHardwareSim` implements all `XxxHardware` methods
 - Verify `Util.DT` is used for simulation updates
 - Check dashboard for `currentMode` to see command state
 
@@ -977,7 +977,7 @@ Created the shooter subsystem with hardware abstraction, simulation, and basic c
 ### Files Created
 - `src/main/java/frc/robot/subsystems/shooter/ShooterSubsystem.java` - Main subsystem with spin-up command
 - `src/main/java/frc/robot/subsystems/shooter/ShooterHardware.java` - Hardware interface
-- `src/main/java/frc/robot/subsystems/shooter/ShooterSim.java` - Flywheel simulation
+- `src/main/java/frc/robot/subsystems/shooter/ShooterHardwareSim.java` - Flywheel simulation
 - `src/main/java/frc/robot/testbots/ShooterTestbot.java` - Standalone test program
 
 ### Files Modified
@@ -1036,7 +1036,7 @@ Use descriptive names that sort chronologically:
 2. [ ] Add config interface in `Config.java`
 3. [ ] Create `XxxHardware.java` interface
 4. [ ] Create `XxxSubsystem.java` with command factories
-5. [ ] Create `XxxSim.java` for simulation
+5. [ ] Create `XxxHardwareSim.java` for simulation
 6. [ ] Create `XxxTestbot.java` for testing
 7. [ ] Wire up in `RobotContainer.java`
 8. [ ] Commands reset PID in `initialize()`

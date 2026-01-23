@@ -6,7 +6,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.swerve.SwerveHardwareCTRE;
-import frc.robot.subsystems.swerve.SwerveSim;
+import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveTeleopSpeedSupplier;
 
@@ -30,7 +30,7 @@ public class SwerveTestbot extends TimedRobot {
 
         // use appropriate hardware based on environment
         swerve = new SwerveSubsystem(
-                isSimulation() ? new SwerveSim() : new SwerveHardwareCTRE());
+                isSimulation() ? new SwerveHardwareSim() : new SwerveHardwareCTRE());
         controller = new CommandXboxController(0);
 
         System.out.println(">>> Button bindings configured - press A, B, X, Y, Start, Back, etc.");

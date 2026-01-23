@@ -9,7 +9,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.swerve.SwerveHardware;
 import frc.robot.subsystems.swerve.SwerveHardwareCTRE;
-import frc.robot.subsystems.swerve.SwerveSim;
+import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveTeleopSpeedSupplier;
 import frc.robot.util.CommandLogger;
@@ -28,7 +28,7 @@ public class RobotContainer {
 
     // create hardware and subsystem
     SwerveHardware swerveHardware = Robot.isSimulation()
-        ? new SwerveSim()
+        ? new SwerveHardwareSim()
         : new SwerveHardwareCTRE();
     swerve = new SwerveSubsystem(swerveHardware);
 
