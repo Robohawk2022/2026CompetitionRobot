@@ -1,0 +1,11 @@
+{
+  "enabledMcpjsonServers": [
+    "frc-networktables",
+    "frc-docs"
+  ],
+  "permissions": {
+    "allow": [
+      "Bash(./setup.sh)"
+    ]
+  }
+}

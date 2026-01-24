@@ -57,9 +57,9 @@ public class ShooterMotorsTestbot extends TimedRobot {
 
     // track current state for dashboard
     String currentMode = "idle";
-    double intakeAmps = 0;
-    double indexAmps = 0;
-    double shootAmps = 0;
+    double intakeVoltsCmd = 0;
+    double indexVoltsCmd = 0;
+    double shootVoltsCmd = 0;
 
     @SuppressWarnings("deprecation")
     public ShooterMotorsTestbot() {
@@ -93,10 +93,10 @@ public class ShooterMotorsTestbot extends TimedRobot {
             builder.addDoubleProperty("ShootFunc/IndexPct", () -> shootFuncIndexPct, val -> shootFuncIndexPct = val);
             builder.addDoubleProperty("ShootFunc/ShootPct", () -> shootFuncShootPct, val -> shootFuncShootPct = val);
 
-            // current readings (read-only)
-            builder.addDoubleProperty("IntakeAmps", () -> intakeAmps, null);
-            builder.addDoubleProperty("IndexAmps", () -> indexAmps, null);
-            builder.addDoubleProperty("ShootAmps", () -> shootAmps, null);
+            // commanded voltages (read-only)
+            builder.addDoubleProperty("IntakeVolts", () -> intakeVoltsCmd, null);
+            builder.addDoubleProperty("IndexVolts", () -> indexVoltsCmd, null);
+            builder.addDoubleProperty("ShootVolts", () -> shootVoltsCmd, null);
         });
 
         System.out.println(">>> ShooterMotorsTestbot initialized");
@@ -106,11 +106,6 @@ public class ShooterMotorsTestbot extends TimedRobot {
     @Override
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
-
-        // update current readings
-        intakeAmps = intakeMotor.getOutputCurrent();
-        indexAmps = indexMotor.getOutputCurrent();
-        shootAmps = shootMotor.getOutputCurrent();
     }
 
     @Override
@@ -144,13 +139,19 @@ public class ShooterMotorsTestbot extends TimedRobot {
             () -> {
                 currentMode = "intake";
                 // intake CCW = negative voltage
-                intakeMotor.setVoltage(-pctToVolts(intakeFuncIntakePct));
+                intakeVoltsCmd = -pctToVolts(intakeFuncIntakePct);
+                intakeMotor.setVoltage(intakeVoltsCmd);
                 // index CW = positive voltage
-                indexMotor.setVoltage(pctToVolts(intakeFuncIndexPct));
+                indexVoltsCmd = pctToVolts(intakeFuncIndexPct);
+                indexMotor.setVoltage(indexVoltsCmd);
                 // shoot off
+                shootVoltsCmd = 0;
                 shootMotor.setVoltage(0);
             },
             () -> {
+                intakeVoltsCmd = 0;
+                indexVoltsCmd = 0;
+                shootVoltsCmd = 0;
                 intakeMotor.setVoltage(0);
                 indexMotor.setVoltage(0);
                 shootMotor.setVoltage(0);
@@ -168,13 +169,19 @@ public class ShooterMotorsTestbot extends TimedRobot {
             () -> {
                 currentMode = "shoot";
                 // intake off
+                intakeVoltsCmd = 0;
                 intakeMotor.setVoltage(0);
                 // index CW = positive voltage
-                indexMotor.setVoltage(pctToVolts(shootFuncIndexPct));
+                indexVoltsCmd = pctToVolts(shootFuncIndexPct);
+                indexMotor.setVoltage(indexVoltsCmd);
                 // shoot CCW = negative voltage
-                shootMotor.setVoltage(-pctToVolts(shootFuncShootPct));
+                shootVoltsCmd = -pctToVolts(shootFuncShootPct);
+                shootMotor.setVoltage(shootVoltsCmd);
             },
             () -> {
+                intakeVoltsCmd = 0;
+                indexVoltsCmd = 0;
+                shootVoltsCmd = 0;
                 intakeMotor.setVoltage(0);
                 indexMotor.setVoltage(0);
                 shootMotor.setVoltage(0);
