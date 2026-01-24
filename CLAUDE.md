@@ -3,8 +3,8 @@
 FRC robot code for Team 3373. Java 17, WPILib framework, Gradle build.
 
 **IMPORTANT**:
-- **START** by reading `claude-docs/` to check what's already been done
-- **END** by logging what you did to `claude-docs/` folder
+- **START** by reading `docs/` to check what's already been done
+- **END** by logging what you did to `docs/` folder
 
 See [Session Logging](#session-logging-required) section.
 
@@ -26,13 +26,13 @@ See [Session Logging](#session-logging-required) section.
 
 ## Workflow for AI Agents
 
-1. **Check previous sessions first** - Read `claude-docs/` to see what's been done before
+1. **Check previous sessions first** - Read `docs/` to see what's been done before
 2. **Read existing code** - Never propose changes to code you haven't read
 3. **Check for existing utilities** - Look in `Config.java` and `util/` before creating new helpers
 4. **Ask about duplicates** - If something similar exists, ask the user before creating new code
 5. **Build to verify** - Run `./gradlew build` after making changes
 6. **Test in simulation** - Use `./gradlew simulateJava` to verify behavior
-7. **Log your work** - Document what you did in `claude-docs/` before ending session
+7. **Log your work** - Document what you did in `docs/` before ending session
 
 ---
 
@@ -61,6 +61,41 @@ Use during simulation to query live robot state:
 | `get_subsystem_status` | Query any subsystem by name |
 | `get_preference` / `list_preferences` | Read robot configuration values |
 | `connection_status` | Check NetworkTables connection |
+
+### Simulation Control Tools (frc-networktables)
+
+Control robot simulation via HALSim WebSocket (simulation only):
+
+| Tool | Description |
+|------|-------------|
+| `simulation_control_status` | Check if WebSocket control is available |
+| `set_robot_mode` | Enable/disable robot, set mode (teleop/autonomous/test) |
+| `set_joystick_input` | Set Xbox controller axes, buttons, D-pad |
+| `set_alliance` | Set alliance color (red/blue) and station (1-3) |
+| `drive_robot` | Drive robot continuously for a duration (auto-enables teleop) |
+
+**Xbox Controller Mapping:**
+- Axes: `left_x`, `left_y`, `right_x`, `right_y` (-1 to 1), `left_trigger`, `right_trigger` (0 to 1)
+- Buttons: `a`, `b`, `x`, `y`, `left_bumper`, `right_bumper`, `back`, `start`, `left_stick`, `right_stick`
+- POV/D-pad: -1 (unpressed), 0 (up), 90 (right), 180 (down), 270 (left)
+
+**Example usage:**
+```
+# Drive forward for 3 seconds (easiest method)
+drive_robot left_y=-0.5 duration=3
+
+# Drive forward while rotating for 2 seconds
+drive_robot left_y=-0.5 right_x=0.3 duration=2
+
+# Enable teleop mode manually
+set_robot_mode enabled=true mode=teleop
+
+# Drive forward with left stick (single frame)
+set_joystick_input joystick=0 axes={"left_y": -0.5}
+
+# Press A button on operator controller
+set_joystick_input joystick=1 buttons={"a": true}
+```
 
 ### frc-docs Tools
 
@@ -109,7 +144,7 @@ This is an **FRC robot codebase** - software for controlling a competition robot
 ## Project Structure
 
 ```
-├── claude-docs/              # AI session logs (REQUIRED - log every session here)
+├── docs/              # AI session logs (REQUIRED - log every session here)
 │   └── YYYY-MM-DD-description.md
 ├── src/main/java/frc/robot/
 │   ├── Config.java           # ALL tunable parameters (use Preferences)
@@ -297,7 +332,7 @@ this.hardware = Objects.requireNonNull(hardware);
 
 ## Subsystem Architecture
 
-> **Before creating a new subsystem**, check `claude-docs/` for existing implementations. A subsystem may already exist or have been started in a previous session.
+> **Before creating a new subsystem**, check `docs/` for existing implementations. A subsystem may already exist or have been started in a previous session.
 
 ### Complete Subsystem Example
 
@@ -457,7 +492,7 @@ public class XxxSim implements XxxHardware {
 
 ## Command Patterns
 
-> **Before implementing commands**, check `claude-docs/` for established patterns in this codebase. Session logs document command approaches that worked (or didn't).
+> **Before implementing commands**, check `docs/` for established patterns in this codebase. Session logs document command approaches that worked (or didn't).
 
 ### Command Factory (Preferred)
 
@@ -777,7 +812,7 @@ Run with: `./gradlew simulateJava -Probot=ArmTestbot`
 
 ## Common Utilities
 
-> **Before creating new utilities**, check `util/` package and `claude-docs/` session logs. A helper may already exist or have been discussed in a previous session.
+> **Before creating new utilities**, check `util/` package and `docs/` session logs. A helper may already exist or have been discussed in a previous session.
 
 ### Util Class
 
@@ -857,9 +892,9 @@ double velocity = state.velocity;
 
 ### Must Do
 
-- **Check `claude-docs/` first** - Read previous session logs before starting work
+- **Check `docs/` first** - Read previous session logs before starting work
 - **Check for existing code** - Search before creating new classes/utilities
-- **Check before creating subsystems** - Read `claude-docs/` to see if a subsystem was started or discussed previously
+- **Check before creating subsystems** - Read `docs/` to see if a subsystem was started or discussed previously
 - **Ask if duplicate found** - If something similar exists, ask the user before proceeding
 - **Use Config.java** for all tunable values with `Util.pref()`
 - **Clamp voltages** with `Util.clampVolts()` before sending to hardware
@@ -867,7 +902,7 @@ double velocity = state.velocity;
 - **Call `addRequirements()`** in all commands
 - **Use `Objects.requireNonNull()`** for constructor parameters
 - **Track `currentMode`** for dashboard debugging
-- **Log every session** to `claude-docs/` folder before ending
+- **Log every session** to `docs/` folder before ending
 
 ### Must Not
 
@@ -956,7 +991,7 @@ To set alliance in simulation, add a boolean entry to `FMSInfo/IsRedAlliance` in
 
 ### Before Starting: Check What's Been Done
 
-**ALWAYS read the `claude-docs/` folder before starting work.** This prevents:
+**ALWAYS read the `docs/` folder before starting work.** This prevents:
 - Duplicating work that was already completed
 - Recreating code that was intentionally removed
 - Missing context from previous sessions
@@ -964,13 +999,13 @@ To set alliance in simulation, add a boolean entry to `FMSInfo/IsRedAlliance` in
 
 ```bash
 # Check recent session logs
-ls -la claude-docs/
+ls -la docs/
 
 # Read the most recent logs to understand current state
 ```
 
 **Before creating anything new, check for duplicates:**
-1. Has this subsystem/feature been started already? Check `claude-docs/`
+1. Has this subsystem/feature been started already? Check `docs/`
 2. Does this utility already exist? Check `util/` package
 3. Is this config parameter already defined? Check `Config.java`
 4. Was this tried before and abandoned? Check session logs for context
@@ -990,11 +1025,11 @@ Example questions to ask:
 
 ### After Every Session: Log Your Work
 
-**After every coding session, you MUST log what you did to the `claude-docs/` folder.**
+**After every coding session, you MUST log what you did to the `docs/` folder.**
 
 ### Log File Format
 
-Create a new markdown file for each session: `claude-docs/YYYY-MM-DD-brief-description.md`
+Create a new markdown file for each session: `docs/YYYY-MM-DD-brief-description.md`
 
 ```markdown
 # Session: [Brief Description]
@@ -1128,7 +1163,7 @@ Use descriptive names that sort chronologically:
 10. [ ] Voltages clamped before hardware
 11. [ ] Dashboard telemetry added
 12. [ ] `Objects.requireNonNull()` for constructor params
-13. [ ] **Log session to `claude-docs/`**
+13. [ ] **Log session to `docs/`**
 
 ---
 
@@ -1163,14 +1198,14 @@ Use descriptive names that sort chronologically:
 - `.wpilib/` - WPILib configuration
 
 **Never delete**:
-- `claude-docs/` - Session logs (only add new files, never remove old ones)
+- `docs/` - Session logs (only add new files, never remove old ones)
 
 **Never commit**:
 - Hardcoded IP addresses or credentials
 - `.gradle/` build artifacts
 
 **Always commit**:
-- `claude-docs/*.md` - Session logs should be tracked in git
+- `docs/*.md` - Session logs should be tracked in git
 
 ---
 
@@ -1185,22 +1220,22 @@ Use descriptive names that sort chronologically:
 
 ## Session Documentation Index
 
-The `claude-docs/` folder contains session logs with implementation details. Key sessions:
+The `docs/` folder contains session logs with implementation details. Key sessions:
 
 ### Vision / Limelight
-- [Improve Limelight Pose Estimation](claude-docs/2026-01-17-improve-limelight-pose-estimation.md) - MegaTag2 integration, dynamic std devs, pose filtering
-- [Add TagPOI Filtering](claude-docs/2026-01-17-add-tagpoi-filtering.md) - Point-of-interest based tag filtering
+- [Improve Limelight Pose Estimation](docs/2026-01-17-improve-limelight-pose-estimation.md) - MegaTag2 integration, dynamic std devs, pose filtering
+- [Add TagPOI Filtering](docs/2026-01-17-add-tagpoi-filtering.md) - Point-of-interest based tag filtering
 
 ### Swerve Drive
-- [Add Swerve Drive CTRE](claude-docs/2025-01-17-add-swerve-drive-ctre.md) - CTRE Phoenix 6 swerve implementation
+- [Add Swerve Drive CTRE](docs/2025-01-17-add-swerve-drive-ctre.md) - CTRE Phoenix 6 swerve implementation
 
 ### Odometry
-- [Odometry Improvements](claude-docs/2026-01-17-odometry-improvements.md) - Pose estimation enhancements
+- [Odometry Improvements](docs/2026-01-17-odometry-improvements.md) - Pose estimation enhancements
 
 ### Utilities
-- [Add Command Logger](claude-docs/2026-01-17-add-command-logger.md) - Command debugging utility
-- [Add Button Logging](claude-docs/2026-01-17-add-button-logging.md) - Controller input logging
+- [Add Command Logger](docs/2026-01-17-add-command-logger.md) - Command debugging utility
+- [Add Button Logging](docs/2026-01-17-add-button-logging.md) - Controller input logging
 
 ### Documentation
-- [Add Command Documentation](claude-docs/2026-01-17-add-command-documentation.md) - Command patterns documentation
-- [Update CLAUDE.md Add Logging](claude-docs/2025-01-17-update-claude-md-add-logging.md) - Session logging requirements
+- [Add Command Documentation](docs/2026-01-17-add-command-documentation.md) - Command patterns documentation
+- [Update CLAUDE.md Add Logging](docs/2025-01-17-update-claude-md-add-logging.md) - Session logging requirements

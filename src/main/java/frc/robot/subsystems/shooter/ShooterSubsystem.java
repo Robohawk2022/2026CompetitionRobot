@@ -8,6 +8,7 @@ import frc.robot.util.Util;
 import java.util.Objects;
 import java.util.function.DoubleSupplier;
 
+import static frc.robot.Config.Shooter.*;
 import static frc.robot.Config.Shooter.d;
 import static frc.robot.Config.Shooter.p;
 import static frc.robot.Config.Shooter.v;
@@ -61,8 +62,8 @@ public class ShooterSubsystem implements Subsystem {
         currentRps = hardware.getMotorRevolutionsPerSecond();
 
         // convert the speed in revolutions per second to a speed in
-        // feet per second using the gear ration and wheel diameter
-        currentFps = -1.0; // TODO implement me
+        // feet per second using the gear ratio and wheel circumference
+        currentFps = currentRps * gearRatio * wheelCircumference;
     }
 
     public void openLoop(double volts) {
@@ -87,7 +88,7 @@ public class ShooterSubsystem implements Subsystem {
         if (targetFps != feetPerSecond) {
 
             targetFps = feetPerSecond;
-            targetRps = 0.0; // TODO implement me
+            targetRps = feetPerSecond / (gearRatio * wheelCircumference);
 
             // if we notice that our setpoint has changed, and we're not in a
             // competition, we're probably in the lab tuning the robot. this is
@@ -113,16 +114,7 @@ public class ShooterSubsystem implements Subsystem {
      * volts to the motor
      */
     public Command idleCommand() {
-        return voltsCommand(0.0);
-    }
-
-    /**
-     * @param volts a voltage level (range is [-12, 12])
-     * @return a command that will continuously apply the specified number of
-     * volts to the motors
-     */
-    public Command voltsCommand(double volts) {
-        throw new UnsupportedOperationException("TODO implement me");
+        return run(() -> openLoop(0.0));
     }
 
     /**
@@ -131,7 +123,7 @@ public class ShooterSubsystem implements Subsystem {
      * the corresponding voltage
      */
     public Command teleopCommand(DoubleSupplier input) {
-        throw new UnsupportedOperationException("TODO implement me");
+        return run(() -> openLoop(input.getAsDouble() * Util.MAX_VOLTS));
     }
 
     /**
@@ -155,7 +147,7 @@ public class ShooterSubsystem implements Subsystem {
      * hold the wheel at the specified speed
      */
     public Command speedCommand(double feetPerSecond) {
-        throw new UnsupportedOperationException("TODO implement me");
+        return run(() -> closedLoop(feetPerSecond));
     }
 
 //endregion

@@ -38,7 +38,7 @@ import static frc.robot.Config.Limelight.limelightName;
  *   <li>Publishing to NetworkTables in the exact format LimelightHelpers expects</li>
  * </ul>
  */
-public class LimelightSim {
+public class LimelightHardwareSim {
 
     /** Enable verbose logging */
     private static final boolean verboseLogging = false;
@@ -90,9 +90,9 @@ public class LimelightSim {
     }
 
     /**
-     * Creates a new LimelightSim.
+     * Creates a new LimelightHardwareSim.
      */
-    public LimelightSim() {
+    public LimelightHardwareSim() {
         this.fieldLayout = Util.getFieldLayout();
 
         // get NetworkTables table for the limelight
@@ -107,7 +107,7 @@ public class LimelightSim {
         taPublisher = table.getDoubleTopic("ta").publish();
         tidPublisher = table.getDoubleTopic("tid").publish();
 
-        Util.log("LimelightSim initialized with %d tags on field", fieldLayout.getTags().size());
+        Util.log("LimelightHardwareSim initialized with %d tags on field", fieldLayout.getTags().size());
     }
 
     /**

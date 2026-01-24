@@ -81,8 +81,19 @@ test {
 }
 
 // Simulation configuration (e.g. environment variables).
-wpi.sim.addGui().defaultEnabled = true
-wpi.sim.addDriverstation()
+// For headless MCP control: ./gradlew simulateJava -Pheadless
+if (project.hasProperty('headless')) {
+    // Headless mode - ONLY WebSocket, no GUI or DS sim
+    // WebSocket client must provide all driver station and joystick values
+    wpi.sim.addWebsocketsServer().defaultEnabled = true
+    // Note: No addDriverstation() or addGui() - WebSocket is sole provider
+    println ">>> Running in HEADLESS mode - WebSocket on port 3300 controls everything"
+} else {
+    // Normal mode with GUI
+    wpi.sim.addGui().defaultEnabled = true
+    wpi.sim.addDriverstation()
+    wpi.sim.addWebsocketsServer().defaultEnabled = true  // Enable HALSim WebSocket for MCP control
+}
 
 // Support for testbot selection via -Probot=XxxTestbot
 if (project.hasProperty('robot')) {

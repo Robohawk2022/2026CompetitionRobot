@@ -12,6 +12,7 @@ Default connects to localhost:5810 (WPILib simulation default)
 """
 
 import argparse
+import asyncio
 import json
 import socket
 import sys
@@ -19,6 +20,8 @@ import time
 from typing import Any
 
 import ntcore
+import websockets
+from websockets.exceptions import ConnectionClosed, WebSocketException
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
@@ -29,6 +32,33 @@ _connected = False
 _current_host = "localhost"
 _current_port = 5810
 _multi_subscriber = None  # Subscribe to all topics
+
+# HALSim WebSocket state (for simulation control)
+_ws_connection = None
+_ws_host = "localhost"
+_ws_port = 3300
+_ws_connected = False
+_joysticks_initialized = set()  # Track which joysticks have been initialized
+
+# Xbox controller axis indices
+AXIS_LEFT_X = 0
+AXIS_LEFT_Y = 1
+AXIS_LEFT_TRIGGER = 2
+AXIS_RIGHT_TRIGGER = 3
+AXIS_RIGHT_X = 4
+AXIS_RIGHT_Y = 5
+
+# Xbox controller button indices (1-indexed in WPILib)
+BUTTON_A = 1
+BUTTON_B = 2
+BUTTON_X = 3
+BUTTON_Y = 4
+BUTTON_LEFT_BUMPER = 5
+BUTTON_RIGHT_BUMPER = 6
+BUTTON_BACK = 7
+BUTTON_START = 8
+BUTTON_LEFT_STICK = 9
+BUTTON_RIGHT_STICK = 10
 
 
 def get_nt() -> ntcore.NetworkTableInstance:
@@ -112,6 +142,198 @@ def discover_networktables_servers() -> list[dict[str, Any]]:
                 })
 
     return found_servers
+
+
+# =============================================================================
+# HALSim WebSocket Client (for simulation input control)
+# =============================================================================
+
+async def connect_websocket(host: str = "localhost", port: int = 3300) -> bool:
+    """Connect to the HALSim WebSocket server."""
+    global _ws_connection, _ws_host, _ws_port, _ws_connected, _joysticks_initialized
+
+    _ws_host = host
+    _ws_port = port
+
+    try:
+        uri = f"ws://{host}:{port}/wpilibws"
+        _ws_connection = await asyncio.wait_for(
+            websockets.connect(uri),
+            timeout=2.0
+        )
+        _ws_connected = True
+        _joysticks_initialized = set()  # Reset on new connection
+        return True
+    except (WebSocketException, OSError, asyncio.TimeoutError) as e:
+        _ws_connected = False
+        _ws_connection = None
+        return False
+
+
+async def disconnect_websocket():
+    """Disconnect from the HALSim WebSocket server."""
+    global _ws_connection, _ws_connected
+
+    if _ws_connection:
+        try:
+            await _ws_connection.close()
+        except Exception:
+            pass
+    _ws_connection = None
+    _ws_connected = False
+
+
+async def send_ws_message(message: dict) -> bool:
+    """Send a message to the HALSim WebSocket server."""
+    global _ws_connection, _ws_connected
+
+    if not _ws_connection or not _ws_connected:
+        # Try to reconnect
+        if not await connect_websocket(_ws_host, _ws_port):
+            return False
+
+    try:
+        await _ws_connection.send(json.dumps(message))
+        return True
+    except (ConnectionClosed, WebSocketException) as e:
+        _ws_connected = False
+        return False
+
+
+def is_simulation() -> bool:
+    """Check if we're connected to a simulation (not a real robot)."""
+    # WebSocket control is only available in simulation
+    # We can check this by seeing if port 3300 is open on localhost
+    return scan_port(_ws_host, _ws_port, timeout=0.1)
+
+
+async def set_driver_station_mode(enabled: bool, autonomous: bool = False, test: bool = False) -> bool:
+    """Set the driver station mode."""
+    message = {
+        "type": "DriverStation",
+        "device": "",
+        "data": {
+            ">enabled": enabled,
+            ">autonomous": autonomous,
+            ">test": test,
+            ">new_data": True  # Critical: tells robot code to read fresh joystick data
+        }
+    }
+    return await send_ws_message(message)
+
+
+async def signal_new_data() -> bool:
+    """
+    Signal to the robot code that new joystick data is available.
+    Must be called after set_joystick_state() for the robot to see the values.
+    """
+    message = {
+        "type": "DriverStation",
+        "device": "",
+        "data": {
+            ">new_data": True
+        }
+    }
+    return await send_ws_message(message)
+
+
+async def set_alliance_station(alliance: str, station: int = 1) -> bool:
+    """Set the alliance color and station."""
+    # Station format: "red1", "red2", "red3", "blue1", "blue2", "blue3"
+    station_str = f"{alliance.lower()}{station}"
+    message = {
+        "type": "DriverStation",
+        "device": "",
+        "data": {
+            ">station": station_str
+        }
+    }
+    return await send_ws_message(message)
+
+
+async def init_xbox_controller(port: int = 0, name: str = "Claude's Controller") -> bool:
+    """
+    Initialize a virtual Xbox controller on the specified port.
+    This must be called before the joystick values will be accepted.
+    """
+    global _joysticks_initialized
+
+    if port in _joysticks_initialized:
+        return True  # Already initialized
+
+    # Send joystick descriptor - this tells HALSim about the controller
+    descriptor_msg = {
+        "type": "Joystick",
+        "device": str(port),
+        "data": {
+            ">name": name,
+            ">type": 1,  # 1 = Xbox controller
+            ">isXbox": True,
+            ">axisCount": 6,
+            ">buttonCount": 12,
+            ">povCount": 1,
+            # Initialize with default values
+            ">axes": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            ">buttons": [False] * 12,
+            ">povs": [-1]
+        }
+    }
+
+    success = await send_ws_message(descriptor_msg)
+    if success:
+        _joysticks_initialized.add(port)
+    return success
+
+
+async def set_joystick_state(
+    port: int,
+    axes: list[float] | None = None,
+    buttons: list[bool] | None = None,
+    povs: list[int] | None = None
+) -> bool:
+    """
+    Set joystick state.
+
+    Args:
+        port: Joystick port (0-5)
+        axes: List of 6 axis values (-1.0 to 1.0 for sticks, 0.0 to 1.0 for triggers)
+        buttons: List of 12 button states (index 0 is button 1)
+        povs: List of POV values (-1 = unpressed, 0-359 for direction)
+    """
+    # Auto-initialize the controller if not done yet
+    if port not in _joysticks_initialized:
+        await init_xbox_controller(port)
+
+    data = {}
+
+    if axes is not None:
+        # Ensure we have exactly 6 axes
+        while len(axes) < 6:
+            axes.append(0.0)
+        data[">axes"] = axes[:6]
+
+    if buttons is not None:
+        # Ensure we have enough buttons (12 for Xbox)
+        while len(buttons) < 12:
+            buttons.append(False)
+        data[">buttons"] = buttons[:12]
+
+    if povs is not None:
+        data[">povs"] = povs
+
+    if not data:
+        return False
+
+    message = {
+        "type": "Joystick",
+        "device": str(port),
+        "data": data
+    }
+    success = await send_ws_message(message)
+    if success:
+        # Signal new data available - this is CRITICAL for robot code to see the values
+        await signal_new_data()
+    return success
 
 
 def get_table_values(table_path: str) -> dict[str, Any]:
@@ -358,6 +580,151 @@ async def list_tools() -> list[Tool]:
                 },
                 "required": ["host"]
             }
+        ),
+        # Simulation control tools (HALSim WebSocket)
+        Tool(
+            name="simulation_control_status",
+            description="Check if simulation control is available (HALSim WebSocket). This is only available when running in simulation, not on a real robot.",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        ),
+        Tool(
+            name="set_robot_mode",
+            description="Enable/disable the robot and set its mode. SIMULATION ONLY - will not work on a real robot.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean",
+                        "description": "Whether the robot should be enabled"
+                    },
+                    "mode": {
+                        "type": "string",
+                        "enum": ["teleop", "autonomous", "test"],
+                        "description": "Robot mode (default: teleop)"
+                    }
+                },
+                "required": ["enabled"]
+            }
+        ),
+        Tool(
+            name="set_joystick_input",
+            description="Set Xbox controller inputs for simulation. SIMULATION ONLY. Axes range from -1.0 to 1.0 (sticks) or 0.0 to 1.0 (triggers). POV is -1 (unpressed) or 0-359 degrees.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "joystick": {
+                        "type": "integer",
+                        "description": "Joystick port (0=driver, 1=operator)"
+                    },
+                    "axes": {
+                        "type": "object",
+                        "description": "Axis values: left_x, left_y, right_x, right_y, left_trigger, right_trigger",
+                        "properties": {
+                            "left_x": {"type": "number", "minimum": -1.0, "maximum": 1.0},
+                            "left_y": {"type": "number", "minimum": -1.0, "maximum": 1.0},
+                            "right_x": {"type": "number", "minimum": -1.0, "maximum": 1.0},
+                            "right_y": {"type": "number", "minimum": -1.0, "maximum": 1.0},
+                            "left_trigger": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+                            "right_trigger": {"type": "number", "minimum": 0.0, "maximum": 1.0}
+                        }
+                    },
+                    "buttons": {
+                        "type": "object",
+                        "description": "Button states: a, b, x, y, left_bumper, right_bumper, back, start, left_stick, right_stick",
+                        "properties": {
+                            "a": {"type": "boolean"},
+                            "b": {"type": "boolean"},
+                            "x": {"type": "boolean"},
+                            "y": {"type": "boolean"},
+                            "left_bumper": {"type": "boolean"},
+                            "right_bumper": {"type": "boolean"},
+                            "back": {"type": "boolean"},
+                            "start": {"type": "boolean"},
+                            "left_stick": {"type": "boolean"},
+                            "right_stick": {"type": "boolean"}
+                        }
+                    },
+                    "pov": {
+                        "type": "integer",
+                        "description": "D-pad direction: -1 (unpressed), 0 (up), 45, 90 (right), 135, 180 (down), 225, 270 (left), 315"
+                    }
+                },
+                "required": ["joystick"]
+            }
+        ),
+        Tool(
+            name="set_alliance",
+            description="Set the alliance color and station. SIMULATION ONLY.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "alliance": {
+                        "type": "string",
+                        "enum": ["red", "blue"],
+                        "description": "Alliance color"
+                    },
+                    "station": {
+                        "type": "integer",
+                        "description": "Driver station number (1, 2, or 3)"
+                    }
+                },
+                "required": ["alliance"]
+            }
+        ),
+        Tool(
+            name="drive_robot",
+            description="Drive the robot in simulation by continuously sending joystick inputs for a specified duration. "
+                        "Automatically enables teleop mode. SIMULATION ONLY. "
+                        "Use left_y=-0.5 to drive forward, right_x=0.5 to rotate right. "
+                        "Can also hold buttons like left_bumper for special modes (e.g., orbit).",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "left_x": {
+                        "type": "number",
+                        "minimum": -1.0,
+                        "maximum": 1.0,
+                        "description": "Left stick X axis (strafe left/right)"
+                    },
+                    "left_y": {
+                        "type": "number",
+                        "minimum": -1.0,
+                        "maximum": 1.0,
+                        "description": "Left stick Y axis (forward/backward, negative=forward)"
+                    },
+                    "right_x": {
+                        "type": "number",
+                        "minimum": -1.0,
+                        "maximum": 1.0,
+                        "description": "Right stick X axis (rotation)"
+                    },
+                    "duration": {
+                        "type": "number",
+                        "minimum": 0.1,
+                        "maximum": 10.0,
+                        "description": "Duration to drive in seconds (default: 2.0, max: 10.0)"
+                    },
+                    "buttons": {
+                        "type": "object",
+                        "description": "Buttons to hold: a, b, x, y, left_bumper, right_bumper, back, start",
+                        "properties": {
+                            "a": {"type": "boolean"},
+                            "b": {"type": "boolean"},
+                            "x": {"type": "boolean"},
+                            "y": {"type": "boolean"},
+                            "left_bumper": {"type": "boolean"},
+                            "right_bumper": {"type": "boolean"},
+                            "back": {"type": "boolean"},
+                            "start": {"type": "boolean"}
+                        }
+                    }
+                },
+                "required": []
+            }
         )
     ]
 
@@ -368,7 +735,12 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     nt = get_nt()
 
     # Check connection (allow some tools to work without connection)
-    connection_optional_tools = ["connection_status", "scan_for_servers", "reconnect"]
+    # Simulation control tools also work without NT connection (they use WebSocket)
+    connection_optional_tools = [
+        "connection_status", "scan_for_servers", "reconnect",
+        "simulation_control_status", "set_robot_mode", "set_joystick_input", "set_alliance",
+        "drive_robot"
+    ]
     if not nt.isConnected() and name not in connection_optional_tools:
         return [TextContent(
             type="text",
@@ -696,6 +1068,257 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
                 "truncated": len(filtered) > 100
             }
             return [TextContent(type="text", text=json.dumps(result, indent=2))]
+
+        # =====================================================================
+        # Simulation Control Tools (HALSim WebSocket)
+        # =====================================================================
+
+        elif name == "simulation_control_status":
+            ws_available = is_simulation()
+            ws_connected = _ws_connected
+
+            result = {
+                "websocket_server_available": ws_available,
+                "websocket_connected": ws_connected,
+                "websocket_target": f"{_ws_host}:{_ws_port}",
+                "is_simulation": ws_available,
+                "hint": "Simulation control tools (set_robot_mode, set_joystick_input, set_alliance) "
+                        "are only available when running the WPILib simulation."
+            }
+
+            if not ws_available:
+                result["note"] = (
+                    "HALSim WebSocket server not detected. Make sure:\n"
+                    "1. Simulation is running (./gradlew simulateJava)\n"
+                    "2. build.gradle has: wpi.sim.addWebsocketsServer().defaultEnabled = true"
+                )
+
+            return [TextContent(type="text", text=json.dumps(result, indent=2))]
+
+        elif name == "set_robot_mode":
+            # Check if simulation is running
+            if not is_simulation():
+                return [TextContent(
+                    type="text",
+                    text="Simulation control not available. Make sure:\n"
+                         "1. Simulation is running (./gradlew simulateJava)\n"
+                         "2. build.gradle has: wpi.sim.addWebsocketsServer().defaultEnabled = true"
+                )]
+
+            enabled = arguments.get("enabled", False)
+            mode = arguments.get("mode", "teleop").lower()
+
+            autonomous = mode == "autonomous"
+            test = mode == "test"
+
+            success = await set_driver_station_mode(enabled, autonomous, test)
+
+            if success:
+                mode_str = "autonomous" if autonomous else ("test" if test else "teleop")
+                state_str = "enabled" if enabled else "disabled"
+                return [TextContent(
+                    type="text",
+                    text=f"Robot set to {mode_str} mode, {state_str}"
+                )]
+            else:
+                return [TextContent(
+                    type="text",
+                    text="Failed to set robot mode. WebSocket connection error."
+                )]
+
+        elif name == "set_joystick_input":
+            # Check if simulation is running
+            if not is_simulation():
+                return [TextContent(
+                    type="text",
+                    text="Simulation control not available. Make sure:\n"
+                         "1. Simulation is running (./gradlew simulateJava)\n"
+                         "2. build.gradle has: wpi.sim.addWebsocketsServer().defaultEnabled = true"
+                )]
+
+            port = arguments.get("joystick", 0)
+            axes_obj = arguments.get("axes", {})
+            buttons_obj = arguments.get("buttons", {})
+            pov = arguments.get("pov", -1)
+
+            # Convert axes object to list
+            axes_list = [0.0] * 6
+            if axes_obj:
+                axes_list[AXIS_LEFT_X] = float(axes_obj.get("left_x", 0.0))
+                axes_list[AXIS_LEFT_Y] = float(axes_obj.get("left_y", 0.0))
+                axes_list[AXIS_LEFT_TRIGGER] = float(axes_obj.get("left_trigger", 0.0))
+                axes_list[AXIS_RIGHT_TRIGGER] = float(axes_obj.get("right_trigger", 0.0))
+                axes_list[AXIS_RIGHT_X] = float(axes_obj.get("right_x", 0.0))
+                axes_list[AXIS_RIGHT_Y] = float(axes_obj.get("right_y", 0.0))
+
+            # Convert buttons object to list (WPILib uses 1-indexed, list is 0-indexed)
+            buttons_list = [False] * 12
+            if buttons_obj:
+                buttons_list[BUTTON_A - 1] = bool(buttons_obj.get("a", False))
+                buttons_list[BUTTON_B - 1] = bool(buttons_obj.get("b", False))
+                buttons_list[BUTTON_X - 1] = bool(buttons_obj.get("x", False))
+                buttons_list[BUTTON_Y - 1] = bool(buttons_obj.get("y", False))
+                buttons_list[BUTTON_LEFT_BUMPER - 1] = bool(buttons_obj.get("left_bumper", False))
+                buttons_list[BUTTON_RIGHT_BUMPER - 1] = bool(buttons_obj.get("right_bumper", False))
+                buttons_list[BUTTON_BACK - 1] = bool(buttons_obj.get("back", False))
+                buttons_list[BUTTON_START - 1] = bool(buttons_obj.get("start", False))
+                buttons_list[BUTTON_LEFT_STICK - 1] = bool(buttons_obj.get("left_stick", False))
+                buttons_list[BUTTON_RIGHT_STICK - 1] = bool(buttons_obj.get("right_stick", False))
+
+            # POV as list
+            povs_list = [pov] if pov is not None else [-1]
+
+            success = await set_joystick_state(
+                port,
+                axes=axes_list if axes_obj else None,
+                buttons=buttons_list if buttons_obj else None,
+                povs=povs_list if pov is not None else None
+            )
+
+            if success:
+                result = {
+                    "joystick": port,
+                    "axes_set": bool(axes_obj),
+                    "buttons_set": bool(buttons_obj),
+                    "pov_set": pov is not None,
+                    "status": "success"
+                }
+                if axes_obj:
+                    result["axes"] = axes_obj
+                if buttons_obj:
+                    result["buttons"] = buttons_obj
+                if pov is not None:
+                    result["pov"] = pov
+                return [TextContent(type="text", text=json.dumps(result, indent=2))]
+            else:
+                return [TextContent(
+                    type="text",
+                    text="Failed to set joystick input. WebSocket connection error."
+                )]
+
+        elif name == "set_alliance":
+            # Check if simulation is running
+            if not is_simulation():
+                return [TextContent(
+                    type="text",
+                    text="Simulation control not available. Make sure:\n"
+                         "1. Simulation is running (./gradlew simulateJava)\n"
+                         "2. build.gradle has: wpi.sim.addWebsocketsServer().defaultEnabled = true"
+                )]
+
+            alliance = arguments.get("alliance", "blue").lower()
+            station = arguments.get("station", 1)
+
+            if alliance not in ["red", "blue"]:
+                return [TextContent(
+                    type="text",
+                    text=f"Invalid alliance '{alliance}'. Must be 'red' or 'blue'."
+                )]
+
+            if station not in [1, 2, 3]:
+                return [TextContent(
+                    type="text",
+                    text=f"Invalid station '{station}'. Must be 1, 2, or 3."
+                )]
+
+            success = await set_alliance_station(alliance, station)
+
+            if success:
+                return [TextContent(
+                    type="text",
+                    text=f"Alliance set to {alliance.capitalize()} {station}"
+                )]
+            else:
+                return [TextContent(
+                    type="text",
+                    text="Failed to set alliance. WebSocket connection error."
+                )]
+
+        elif name == "drive_robot":
+            # Check if simulation is running
+            if not is_simulation():
+                return [TextContent(
+                    type="text",
+                    text="Simulation control not available. Make sure:\n"
+                         "1. Simulation is running (./gradlew simulateJava)\n"
+                         "2. build.gradle has: wpi.sim.addWebsocketsServer().defaultEnabled = true"
+                )]
+
+            left_x = float(arguments.get("left_x", 0.0))
+            left_y = float(arguments.get("left_y", 0.0))
+            right_x = float(arguments.get("right_x", 0.0))
+            duration = float(arguments.get("duration", 2.0))
+            buttons_arg = arguments.get("buttons", {})
+
+            # Clamp duration
+            duration = max(0.1, min(10.0, duration))
+
+            # First enable teleop mode
+            if not await set_driver_station_mode(enabled=True, autonomous=False, test=False):
+                return [TextContent(
+                    type="text",
+                    text="Failed to enable teleop mode. WebSocket connection error."
+                )]
+
+            # Build axes list
+            axes_list = [left_x, left_y, 0.0, 0.0, right_x, 0.0]
+
+            # Build buttons list (12 buttons, 1-indexed in WPILib)
+            buttons_list = [False] * 12
+            button_map = {
+                "a": BUTTON_A - 1,
+                "b": BUTTON_B - 1,
+                "x": BUTTON_X - 1,
+                "y": BUTTON_Y - 1,
+                "left_bumper": BUTTON_LEFT_BUMPER - 1,
+                "right_bumper": BUTTON_RIGHT_BUMPER - 1,
+                "back": BUTTON_BACK - 1,
+                "start": BUTTON_START - 1,
+                "left_stick": BUTTON_LEFT_STICK - 1,
+                "right_stick": BUTTON_RIGHT_STICK - 1,
+            }
+            held_buttons = []
+            for btn_name, btn_idx in button_map.items():
+                if buttons_arg.get(btn_name, False):
+                    buttons_list[btn_idx] = True
+                    held_buttons.append(btn_name)
+
+            # Send joystick inputs continuously
+            iterations = int(duration / 0.02)  # 20ms intervals (50Hz - match robot loop rate)
+            start_time = time.time()
+
+            for _ in range(iterations):
+                # Send joystick data
+                joy_success = await set_joystick_state(
+                    port=0,
+                    axes=axes_list,
+                    buttons=buttons_list,
+                    povs=[-1]
+                )
+                # Also re-send enabled state to ensure robot stays enabled
+                mode_success = await set_driver_station_mode(enabled=True, autonomous=False, test=False)
+
+                if not joy_success or not mode_success:
+                    return [TextContent(
+                        type="text",
+                        text=f"WebSocket connection lost during driving after {time.time() - start_time:.1f}s"
+                    )]
+                await asyncio.sleep(0.02)
+
+            # Release controls (return to neutral)
+            await set_joystick_state(
+                port=0,
+                axes=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                buttons=[False] * 12,
+                povs=[-1]
+            )
+
+            elapsed = time.time() - start_time
+            buttons_info = f", buttons={held_buttons}" if held_buttons else ""
+            return [TextContent(
+                type="text",
+                text=f"Drove robot for {elapsed:.1f}s with inputs: left_x={left_x}, left_y={left_y}, right_x={right_x}{buttons_info}"
+            )]
 
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]

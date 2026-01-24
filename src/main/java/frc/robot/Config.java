@@ -3,8 +3,6 @@ package frc.robot;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
-import com.ctre.phoenix6.signals.InvertedValue;
-
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.util.Units;
@@ -30,18 +28,6 @@ public interface Config {
         /** Log controller button presses and stick values */
         BooleanSupplier controllerLogging = pref("Logging/Controller?", true);
 
-        /** Log swerve module states and PID values */
-        BooleanSupplier swerveLogging = pref("Logging/Swerve?", false);
-
-        /** Log vision estimates and rejection reasons */
-        BooleanSupplier visionLogging = pref("Logging/Vision?", true);
-
-        /** Log odometry diagnostics */
-        BooleanSupplier odometryLogging = pref("Logging/Odometry?", true);
-
-        /** Log shooter state and speeds */
-        BooleanSupplier shooterLogging = pref("Logging/Shooter?", false);
-
         /** Log command scheduling and lifecycle events */
         BooleanSupplier commandLogging = pref("Logging/Commands?", true);
 
@@ -60,46 +46,10 @@ public interface Config {
     /**
      * Configuration for the swerve drive subsystem.
      * <p>
-     * IMPORTANT: Update the placeholder values below for your specific robot!
+     * Hardware-specific constants (CAN IDs, offsets, PID gains) are in
+     * {@link frc.robot.subsystems.swerve.SwerveHardwareConfig}.
      */
     interface Swerve {
-
-        //=======================================================================
-        // PLACEHOLDER VALUES - UPDATE THESE FOR YOUR ROBOT
-        //=======================================================================
-
-        // Chassis dimensions (inches) - measure from wheel center to wheel center
-        double WHEEL_BASE_INCHES = 19.0 + 7.0 / 16.0;       // Front-to-back distance
-        double TRACK_WIDTH_INCHES = 25.0;       // Left-to-right distance
-
-        // CAN IDs - Module order: FL (Front Left), FR, BL, BR
-        int FL_DRIVE_ID = 41;
-        int FL_TURN_ID = 42;
-        int FL_ENCODER_ID = 43;
-        int FR_DRIVE_ID = 21;
-        int FR_TURN_ID = 22;
-        int FR_ENCODER_ID = 23;
-        int BL_DRIVE_ID = 11;
-        int BL_TURN_ID = 12;
-        int BL_ENCODER_ID = 13;
-        int BR_DRIVE_ID = 31;
-        int BR_TURN_ID = 32;
-        int BR_ENCODER_ID = 33;
-        int PIGEON_ID = 10;
-
-        // Module angular offsets (radians) - Calibrate by pointing all wheels forward
-        // and reading the CANcoder values, then negate them here
-        double FL_ANGULAR_OFFSET = 0;
-        double FR_ANGULAR_OFFSET = 0;
-        double BL_ANGULAR_OFFSET = 0;
-        double BR_ANGULAR_OFFSET = 0;
-
-        // The modules on one side of the robot are inverted with respect to the other,
-        // so we need to make sure the drive motors spin in the correct direction
-        InvertedValue FL_DRIVE_INVERTED = InvertedValue.Clockwise_Positive;
-        InvertedValue FR_DRIVE_INVERTED = InvertedValue.CounterClockwise_Positive;
-        InvertedValue BL_DRIVE_INVERTED = InvertedValue.Clockwise_Positive;
-        InvertedValue BR_DRIVE_INVERTED = InvertedValue.CounterClockwise_Positive;
 
         //=======================================================================
         // Tunable values (adjustable via dashboard/preferences)
@@ -119,15 +69,6 @@ public interface Config {
         // Controller type: false = 8BitDo (real robot), true = Xbox (simulation)
         BooleanSupplier useXboxMapping = pref("Swerve/UseXboxMapping?", false);
 
-        // Drive motor PID (velocity control)
-        DoubleSupplier driveKP = pref("Swerve/Drive/kP", 0.1);
-        DoubleSupplier driveKV = pref("Swerve/Drive/kV", 0.12);
-        DoubleSupplier driveKS = pref("Swerve/Drive/kS", 0.0);
-
-        // Turn motor PID (position control)
-        DoubleSupplier turnKP = pref("Swerve/Turn/kP", 6.0);
-        DoubleSupplier turnKD = pref("Swerve/Turn/kD", 0.001);
-
         // Module optimization settings
         /** Enable cosine compensation - scales drive output by cos(angle error) */
         BooleanSupplier cosineCompensation = pref("Swerve/CosineCompensation?", true);
@@ -137,6 +78,10 @@ public interface Config {
         //=======================================================================
         // Physical constants (change only if hardware changes)
         //=======================================================================
+
+        // Chassis dimensions (inches) - measure from wheel center to wheel center
+        double WHEEL_BASE_INCHES = 19.0 + 7.0 / 16.0;       // Front-to-back distance
+        double TRACK_WIDTH_INCHES = 25.0;       // Left-to-right distance
 
         double WHEEL_DIAMETER_METERS = 0.1016;  // 4 inch wheels
         double DRIVE_GEAR_RATIO = 6.12;         // L3 gearing for SDS MK4i
@@ -380,6 +325,151 @@ public interface Config {
 
         /** Drift threshold for warning (meters) - logged when exceeded */
         DoubleSupplier driftWarning = pref("Odometry/DriftWarning_m", 0.5);
+    }
+
+    /**
+     * Configuration for PathPlanner autonomous path following.
+     */
+    interface PathPlanner {
+
+        //=======================================================================
+        // Robot physical properties (for path following)
+        //=======================================================================
+
+        /** Robot mass including bumpers and battery (kg) */
+        double ROBOT_MASS_KG = 54.0;
+
+        /** Robot moment of inertia (kg*m^2) - estimate or calculate from CAD */
+        double ROBOT_MOI = 6.0;
+
+        /** Wheel coefficient of friction */
+        double WHEEL_COF = 1.0;
+
+        //=======================================================================
+        // Drive motor properties (Kraken X60)
+        //=======================================================================
+
+        /** Motor free speed (RPM) */
+        double MOTOR_FREE_SPEED_RPM = 6380.0;
+
+        /** Motor stall torque (N*m) */
+        double MOTOR_STALL_TORQUE_NM = 7.09;
+
+        /** Motor stall current (A) */
+        double MOTOR_STALL_CURRENT_AMPS = 366.0;
+
+        /** Current limit for drive motors (A) */
+        double DRIVE_CURRENT_LIMIT_AMPS = 60.0;
+
+        //=======================================================================
+        // Path following PID tuning
+        //=======================================================================
+
+        /** Translation P gain for path following */
+        DoubleSupplier translationKP = pref("PathPlanner/Translation/kP", 5.0);
+
+        /** Translation I gain for path following */
+        DoubleSupplier translationKI = pref("PathPlanner/Translation/kI", 0.0);
+
+        /** Translation D gain for path following */
+        DoubleSupplier translationKD = pref("PathPlanner/Translation/kD", 0.0);
+
+        /** Rotation P gain for path following */
+        DoubleSupplier rotationKP = pref("PathPlanner/Rotation/kP", 5.0);
+
+        /** Rotation I gain for path following */
+        DoubleSupplier rotationKI = pref("PathPlanner/Rotation/kI", 0.0);
+
+        /** Rotation D gain for path following */
+        DoubleSupplier rotationKD = pref("PathPlanner/Rotation/kD", 0.0);
+
+        //=======================================================================
+        // Path following settings
+        //=======================================================================
+
+        /** Enable PathPlanner logging to NetworkTables/AdvantageScope */
+        BooleanSupplier enableLogging = pref("PathPlanner/Logging?", true);
+    }
+
+    /**
+     * Configuration for orbit/face-target drive modes.
+     * <p>
+     * These modes allow the robot to orbit around or face a fixed target point
+     * (e.g., Tower for 2026 REBUILT game). Driver sticks control radial (toward/away)
+     * and tangential (orbit around) movement.
+     * <p>
+     * Field is ~16.5m x 8.2m. Tower is at field center (8.25m, 4.1m).
+     */
+    interface Orbit {
+
+        //=======================================================================
+        // Target position (center of scoring structure - Tower for 2026)
+        // Field: 16.5m x 8.2m, origin at blue alliance wall corner
+        //=======================================================================
+
+        /** Blue alliance target X position in meters (Tower at field center) */
+        DoubleSupplier blueTargetX = pref("Orbit/BlueTargetX_m", 8.25);
+
+        /** Blue alliance target Y position in meters */
+        DoubleSupplier blueTargetY = pref("Orbit/BlueTargetY_m", 4.1);
+
+        /** Red alliance target X position in meters (same as blue for center target) */
+        DoubleSupplier redTargetX = pref("Orbit/RedTargetX_m", 8.25);
+
+        /** Red alliance target Y position in meters */
+        DoubleSupplier redTargetY = pref("Orbit/RedTargetY_m", 4.1);
+
+        //=======================================================================
+        // Speed limits
+        //=======================================================================
+
+        /** Maximum radial speed (toward/away from target) in feet per second */
+        DoubleSupplier maxRadialSpeedFps = pref("Orbit/MaxRadialSpeedFPS", 15.0);
+
+        /** Maximum tangential speed (orbiting around target) in feet per second */
+        DoubleSupplier maxTangentSpeedFps = pref("Orbit/MaxTangentSpeedFPS", 15.0);
+
+        /** Rotation trim authority as fraction of max rotation (1.0 = 100%) */
+        DoubleSupplier rotationTrimAuthority = pref("Orbit/RotationTrimAuthority", 1.0);
+
+        //=======================================================================
+        // Heading control PID
+        //=======================================================================
+
+        /** Heading P gain for facing the target (high value = snap to target faster) */
+        DoubleSupplier headingKP = pref("Orbit/Heading/kP", 72.0);
+
+        /** Heading D gain for facing the target */
+        DoubleSupplier headingKD = pref("Orbit/Heading/kD", 0.005);
+
+        /** Heading tolerance in degrees (for "locked" indicator) */
+        DoubleSupplier headingTolerance = pref("Orbit/Heading/Tolerance", 2.0);
+
+        /** Heading error threshold to allow movement (degrees). Robot must face target within this before moving. */
+        DoubleSupplier lockThreshold = pref("Orbit/Heading/LockThreshold", 15.0);
+
+        //=======================================================================
+        // Safety limits
+        //=======================================================================
+
+        /** Minimum distance from target to prevent singularity (meters) */
+        DoubleSupplier minDistance = pref("Orbit/MinDistance_m", 0.5);
+
+        //=======================================================================
+        // Rotation priority (prevents translation from starving rotation)
+        //=======================================================================
+
+        /**
+         * Minimum rotation authority to preserve during desaturation (0.0 to 1.0).
+         * <p>
+         * When rotation demand exceeds this fraction of max omega, translation
+         * is scaled down to ensure heading control isn't starved. Higher values
+         * prioritize rotation more aggressively.
+         * <p>
+         * Example: 0.5 means if rotation is using 70% of max omega, translation
+         * is scaled to (1 - (0.7 - 0.5)) = 0.8 of its requested value.
+         */
+        DoubleSupplier rotationPriority = pref("Orbit/RotationPriority", 0.5);
     }
 
 }

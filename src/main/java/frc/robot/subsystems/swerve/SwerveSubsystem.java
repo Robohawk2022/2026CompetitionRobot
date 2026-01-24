@@ -7,6 +7,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
@@ -20,12 +21,13 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.vision.LimelightEstimator;
 import frc.robot.subsystems.vision.VisionEstimateResult;
-import frc.robot.util.PosePublisher;
+import frc.robot.util.PDController;
 import frc.robot.util.Util;
 
 import static frc.robot.Config.Swerve.*;
 import static frc.robot.Config.Odometry.enableDiagnostics;
 import static frc.robot.Config.Odometry.driftWarning;
+import static frc.robot.Config.Orbit.*;
 
 /**
  * Swerve drive subsystem with odometry and pose estimation.
@@ -67,7 +69,22 @@ public class SwerveSubsystem extends SubsystemBase {
 
     private final OdometryDiagnostics diagnostics;
 
-    ChassisSpeeds latistspeed = Util.ZERO_SPEED;
+    // orbit telemetry
+    private boolean orbitActive = false;
+    private boolean targetLocked = false;
+    private double orbitDistanceFeet = 0;
+    private double orbitTargetHeadingDeg = 0;
+    private double orbitHeadingErrorDeg = 0;
+    private double orbitRadialSpeedFps = 0;
+    private double orbitTangentSpeedFps = 0;
+
+    // orbit heading control state (for D-term)
+    private double previousHeadingError = 0;
+
+    // orbit initial lock state - once locked, stays unlocked
+    private boolean orbitInitialLockAcquired = false;
+
+    ChassisSpeeds latestSpeed = Util.ZERO_SPEED;
 
     /**
      * Creates a {@link SwerveSubsystem}.
@@ -108,9 +125,9 @@ public class SwerveSubsystem extends SubsystemBase {
             builder.addDoubleProperty("HeadingDeg", () -> getHeading().getDegrees(), null);
             builder.addDoubleProperty("PoseXFeet", () -> Units.metersToFeet(getPose().getX()), null);
             builder.addDoubleProperty("PoseYFeet", () -> Units.metersToFeet(getPose().getY()), null);
-            builder.addDoubleProperty("Speedx", () -> latistspeed.vxMetersPerSecond, null);
-            builder.addDoubleProperty("Speedy", () -> latistspeed.vyMetersPerSecond, null);
-            builder.addDoubleProperty("SpeedO", () -> latistspeed.omegaRadiansPerSecond, null);
+            builder.addDoubleProperty("Speedx", () -> latestSpeed.vxMetersPerSecond, null);
+            builder.addDoubleProperty("Speedy", () -> latestSpeed.vyMetersPerSecond, null);
+            builder.addDoubleProperty("SpeedO", () -> latestSpeed.omegaRadiansPerSecond, null);
 
             // reset odometry button - click to reset pose and heading to origin
             builder.addBooleanProperty("ResetOdometry", () -> false, (value) -> {
@@ -128,6 +145,15 @@ public class SwerveSubsystem extends SubsystemBase {
                 builder.addDoubleProperty("MaxSpeedFPS", () -> Units.metersToFeet(maxSpeedMps), null);
                 builder.addDoubleProperty("MaxRotationDPS", () -> Math.toDegrees(maxRotationRps), null);
             }
+
+            // orbit telemetry
+            builder.addBooleanProperty("Orbit/Active?", () -> orbitActive, null);
+            builder.addBooleanProperty("Orbit/TargetLocked?", () -> targetLocked, null);
+            builder.addDoubleProperty("Orbit/DistanceFeet", () -> orbitDistanceFeet, null);
+            builder.addDoubleProperty("Orbit/TargetHeadingDeg", () -> orbitTargetHeadingDeg, null);
+            builder.addDoubleProperty("Orbit/HeadingErrorDeg", () -> orbitHeadingErrorDeg, null);
+            builder.addDoubleProperty("Orbit/RadialSpeedFPS", () -> orbitRadialSpeedFps, null);
+            builder.addDoubleProperty("Orbit/TangentSpeedFPS", () -> orbitTangentSpeedFps, null);
         });
     }
 
@@ -181,12 +207,12 @@ public class SwerveSubsystem extends SubsystemBase {
         field2d.setRobotPose(poseEstimator.getEstimatedPosition());
 
         // publish poses for AdvantageScope
-        PosePublisher.publish("Odometry", latestOdometryPose);
-        PosePublisher.publish("Estimated", poseEstimator.getEstimatedPosition());
+        Util.publishPose("Odometry", latestOdometryPose);
+        Util.publishPose("Estimated", poseEstimator.getEstimatedPosition());
 
         // publish vision pose if valid
         if (latestVisionResult != null && latestVisionResult.accepted && latestVisionResult.getPose() != null) {
-            PosePublisher.publish("Vision", latestVisionResult.getPose());
+            Util.publishPose("Vision", latestVisionResult.getPose());
         }
     }
 
@@ -272,7 +298,61 @@ public class SwerveSubsystem extends SubsystemBase {
         SwerveModuleState[] states = KINEMATICS.toSwerveModuleStates(speeds);
         SwerveDriveKinematics.desaturateWheelSpeeds(states, maxSpeed);
         hardware.setModuleStates(states);
-        latistspeed = speeds;
+        latestSpeed = speeds;
+    }
+
+    /**
+     * Drives the robot while preserving rotation (heading control).
+     * <p>
+     * Unlike normal drive, this method ensures rotation is never scaled down.
+     * If total demand exceeds capacity, translation is reduced to preserve rotation.
+     *
+     * @param vx            field-relative X velocity (m/s)
+     * @param vy            field-relative Y velocity (m/s)
+     * @param omega         rotation velocity (rad/s)
+     * @param maxSpeed      maximum wheel speed (m/s)
+     */
+    public void drivePreserveRotation(double vx, double vy, double omega, double maxSpeed) {
+        // convert true field-relative to robot-relative (not driver-relative)
+        ChassisSpeeds fieldSpeeds = new ChassisSpeeds(vx, vy, omega);
+        ChassisSpeeds robotSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(fieldSpeeds, getHeading());
+
+        // calculate what rotation alone would require
+        ChassisSpeeds rotationOnly = new ChassisSpeeds(0, 0, robotSpeeds.omegaRadiansPerSecond);
+        SwerveModuleState[] rotationStates = KINEMATICS.toSwerveModuleStates(rotationOnly);
+
+        // find max wheel speed used by rotation
+        double maxRotationSpeed = 0;
+        for (SwerveModuleState state : rotationStates) {
+            maxRotationSpeed = Math.max(maxRotationSpeed, Math.abs(state.speedMetersPerSecond));
+        }
+
+        // calculate remaining capacity for translation
+        double remainingCapacity = maxSpeed - maxRotationSpeed;
+        if (remainingCapacity < 0.1) {
+            remainingCapacity = 0.1; // always allow some translation
+        }
+
+        // calculate translation magnitude
+        double translationMag = Math.hypot(robotSpeeds.vxMetersPerSecond, robotSpeeds.vyMetersPerSecond);
+
+        // scale translation if needed
+        double scaledVx = robotSpeeds.vxMetersPerSecond;
+        double scaledVy = robotSpeeds.vyMetersPerSecond;
+        if (translationMag > remainingCapacity && translationMag > 0.01) {
+            double scale = remainingCapacity / translationMag;
+            scaledVx *= scale;
+            scaledVy *= scale;
+        }
+
+        // combine scaled translation with full rotation
+        ChassisSpeeds finalSpeeds = new ChassisSpeeds(scaledVx, scaledVy, robotSpeeds.omegaRadiansPerSecond);
+        SwerveModuleState[] states = KINEMATICS.toSwerveModuleStates(finalSpeeds);
+
+        // NO desaturation - we already calculated to stay within limits
+        // desaturation would scale down rotation which defeats the purpose
+        hardware.setModuleStates(states);
+        latestSpeed = finalSpeeds;
     }
 
     /**
@@ -280,6 +360,25 @@ public class SwerveSubsystem extends SubsystemBase {
      */
     public ChassisSpeeds getCurrentSpeeds() {
         return KINEMATICS.toChassisSpeeds(hardware.getModuleStates());
+    }
+
+    /**
+     * Drives the robot using robot-relative speeds.
+     * <p>
+     * This method is used by PathPlanner for autonomous path following.
+     *
+     * @param speeds robot-relative chassis speeds (vx, vy in m/s, omega in rad/s)
+     */
+    public void driveRobotRelative(ChassisSpeeds speeds) {
+        currentMode = "path-following";
+
+        // Compensate for translational skew during rotation (20ms timestep)
+        ChassisSpeeds discretizedSpeeds = ChassisSpeeds.discretize(speeds, Util.DT);
+
+        SwerveModuleState[] states = KINEMATICS.toSwerveModuleStates(discretizedSpeeds);
+        SwerveDriveKinematics.desaturateWheelSpeeds(states, MAX_WHEEL_SPEED_MPS);
+        hardware.setModuleStates(states);
+        latestSpeed = discretizedSpeeds;
     }
 
     /**
@@ -464,6 +563,267 @@ public class SwerveSubsystem extends SubsystemBase {
             currentMode = "fixed";
             drive(speeds, false);
         }).withTimeout(seconds);
+    }
+
+    /**
+     * Creates a drive command that automatically faces the target (Tower) while allowing normal translation.
+     * <p>
+     * The robot will automatically rotate to face the target center while the driver
+     * controls translation with the left stick. Right stick provides rotation trim.
+     *
+     * @param xSupplier       forward/back speed (-1 to 1)
+     * @param ySupplier       left/right strafe speed (-1 to 1)
+     * @param rotSupplier     rotation trim input (-1 to 1)
+     * @param sniperTrigger   sniper mode trigger axis (0 to 1)
+     * @param turboTrigger    turbo mode trigger axis (0 to 1)
+     * @return the face-target drive command
+     */
+    public Command faceTargetDriveCommand(
+            DoubleSupplier xSupplier,
+            DoubleSupplier ySupplier,
+            DoubleSupplier rotSupplier,
+            DoubleSupplier sniperTrigger,
+            DoubleSupplier turboTrigger) {
+
+        return startRun(
+            () -> {
+                currentMode = "face-reef";
+            },
+            () -> {
+                updateSpeedLimits();
+
+                // get target position for current alliance
+                Translation2d targetPoint = getTargetPoint();
+                Pose2d robotPose = getPose();
+                Translation2d robotPos = robotPose.getTranslation();
+
+                // vector from robot to target
+                Translation2d toTarget = targetPoint.minus(robotPos);
+                double distance = toTarget.getNorm();
+
+                // get driver inputs
+                double x = xSupplier.getAsDouble();
+                double y = ySupplier.getAsDouble();
+                double rotTrim = rotSupplier.getAsDouble();
+
+                // clamp inputs
+                x = MathUtil.clamp(x, -1.0, 1.0);
+                y = MathUtil.clamp(y, -1.0, 1.0);
+                rotTrim = MathUtil.clamp(rotTrim, -1.0, 1.0);
+
+                // convert to velocities
+                double vx = x * maxSpeedMps;
+                double vy = y * maxSpeedMps;
+
+                // check trigger thresholds
+                sniperActive = sniperTrigger.getAsDouble() > 0.5;
+                turboActive = turboTrigger.getAsDouble() > 0.5;
+
+                // track effective max speed for desaturation
+                double effectiveMaxSpeed = maxSpeedMps;
+
+                // apply speed modifiers (sniper takes priority)
+                if (sniperActive) {
+                    double sf = sniperFactor.getAsDouble();
+                    vx *= sf;
+                    vy *= sf;
+                    effectiveMaxSpeed *= sf;
+                    currentMode = "face-reef-sniper";
+                } else if (turboActive) {
+                    double tf = turboFactor.getAsDouble();
+                    vx *= tf;
+                    vy *= tf;
+                    effectiveMaxSpeed *= tf;
+                    currentMode = "face-reef-turbo";
+                } else {
+                    currentMode = "face-reef";
+                }
+
+                // heading control: always face the target point
+                double targetHeadingDeg = Math.toDegrees(Math.atan2(toTarget.getY(), toTarget.getX()));
+                double currentHeadingDeg = robotPose.getRotation().getDegrees();
+                double headingError = Util.degreeModulus(targetHeadingDeg - currentHeadingDeg);
+
+                // update telemetry
+                orbitDistanceFeet = Units.metersToFeet(distance);
+                orbitTargetHeadingDeg = targetHeadingDeg;
+                orbitHeadingErrorDeg = headingError;
+                targetLocked = Math.abs(headingError) < 2.0;
+
+                // calculate rotation speed - proportional with saturation to max
+                double maxOmegaDps = Math.toDegrees(maxRotationRps);
+                double omegaDps = headingKP.getAsDouble() * headingError;
+                omegaDps = MathUtil.clamp(omegaDps, -maxOmegaDps, maxOmegaDps);
+
+                // add manual trim
+                double trimSpeed = rotTrim * maxRotationRps * 0.3;
+                double omega = Math.toRadians(omegaDps) + trimSpeed;
+
+                // drive with rotation preserved - translation scales down if needed
+                drivePreserveRotation(vx, vy, omega, effectiveMaxSpeed);
+            }
+        );
+    }
+
+    /**
+     * @return the target point (Tower position for 2026) for the current alliance
+     */
+    public Translation2d getTargetPoint() {
+        if (Util.isRedAlliance()) {
+            return new Translation2d(redTargetX.getAsDouble(), redTargetY.getAsDouble());
+        } else {
+            return new Translation2d(blueTargetX.getAsDouble(), blueTargetY.getAsDouble());
+        }
+    }
+
+    /**
+     * Creates an orbit drive command that orbits around the target (Tower) while facing it.
+     * <p>
+     * The left stick Y controls radial movement (toward/away from target).
+     * The left stick X controls tangential movement (orbiting around target).
+     * The right stick X provides fine rotation adjustment.
+     * <p>
+     * Turbo and sniper speed modifiers are applied to the orbit speeds.
+     *
+     * @param radialSupplier   radial input (-1 to 1), positive = toward target
+     * @param tangentSupplier  tangent input (-1 to 1), positive = CCW orbit
+     * @param rotSupplier      rotation trim input (-1 to 1)
+     * @param sniperTrigger    sniper mode trigger axis (0 to 1)
+     * @param turboTrigger     turbo mode trigger axis (0 to 1)
+     * @return the orbit command
+     */
+    public Command orbitCommand(
+            DoubleSupplier radialSupplier,
+            DoubleSupplier tangentSupplier,
+            DoubleSupplier rotSupplier,
+            DoubleSupplier sniperTrigger,
+            DoubleSupplier turboTrigger) {
+
+        return startRun(
+            () -> {
+                currentMode = "orbit-locking";
+                orbitActive = true;
+                previousHeadingError = 0;
+                orbitInitialLockAcquired = false;
+            },
+            () -> {
+                updateSpeedLimits();
+
+                // get orbit point for current alliance
+                Translation2d orbitPoint = getTargetPoint();
+                Pose2d robotPose = getPose();
+                Translation2d robotPos = robotPose.getTranslation();
+
+                // vector from robot to orbit point
+                Translation2d toOrbit = orbitPoint.minus(robotPos);
+                double distance = toOrbit.getNorm();
+
+                // prevent singularity when too close to orbit point
+                double minDist = minDistance.getAsDouble();
+                if (distance < minDist) {
+                    // just stop if we're too close
+                    drive(Util.ZERO_SPEED, false);
+                    return;
+                }
+
+                // unit vectors: radial (toward orbit point) and tangent (perpendicular, CCW)
+                Translation2d radialUnit = toOrbit.div(distance);
+                Translation2d tangentUnit = new Translation2d(-radialUnit.getY(), radialUnit.getX());
+
+                // get driver inputs
+                double radialInput = radialSupplier.getAsDouble();
+                double tangentInput = tangentSupplier.getAsDouble();
+                double rotInput = rotSupplier.getAsDouble();
+
+                // clamp inputs
+                radialInput = MathUtil.clamp(radialInput, -1.0, 1.0);
+                tangentInput = MathUtil.clamp(tangentInput, -1.0, 1.0);
+                rotInput = MathUtil.clamp(rotInput, -1.0, 1.0);
+
+                // convert to velocities (in meters per second)
+                double radialSpeed = radialInput * Units.feetToMeters(maxRadialSpeedFps.getAsDouble());
+                double tangentSpeed = tangentInput * Units.feetToMeters(maxTangentSpeedFps.getAsDouble());
+
+                // check trigger thresholds
+                sniperActive = sniperTrigger.getAsDouble() > 0.5;
+                turboActive = turboTrigger.getAsDouble() > 0.5;
+
+                // apply speed modifiers (sniper takes priority)
+                if (sniperActive) {
+                    double sf = sniperFactor.getAsDouble();
+                    radialSpeed *= sf;
+                    tangentSpeed *= sf;
+                } else if (turboActive) {
+                    // turbo uses same multiplier as regular driving
+                    double tf = turboFactor.getAsDouble();
+                    radialSpeed *= tf;
+                    tangentSpeed *= tf;
+                }
+
+                // heading control: always face the orbit point
+                double targetHeadingDeg = Math.toDegrees(Math.atan2(toOrbit.getY(), toOrbit.getX()));
+                double currentHeadingDeg = robotPose.getRotation().getDegrees();
+                double headingError = Util.degreeModulus(targetHeadingDeg - currentHeadingDeg);
+
+                // check if we're locked on target (only matters on initial activation)
+                // once locked, stays unlocked for the rest of the command
+                if (!orbitInitialLockAcquired && Math.abs(headingError) < lockThreshold.getAsDouble()) {
+                    orbitInitialLockAcquired = true;
+                }
+                boolean canMove = orbitInitialLockAcquired;
+
+                // update mode based on lock state and speed mode
+                if (!orbitInitialLockAcquired) {
+                    currentMode = "orbit-locking";
+                } else if (sniperActive) {
+                    currentMode = "orbit-sniper";
+                } else if (turboActive) {
+                    currentMode = "orbit-turbo";
+                } else {
+                    currentMode = "orbit";
+                }
+
+                // combine radial and tangent into field-relative velocity
+                // suppress translation until locked on target
+                double vxField = 0;
+                double vyField = 0;
+                if (canMove) {
+                    vxField = radialUnit.getX() * radialSpeed + tangentUnit.getX() * tangentSpeed;
+                    vyField = radialUnit.getY() * radialSpeed + tangentUnit.getY() * tangentSpeed;
+                }
+
+                // update telemetry
+                orbitDistanceFeet = Units.metersToFeet(distance);
+                orbitTargetHeadingDeg = targetHeadingDeg;
+                orbitHeadingErrorDeg = headingError;
+                orbitRadialSpeedFps = canMove ? Units.metersToFeet(radialSpeed) : 0;
+                orbitTangentSpeedFps = canMove ? Units.metersToFeet(tangentSpeed) : 0;
+                targetLocked = Math.abs(headingError) < headingTolerance.getAsDouble();
+
+                // feedforward: predict rotation rate needed for tangential movement
+                // only apply when moving (canMove), otherwise just use PD to lock on target
+                double feedforwardDps = canMove ? Math.toDegrees(tangentSpeed / distance) : 0;
+
+                // calculate rotation with PD control and saturation to max
+                double maxOmegaDps = Math.toDegrees(maxRotationRps);
+                double omegaDps = feedforwardDps + headingKP.getAsDouble() * headingError;
+
+                // add D-term: rate of error change (degrees per second)
+                double errorRate = (headingError - previousHeadingError) / Util.DT;
+                double dTermDps = headingKD.getAsDouble() * errorRate;
+                omegaDps += dTermDps;
+                previousHeadingError = headingError;
+
+                omegaDps = MathUtil.clamp(omegaDps, -maxOmegaDps, maxOmegaDps);
+
+                // add manual trim
+                double rotTrim = rotInput * maxRotationRps * rotationTrimAuthority.getAsDouble();
+                double omega = Math.toRadians(omegaDps) + rotTrim;
+
+                // drive with rotation preserved - translation scales down if needed
+                drivePreserveRotation(vxField, vyField, omega, maxSpeedMps);
+            }
+        ).finallyDo(() -> orbitActive = false);
     }
 
 //endregion
