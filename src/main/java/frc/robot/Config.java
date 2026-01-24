@@ -366,7 +366,7 @@ public interface Config {
         //=======================================================================
 
         /** Translation P gain for path following */
-        DoubleSupplier translationKP = pref("PathPlanner/Translation/kP", 5.0);
+        DoubleSupplier translationKP = pref("PathPlanner/Translation/kP", 0.0);
 
         /** Translation I gain for path following */
         DoubleSupplier translationKI = pref("PathPlanner/Translation/kI", 0.0);
@@ -375,7 +375,7 @@ public interface Config {
         DoubleSupplier translationKD = pref("PathPlanner/Translation/kD", 0.0);
 
         /** Rotation P gain for path following */
-        DoubleSupplier rotationKP = pref("PathPlanner/Rotation/kP", 5.0);
+        DoubleSupplier rotationKP = pref("PathPlanner/Rotation/kP", 0.0);
 
         /** Rotation I gain for path following */
         DoubleSupplier rotationKI = pref("PathPlanner/Rotation/kI", 0.0);
@@ -437,7 +437,7 @@ public interface Config {
         //=======================================================================
 
         /** Heading P gain for facing the target (high value = snap to target faster) */
-        DoubleSupplier headingKP = pref("Orbit/Heading/kP", 72.0);
+        DoubleSupplier headingKP = pref("Orbit/Heading/kP", 1.0);
 
         /** Heading D gain for facing the target */
         DoubleSupplier headingKD = pref("Orbit/Heading/kD", 0.005);
