@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew simulateJava:*)",
+      "mcp__frc-networktables__scan_for_servers",
+      "mcp__frc-networktables__simulation_control_status",
+      "mcp__frc-networktables__drive_robot",
+      "mcp__frc-networktables__get_robot_pose",
+      "mcp__frc-networktables__get_swerve_status",
+      "mcp__frc-networktables__get_active_commands",
+      "mcp__frc-networktables__list_all_topics",
+      "Bash(./gradlew build:*)",
+      "mcp__frc-networktables__connection_status",
+      "mcp__frc-networktables__list_networktables",
+      "mcp__frc-networktables__set_robot_mode",
+      "mcp__frc-networktables__get_networktables_value",
+      "mcp__frc-networktables__set_joystick_input",
+      "mcp__frc-networktables__get_preference",
+      "mcp__frc-networktables__get_robot_state",
+      "Bash(curl:*)",
+      "Bash(pkill:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "frc-networktables",
+    "frc-docs"
+  ]
+}

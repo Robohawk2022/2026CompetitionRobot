@@ -694,3 +694,30 @@ Fixed 2 compilation errors in SwerveSubsystem.java caused by missing `drivePrese
    - If rotation alone exceeds max, scale rotation and skip translation
    - Otherwise, scale translation to fit in remaining headroom
 5. Apply standard desaturation as safety net
+
+---
+
+# 2026-01-24: Point Swerve Wheels Forward on Startup
+
+## Summary
+
+Added initialization code to point all swerve wheels forward (0 degrees) when the robot starts up.
+
+## Changes Made
+
+### Files Modified
+
+- `src/main/java/frc/robot/subsystems/swerve/SwerveHardwareCTRE.java`
+  - Added `lockTurnMotors()` call at the end of the constructor
+  - This commands all four modules to face forward immediately when hardware initializes
+
+- `src/main/java/frc/robot/subsystems/swerve/SwerveHardwareSim.java`
+  - Added constructor with `lockTurnMotors()` call for consistency with real hardware
+
+## Technical Details
+
+The `lockTurnMotors()` method already existed (for SysId characterization) and sets all turn motors to 0 degrees. By calling it in the hardware constructors, the wheels will be commanded forward as soon as the swerve hardware is created during robot initialization.
+
+## Testing Done
+
+- [x] `./gradlew build` - passed

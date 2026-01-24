@@ -66,8 +66,8 @@ public interface Config {
         // Joystick deadzone
         DoubleSupplier deadzone = pref("Swerve/Deadzone", 0.1);
 
-        // Controller type: false = 8BitDo (real robot), true = Xbox (simulation)
-        BooleanSupplier useXboxMapping = pref("Swerve/UseXboxMapping?", false);
+        // Controller type: false = 8BitDo (real robot), true = Xbox (simulation/MCP)
+        BooleanSupplier useXboxMapping = pref("Swerve/UseXboxMapping?", true);
 
         // Module optimization settings
         /** Enable cosine compensation - scales drive output by cos(angle error) */
