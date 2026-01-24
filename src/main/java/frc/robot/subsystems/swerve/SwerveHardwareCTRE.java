@@ -93,6 +93,9 @@ public class SwerveHardwareCTRE implements SwerveHardware {
 
         // initial refresh to populate cached values
         refreshSignals();
+
+        // command all wheels to face forward on startup
+        lockTurnMotors();
     }
 
     private void configurePigeon() {

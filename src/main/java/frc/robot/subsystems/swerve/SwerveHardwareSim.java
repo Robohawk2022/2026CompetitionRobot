@@ -18,6 +18,11 @@ import static frc.robot.Config.Swerve.*;
 public class SwerveHardwareSim implements SwerveHardware {
 
     private Rotation2d heading = new Rotation2d();
+
+    public SwerveHardwareSim() {
+        // command all wheels to face forward on startup
+        lockTurnMotors();
+    }
     private double yawRateDps = 0.0;
 
     private final SwerveModuleState[] moduleStates = new SwerveModuleState[] {
