@@ -17,25 +17,7 @@ public final class Main {
   private Main() {}
 
   public static void main(String... args) {
-      String robotClassName = System.getenv("ROBOT_CLASS");
-      if (robotClassName != null && !robotClassName.isEmpty()) {
-          try {
-              Class<?> robotClass = Class.forName(robotClassName);
-              Supplier<TimedRobot> supplier = () -> {
-                  try {
-                      return (TimedRobot) robotClass.getDeclaredConstructor().newInstance();
-                  } catch (Exception e) {
-                      throw new RuntimeException("Failed to instantiate " + robotClassName, e);
-                  }
-              };
-              RobotBase.startRobot(supplier);
-          } catch (ClassNotFoundException e) {
-              System.err.println("Robot class not found: " + robotClassName);
-              System.err.println("Falling back to Robot");
-              RobotBase.startRobot(SysIdTestbot::new);
-          }
-      } else {
           RobotBase.startRobot(SwerveTestbot::new);
       }
-  }
 }
+
