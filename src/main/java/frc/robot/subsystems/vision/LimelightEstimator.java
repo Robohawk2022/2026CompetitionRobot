@@ -5,6 +5,7 @@ import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.subsystems.vision.LimelightHelpers.PoseEstimate;
+import frc.robot.util.Util;
 
 import static frc.robot.Config.Limelight.*;
 
@@ -149,7 +150,10 @@ public class LimelightEstimator {
             SwerveDrivePoseEstimator estimator,
             Pose2d currentPose) {
 
-        PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightName);
+        // use alliance-aware pose estimate method
+        PoseEstimate estimate = Util.isRedAlliance()
+                ? LimelightHelpers.getBotPoseEstimate_wpiRed(limelightName)
+                : LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightName);
 
         // basic validity check
         String basicReject = checkBasicValidity(estimate, false);
@@ -216,8 +220,10 @@ public class LimelightEstimator {
                     Math.abs(yawRateDps), maxYawRateDps.getAsDouble()));
         }
 
-        // use MegaTag2-specific method
-        PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightName);
+        // use alliance-aware MegaTag2 method
+        PoseEstimate estimate = Util.isRedAlliance()
+                ? LimelightHelpers.getBotPoseEstimate_wpiRed_MegaTag2(limelightName)
+                : LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightName);
 
         // basic validity check
         String basicReject = checkBasicValidity(estimate, true);
@@ -378,7 +384,10 @@ public class LimelightEstimator {
             String limelightName,
             SwerveDrivePoseEstimator estimator) {
 
-        PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightName);
+        // use alliance-aware pose estimate method
+        PoseEstimate estimate = Util.isRedAlliance()
+                ? LimelightHelpers.getBotPoseEstimate_wpiRed(limelightName)
+                : LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightName);
 
         if (estimate == null || estimate.tagCount == 0) {
             SmartDashboard.putBoolean("Vision/ClassicValid", false);
@@ -426,7 +435,10 @@ public class LimelightEstimator {
             return null;
         }
 
-        PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightName);
+        // use alliance-aware MegaTag2 method
+        PoseEstimate estimate = Util.isRedAlliance()
+                ? LimelightHelpers.getBotPoseEstimate_wpiRed_MegaTag2(limelightName)
+                : LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightName);
 
         if (estimate == null || estimate.tagCount == 0) {
             SmartDashboard.putBoolean("Vision/MT2Valid", false);

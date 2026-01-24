@@ -59,14 +59,30 @@ public class SwerveTestbot extends TimedRobot {
         // controller.pov(270).onTrue(logButton("DPad-Left"));
 
         // Odometry reset when both thumbsticks are clicked
-        controller.leftStick()
-                .and(controller.rightStick())
+        driverInput.leftStick()
+                .and(driverInput.rightStick())
                 .onTrue(logButton("BothSticks").andThen(swerve.resetPoseCommand()));
+
+        // Orbit mode: hold left bumper to orbit around the Reef while facing it
+        driverInput.leftBumper()
+                .onTrue(logButton("LB-Orbit"))
+                .whileTrue(driverInput.orbitCommand(swerve));
 
         // publish button tracking to Shuffleboard
         SmartDashboard.putData("ButtonLog", builder -> {
             builder.addStringProperty("Last", () -> lastButton, null);
             builder.addStringProperty("Previous", () -> previousButton, null);
+        });
+
+        // debug controller inputs
+        SmartDashboard.putData("Controller", builder -> {
+            builder.addBooleanProperty("LeftBumper", () -> controller.getHID().getLeftBumper(), null);
+            builder.addBooleanProperty("RightBumper", () -> controller.getHID().getRightBumper(), null);
+            builder.addDoubleProperty("LeftX", () -> controller.getHID().getLeftX(), null);
+            builder.addDoubleProperty("LeftY", () -> controller.getHID().getLeftY(), null);
+            builder.addDoubleProperty("RightX", () -> controller.getHID().getRightX(), null);
+            builder.addDoubleProperty("LeftTrigger", () -> controller.getHID().getLeftTriggerAxis(), null);
+            builder.addDoubleProperty("RightTrigger", () -> controller.getHID().getRightTriggerAxis(), null);
         });
     }
 

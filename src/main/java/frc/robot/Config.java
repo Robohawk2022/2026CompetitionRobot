@@ -327,4 +327,149 @@ public interface Config {
         DoubleSupplier driftWarning = pref("Odometry/DriftWarning_m", 0.5);
     }
 
+    /**
+     * Configuration for PathPlanner autonomous path following.
+     */
+    interface PathPlanner {
+
+        //=======================================================================
+        // Robot physical properties (for path following)
+        //=======================================================================
+
+        /** Robot mass including bumpers and battery (kg) */
+        double ROBOT_MASS_KG = 54.0;
+
+        /** Robot moment of inertia (kg*m^2) - estimate or calculate from CAD */
+        double ROBOT_MOI = 6.0;
+
+        /** Wheel coefficient of friction */
+        double WHEEL_COF = 1.0;
+
+        //=======================================================================
+        // Drive motor properties (Kraken X60)
+        //=======================================================================
+
+        /** Motor free speed (RPM) */
+        double MOTOR_FREE_SPEED_RPM = 6380.0;
+
+        /** Motor stall torque (N*m) */
+        double MOTOR_STALL_TORQUE_NM = 7.09;
+
+        /** Motor stall current (A) */
+        double MOTOR_STALL_CURRENT_AMPS = 366.0;
+
+        /** Current limit for drive motors (A) */
+        double DRIVE_CURRENT_LIMIT_AMPS = 60.0;
+
+        //=======================================================================
+        // Path following PID tuning
+        //=======================================================================
+
+        /** Translation P gain for path following */
+        DoubleSupplier translationKP = pref("PathPlanner/Translation/kP", 5.0);
+
+        /** Translation I gain for path following */
+        DoubleSupplier translationKI = pref("PathPlanner/Translation/kI", 0.0);
+
+        /** Translation D gain for path following */
+        DoubleSupplier translationKD = pref("PathPlanner/Translation/kD", 0.0);
+
+        /** Rotation P gain for path following */
+        DoubleSupplier rotationKP = pref("PathPlanner/Rotation/kP", 5.0);
+
+        /** Rotation I gain for path following */
+        DoubleSupplier rotationKI = pref("PathPlanner/Rotation/kI", 0.0);
+
+        /** Rotation D gain for path following */
+        DoubleSupplier rotationKD = pref("PathPlanner/Rotation/kD", 0.0);
+
+        //=======================================================================
+        // Path following settings
+        //=======================================================================
+
+        /** Enable PathPlanner logging to NetworkTables/AdvantageScope */
+        BooleanSupplier enableLogging = pref("PathPlanner/Logging?", true);
+    }
+
+    /**
+     * Configuration for orbit/face-target drive modes.
+     * <p>
+     * These modes allow the robot to orbit around or face a fixed target point
+     * (e.g., Tower for 2026 REBUILT game). Driver sticks control radial (toward/away)
+     * and tangential (orbit around) movement.
+     * <p>
+     * Field is ~16.5m x 8.2m. Tower is at field center (8.25m, 4.1m).
+     */
+    interface Orbit {
+
+        //=======================================================================
+        // Target position (center of scoring structure - Tower for 2026)
+        // Field: 16.5m x 8.2m, origin at blue alliance wall corner
+        //=======================================================================
+
+        /** Blue alliance target X position in meters (Tower at field center) */
+        DoubleSupplier blueTargetX = pref("Orbit/BlueTargetX_m", 8.25);
+
+        /** Blue alliance target Y position in meters */
+        DoubleSupplier blueTargetY = pref("Orbit/BlueTargetY_m", 4.1);
+
+        /** Red alliance target X position in meters (same as blue for center target) */
+        DoubleSupplier redTargetX = pref("Orbit/RedTargetX_m", 8.25);
+
+        /** Red alliance target Y position in meters */
+        DoubleSupplier redTargetY = pref("Orbit/RedTargetY_m", 4.1);
+
+        //=======================================================================
+        // Speed limits
+        //=======================================================================
+
+        /** Maximum radial speed (toward/away from target) in feet per second */
+        DoubleSupplier maxRadialSpeedFps = pref("Orbit/MaxRadialSpeedFPS", 15.0);
+
+        /** Maximum tangential speed (orbiting around target) in feet per second */
+        DoubleSupplier maxTangentSpeedFps = pref("Orbit/MaxTangentSpeedFPS", 15.0);
+
+        /** Rotation trim authority as fraction of max rotation (1.0 = 100%) */
+        DoubleSupplier rotationTrimAuthority = pref("Orbit/RotationTrimAuthority", 1.0);
+
+        //=======================================================================
+        // Heading control PID
+        //=======================================================================
+
+        /** Heading P gain for facing the target (high value = snap to target faster) */
+        DoubleSupplier headingKP = pref("Orbit/Heading/kP", 72.0);
+
+        /** Heading D gain for facing the target */
+        DoubleSupplier headingKD = pref("Orbit/Heading/kD", 0.005);
+
+        /** Heading tolerance in degrees (for "locked" indicator) */
+        DoubleSupplier headingTolerance = pref("Orbit/Heading/Tolerance", 2.0);
+
+        /** Heading error threshold to allow movement (degrees). Robot must face target within this before moving. */
+        DoubleSupplier lockThreshold = pref("Orbit/Heading/LockThreshold", 15.0);
+
+        //=======================================================================
+        // Safety limits
+        //=======================================================================
+
+        /** Minimum distance from target to prevent singularity (meters) */
+        DoubleSupplier minDistance = pref("Orbit/MinDistance_m", 0.5);
+
+        //=======================================================================
+        // Rotation priority (prevents translation from starving rotation)
+        //=======================================================================
+
+        /**
+         * Minimum rotation authority to preserve during desaturation (0.0 to 1.0).
+         * <p>
+         * When rotation demand exceeds this fraction of max omega, translation
+         * is scaled down to ensure heading control isn't starved. Higher values
+         * prioritize rotation more aggressively.
+         * <p>
+         * Example: 0.5 means if rotation is using 70% of max omega, translation
+         * is scaled to (1 - (0.7 - 0.5)) = 0.8 of its requested value.
+         */
+        DoubleSupplier rotationPriority = pref("Orbit/RotationPriority", 0.5);
+    }
+
 }

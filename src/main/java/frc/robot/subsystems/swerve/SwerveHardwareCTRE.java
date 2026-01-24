@@ -34,7 +34,7 @@ public class SwerveHardwareCTRE implements SwerveHardware {
     private Rotation2d cachedHeading = new Rotation2d();
 
     /**
-     * Creates the CTRE swerve hardware using CAN IDs from Config.
+     * Creates the CTRE swerve hardware using CAN IDs from SwerveHardwareConfig.
      */
     public SwerveHardwareCTRE() {
         frontLeft = new SwerveModule(
@@ -177,5 +177,38 @@ public class SwerveHardwareCTRE implements SwerveHardware {
         frontRight.resetEncoder();
         backLeft.resetEncoder();
         backRight.resetEncoder();
+    }
+
+    //==========================================================================
+    // SysId characterization methods
+    //==========================================================================
+
+    @Override
+    public void setDriveVoltage(double volts) {
+        frontLeft.setDriveVoltage(volts);
+        frontRight.setDriveVoltage(volts);
+        backLeft.setDriveVoltage(volts);
+        backRight.setDriveVoltage(volts);
+    }
+
+    @Override
+    public void lockTurnMotors() {
+        Rotation2d forward = Rotation2d.fromDegrees(0);
+        frontLeft.setTurnAngle(forward);
+        frontRight.setTurnAngle(forward);
+        backLeft.setTurnAngle(forward);
+        backRight.setTurnAngle(forward);
+    }
+
+    @Override
+    public double getAverageDrivePositionMeters() {
+        return (frontLeft.getDrivePositionMeters() + frontRight.getDrivePositionMeters() +
+                backLeft.getDrivePositionMeters() + backRight.getDrivePositionMeters()) / 4.0;
+    }
+
+    @Override
+    public double getAverageDriveVelocityMps() {
+        return (frontLeft.getDriveVelocityMps() + frontRight.getDriveVelocityMps() +
+                backLeft.getDriveVelocityMps() + backRight.getDriveVelocityMps()) / 4.0;
     }
 }

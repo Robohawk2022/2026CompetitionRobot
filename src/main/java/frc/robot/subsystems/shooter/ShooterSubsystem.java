@@ -8,6 +8,7 @@ import frc.robot.util.Util;
 import java.util.Objects;
 import java.util.function.DoubleSupplier;
 
+import static frc.robot.Config.Shooter.*;
 import static frc.robot.Config.Shooter.d;
 import static frc.robot.Config.Shooter.gearRatio;
 import static frc.robot.Config.Shooter.p;
@@ -148,7 +149,7 @@ public class ShooterSubsystem implements Subsystem {
      * hold the wheel at the specified speed
      */
     public Command speedCommand(double feetPerSecond) {
-        throw new UnsupportedOperationException("TODO implement me");
+        return run(() -> closedLoop(feetPerSecond));
     }
 
 //endregion

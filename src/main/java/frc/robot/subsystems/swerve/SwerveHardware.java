@@ -67,4 +67,50 @@ public interface SwerveHardware {
     default void refreshSignals() {
         // no-op for simulation
     }
+
+    //==========================================================================
+    // SysId characterization methods
+    //==========================================================================
+
+    /**
+     * Applies voltage to all drive motors (for SysId characterization).
+     * Default implementation does nothing (for simulation).
+     *
+     * @param volts the voltage to apply to all drive motors
+     */
+    default void setDriveVoltage(double volts) {
+        // no-op for simulation
+    }
+
+    /**
+     * Locks all turn motors to face forward (for SysId characterization).
+     * Default implementation does nothing (for simulation).
+     */
+    default void lockTurnMotors() {
+        // no-op for simulation
+    }
+
+    /**
+     * @return average drive position across all modules in meters
+     */
+    default double getAverageDrivePositionMeters() {
+        SwerveModulePosition[] positions = getModulePositions();
+        double sum = 0;
+        for (SwerveModulePosition pos : positions) {
+            sum += pos.distanceMeters;
+        }
+        return sum / positions.length;
+    }
+
+    /**
+     * @return average drive velocity across all modules in m/s
+     */
+    default double getAverageDriveVelocityMps() {
+        SwerveModuleState[] states = getModuleStates();
+        double sum = 0;
+        for (SwerveModuleState state : states) {
+            sum += state.speedMetersPerSecond;
+        }
+        return sum / states.length;
+    }
 }

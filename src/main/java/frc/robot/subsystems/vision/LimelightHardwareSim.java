@@ -49,6 +49,8 @@ public class LimelightHardwareSim {
     /** Field layout containing all AprilTag positions */
     private final AprilTagFieldLayout fieldLayout;
 
+    /** NetworkTables publishers */
+    private final NetworkTable table;
     private final DoubleArrayPublisher botposePublisher;
     private final DoubleArrayPublisher botposeOrbPublisher;
     private final DoublePublisher tvPublisher;
@@ -95,6 +97,8 @@ public class LimelightHardwareSim {
 
         // get NetworkTables table for the limelight
         NetworkTable table = NetworkTableInstance.getDefault().getTable(limelightName);
+        table = NetworkTableInstance.getDefault().getTable(limelightName);
+     
 
         // create publishers
         botposePublisher = table.getDoubleArrayTopic("botpose_wpiblue").publish();

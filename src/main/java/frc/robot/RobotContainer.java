@@ -4,6 +4,17 @@
 
 package frc.robot;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.ModuleConfig;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -13,6 +24,10 @@ import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveTeleopSpeedSupplier;
 import frc.robot.util.CommandLogger;
+import frc.robot.util.Util;
+
+import static frc.robot.Config.PathPlanner.*;
+import static frc.robot.Config.Swerve.*;
 
 public class RobotContainer {
 
@@ -20,6 +35,8 @@ public class RobotContainer {
   final CommandXboxController operator = new CommandXboxController(1);
 
   final SwerveSubsystem swerve;
+
+  private final SendableChooser<Command> autoChooser;
 
   public RobotContainer() {
     CommandLogger.enable();
@@ -32,21 +49,95 @@ public class RobotContainer {
         : new SwerveHardwareCTRE();
     swerve = new SwerveSubsystem(swerveHardware);
 
-    // set default command with turbo/sniper triggers
-    SwerveTeleopSpeedSupplier driverInput = new SwerveTeleopSpeedSupplier(driver);
-    swerve.setDefaultCommand(driverInput.driveCommand(swerve));
+    // configure PathPlanner AutoBuilder
+    configurePathPlanner();
 
+    // build auto chooser (must be after AutoBuilder is configured)
+    autoChooser = AutoBuilder.buildAutoChooser();
+    SmartDashboard.putData("Auto Chooser", autoChooser);
+
+    // configure driver controls
     configureBindings();
   }
 
+  /**
+   * Configures PathPlanner's AutoBuilder for swerve drive path following.
+   */
+  private void configurePathPlanner() {
+    // Create module config for a single swerve module
+    ModuleConfig moduleConfig = new ModuleConfig(
+        WHEEL_DIAMETER_METERS / 2.0,  // wheel radius
+        MAX_WHEEL_SPEED_MPS,          // max module speed
+        WHEEL_COF,                    // wheel coefficient of friction
+        DCMotor.getKrakenX60(1),      // drive motor
+        DRIVE_CURRENT_LIMIT_AMPS,     // current limit
+        1                             // number of motors per module
+    );
+
+    // Create robot config with module positions (same order as kinematics: FL, FR, BL, BR)
+    RobotConfig robotConfig = new RobotConfig(
+        ROBOT_MASS_KG,
+        ROBOT_MOI,
+        moduleConfig,
+        new Translation2d(WHEEL_BASE_METERS / 2, TRACK_WIDTH_METERS / 2),   // FL
+        new Translation2d(WHEEL_BASE_METERS / 2, -TRACK_WIDTH_METERS / 2),  // FR
+        new Translation2d(-WHEEL_BASE_METERS / 2, TRACK_WIDTH_METERS / 2),  // BL
+        new Translation2d(-WHEEL_BASE_METERS / 2, -TRACK_WIDTH_METERS / 2)  // BR
+    );
+
+    // Configure AutoBuilder
+    AutoBuilder.configure(
+        swerve::getPose,                      // pose supplier
+        swerve::resetPose,                    // pose reset consumer
+        swerve::getCurrentSpeeds,             // chassis speeds supplier
+        swerve::driveRobotRelative,           // robot-relative chassis speeds consumer
+        new PPHolonomicDriveController(       // path following controller
+            new PIDConstants(                 // translation PID
+                translationKP.getAsDouble(),
+                translationKI.getAsDouble(),
+                translationKD.getAsDouble()
+            ),
+            new PIDConstants(                 // rotation PID
+                rotationKP.getAsDouble(),
+                rotationKI.getAsDouble(),
+                rotationKD.getAsDouble()
+            )
+        ),
+        robotConfig,                          // robot configuration
+        this::shouldFlipPath,                 // path flip supplier for red alliance
+        swerve                                // drive subsystem requirement
+    );
+
+    if (enableLogging.getAsBoolean()) {
+      Util.log("PathPlanner AutoBuilder configured for swerve drive");
+    }
+  }
+
+  /**
+   * @return true if paths should be flipped for red alliance
+   */
+  private boolean shouldFlipPath() {
+    var alliance = DriverStation.getAlliance();
+    return alliance.isPresent() && alliance.get() == DriverStation.Alliance.Red;
+  }
+
   private void configureBindings() {
+    SwerveTeleopSpeedSupplier driverInput = new SwerveTeleopSpeedSupplier(driver);
+
+    // default command: normal teleop drive
+    swerve.setDefaultCommand(driverInput.driveCommand(swerve));
+
+    // hold left bumper for orbit mode (face and orbit around target)
+    driverInput.leftBumper()
+        .whileTrue(driverInput.orbitCommand(swerve));
+
     // reset heading when both sticks clicked
-    driver.leftStick()
-        .and(driver.rightStick())
+    driverInput.leftStick()
+        .and(driverInput.rightStick())
         .onTrue(swerve.resetPoseCommand());
   }
 
   public Command getAutonomousCommand() {
-    return Commands.print("No autonomous command configured");
+    return autoChooser.getSelected();
   }
 }

@@ -6,6 +6,7 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
@@ -19,6 +20,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import static frc.robot.Config.Swerve.*;
@@ -47,6 +49,7 @@ public class SwerveModule {
 
     private final VelocityVoltage driveRequest = new VelocityVoltage(0);
     private final PositionVoltage turnRequest = new PositionVoltage(0);
+    private final VoltageOut driveVoltageRequest = new VoltageOut(0);
 
     private SwerveModuleState desiredState = new SwerveModuleState();
 
@@ -254,5 +257,42 @@ public class SwerveModule {
      */
     public BaseStatusSignal[] getSignals() {
         return new BaseStatusSignal[] { drivePositionSignal, driveVelocitySignal, turnPositionSignal };
+    }
+
+    //==========================================================================
+    // SysId characterization methods
+    //==========================================================================
+
+    /**
+     * Applies raw voltage to the drive motor (for SysId characterization).
+     * Bypasses velocity PID control.
+     *
+     * @param volts the voltage to apply
+     */
+    public void setDriveVoltage(double volts) {
+        driveMotor.setControl(driveVoltageRequest.withOutput(volts));
+    }
+
+    /**
+     * Sets the turn motor to a specific angle (for locking during SysId).
+     *
+     * @param angle the target angle
+     */
+    public void setTurnAngle(Rotation2d angle) {
+        turnMotor.setControl(turnRequest.withPosition(angle.getRotations()));
+    }
+
+    /**
+     * @return drive motor position in meters (cached value)
+     */
+    public double getDrivePositionMeters() {
+        return cachedDrivePositionMeters;
+    }
+
+    /**
+     * @return drive motor velocity in meters per second (cached value)
+     */
+    public double getDriveVelocityMps() {
+        return cachedDriveVelocityMps;
     }
 }
