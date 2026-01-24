@@ -214,11 +214,14 @@ public class SwerveModule {
     public void setDesiredState(SwerveModuleState state) {
         Rotation2d currentAngle = Rotation2d.fromRadians(getTurnPositionRadians());
 
-        // if drive speed is below threshold, don't move the angle motor
-        // this prevents jitter when stationary
+        // if drive speed is below threshold, stop driving but still control angle
+        // this prevents wheel drift when stationary and allows setX() to work
         if (Math.abs(state.speedMetersPerSecond) < minSpeedForAngle.getAsDouble()) {
             driveMotor.setControl(driveRequest.withVelocity(0));
-            desiredState = new SwerveModuleState(0, currentAngle);
+            // still command turn motor to the desired angle
+            double positionRotations = state.angle.getRotations();
+            turnMotor.setControl(turnRequest.withPosition(positionRotations));
+            desiredState = new SwerveModuleState(0, state.angle);
             return;
         }
 
