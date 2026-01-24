@@ -218,8 +218,8 @@ public class SysIdTestbot extends TimedRobot {
             builder.addBooleanProperty("Y", () -> controller.getHID().getYButton(), null);
             builder.addBooleanProperty("Start", () -> controller.getHID().getStartButton(), null);
             builder.addBooleanProperty("Back", () -> controller.getHID().getBackButton(), null);
-            builder.addBooleanProperty("LeftBumper", () -> controller.getHID().getLeftBumper(), null);
-            builder.addBooleanProperty("RightBumper", () -> controller.getHID().getRightBumper(), null);
+            builder.addBooleanProperty("LeftBumper", () -> controller.leftBumper().getAsBoolean(), null);
+            builder.addBooleanProperty("RightBumper", () -> controller.rightBumper().getAsBoolean(), null);
             builder.addDoubleProperty("LeftX", () -> controller.getHID().getLeftX(), null);
             builder.addDoubleProperty("LeftY", () -> controller.getHID().getLeftY(), null);
             builder.addDoubleProperty("RightX", () -> controller.getHID().getRightX(), null);
@@ -505,7 +505,7 @@ public class SysIdTestbot extends TimedRobot {
     @Override
     public void autonomousInit() {
         System.out.println(">>> Autonomous enabled - starting SysId sequence");
-        autoSysIdSequence().schedule();
+        CommandScheduler.getInstance().schedule(autoSysIdSequence());
     }
 
     @Override

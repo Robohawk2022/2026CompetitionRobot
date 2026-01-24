@@ -32,10 +32,10 @@ public final class Main {
           } catch (ClassNotFoundException e) {
               System.err.println("Robot class not found: " + robotClassName);
               System.err.println("Falling back to Robot");
-              RobotBase.startRobot(Robot::new);
+              RobotBase.startRobot(SysIdTestbot::new);
           }
       } else {
-          RobotBase.startRobot(SysIdTestbot::new);
+          RobotBase.startRobot(SwerveTestbot::new);
       }
   }
 }

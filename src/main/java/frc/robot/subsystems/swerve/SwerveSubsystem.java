@@ -421,6 +421,16 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
+     * @return a command that resets all wheel angles to 0 (forward facing)
+     */
+    public Command resetWheelsCommand() {
+        return runOnce(() -> {
+            hardware.lockTurnMotors();
+            Util.log("Wheels reset to forward");
+        });
+    }
+
+    /**
      * Creates a teleop drive command.
      *
      * @param xSupplier     forward/backward speed (-1 to 1)

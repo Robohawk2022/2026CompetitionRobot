@@ -33,6 +33,9 @@ public class SwerveTestbot extends TimedRobot {
                 isSimulation() ? new SwerveHardwareSim() : new SwerveHardwareCTRE());
         controller = new CommandXboxController(0);
 
+        // reset wheels to forward facing on startup
+        swerve.resetWheelsCommand().schedule();
+
         System.out.println(">>> Button bindings configured - press A, B, X, Y, Start, Back, etc.");
 
         // default to field-relative driving with turbo/sniper modes
