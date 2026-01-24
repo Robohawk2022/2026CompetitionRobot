@@ -186,7 +186,11 @@ compile_commands.json
 # Eclipse generated file for annotation processors
 .factorypath
 
+
 # MCP Server
 .mcp-server/venv/
 .mcp-server/__pycache__/
 *.pyc
+# Vim temp files
+*.swp
+

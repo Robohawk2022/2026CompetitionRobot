@@ -7,6 +7,9 @@ package frc.robot;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
 import frc.robot.testbots.SysIdTestbot;
+import frc.robot.testbots.ShooterTestbot;
+import frc.robot.testbots.SwerveTestbot;
+
 
 import java.util.function.Supplier;
 

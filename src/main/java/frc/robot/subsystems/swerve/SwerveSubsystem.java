@@ -64,9 +64,6 @@ public class SwerveSubsystem extends SubsystemBase {
     // reset tracking for dashboard
     private int resetCount = 0;
 
-    // periodic logging counter (logs every 50 cycles = 1 second)
-    private int logCounter = 0;
-
     private final OdometryDiagnostics diagnostics;
 
     // orbit telemetry
@@ -122,12 +119,14 @@ public class SwerveSubsystem extends SubsystemBase {
             builder.addBooleanProperty("Enabled?", DriverStation::isEnabled, null);
             builder.addBooleanProperty("TurboActive?", () -> turboActive, null);
             builder.addBooleanProperty("SniperActive?", () -> sniperActive, null);
-            builder.addDoubleProperty("HeadingDeg", () -> getHeading().getDegrees(), null);
-            builder.addDoubleProperty("PoseXFeet", () -> Units.metersToFeet(getPose().getX()), null);
-            builder.addDoubleProperty("PoseYFeet", () -> Units.metersToFeet(getPose().getY()), null);
-            builder.addDoubleProperty("Speedx", () -> latestSpeed.vxMetersPerSecond, null);
-            builder.addDoubleProperty("Speedy", () -> latestSpeed.vyMetersPerSecond, null);
-            builder.addDoubleProperty("SpeedO", () -> latestSpeed.omegaRadiansPerSecond, null);
+            if (verboseLogging) {
+                builder.addDoubleProperty("PoseX", () -> Units.metersToFeet(getPose().getX()), null);
+                builder.addDoubleProperty("PoseY", () -> Units.metersToFeet(getPose().getY()), null);
+                builder.addDoubleProperty("PoseOmega", () -> getHeading().getDegrees(), null);
+                builder.addDoubleProperty("SpeedX", () -> Units.metersToFeet(latestSpeed.vxMetersPerSecond), null);
+                builder.addDoubleProperty("SpeedY", () -> Units.metersToFeet(latestSpeed.vyMetersPerSecond), null);
+                builder.addDoubleProperty("SpeedOmega", () -> Units.radiansToDegrees(latestSpeed.omegaRadiansPerSecond), null);
+            }
 
             // reset odometry button - click to reset pose and heading to origin
             builder.addBooleanProperty("ResetOdometry", () -> false, (value) -> {
@@ -140,20 +139,6 @@ public class SwerveSubsystem extends SubsystemBase {
 
             // reset counter to verify resets are happening
             builder.addIntegerProperty("ResetCount", () -> resetCount, null);
-
-            if (verboseLogging) {
-                builder.addDoubleProperty("MaxSpeedFPS", () -> Units.metersToFeet(maxSpeedMps), null);
-                builder.addDoubleProperty("MaxRotationDPS", () -> Math.toDegrees(maxRotationRps), null);
-            }
-
-            // orbit telemetry
-            builder.addBooleanProperty("Orbit/Active?", () -> orbitActive, null);
-            builder.addBooleanProperty("Orbit/TargetLocked?", () -> targetLocked, null);
-            builder.addDoubleProperty("Orbit/DistanceFeet", () -> orbitDistanceFeet, null);
-            builder.addDoubleProperty("Orbit/TargetHeadingDeg", () -> orbitTargetHeadingDeg, null);
-            builder.addDoubleProperty("Orbit/HeadingErrorDeg", () -> orbitHeadingErrorDeg, null);
-            builder.addDoubleProperty("Orbit/RadialSpeedFPS", () -> orbitRadialSpeedFps, null);
-            builder.addDoubleProperty("Orbit/TangentSpeedFPS", () -> orbitTangentSpeedFps, null);
         });
     }
 
@@ -299,60 +284,6 @@ public class SwerveSubsystem extends SubsystemBase {
         SwerveDriveKinematics.desaturateWheelSpeeds(states, maxSpeed);
         hardware.setModuleStates(states);
         latestSpeed = speeds;
-    }
-
-    /**
-     * Drives the robot while preserving rotation (heading control).
-     * <p>
-     * Unlike normal drive, this method ensures rotation is never scaled down.
-     * If total demand exceeds capacity, translation is reduced to preserve rotation.
-     *
-     * @param vx            field-relative X velocity (m/s)
-     * @param vy            field-relative Y velocity (m/s)
-     * @param omega         rotation velocity (rad/s)
-     * @param maxSpeed      maximum wheel speed (m/s)
-     */
-    public void drivePreserveRotation(double vx, double vy, double omega, double maxSpeed) {
-        // convert true field-relative to robot-relative (not driver-relative)
-        ChassisSpeeds fieldSpeeds = new ChassisSpeeds(vx, vy, omega);
-        ChassisSpeeds robotSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(fieldSpeeds, getHeading());
-
-        // calculate what rotation alone would require
-        ChassisSpeeds rotationOnly = new ChassisSpeeds(0, 0, robotSpeeds.omegaRadiansPerSecond);
-        SwerveModuleState[] rotationStates = KINEMATICS.toSwerveModuleStates(rotationOnly);
-
-        // find max wheel speed used by rotation
-        double maxRotationSpeed = 0;
-        for (SwerveModuleState state : rotationStates) {
-            maxRotationSpeed = Math.max(maxRotationSpeed, Math.abs(state.speedMetersPerSecond));
-        }
-
-        // calculate remaining capacity for translation
-        double remainingCapacity = maxSpeed - maxRotationSpeed;
-        if (remainingCapacity < 0.1) {
-            remainingCapacity = 0.1; // always allow some translation
-        }
-
-        // calculate translation magnitude
-        double translationMag = Math.hypot(robotSpeeds.vxMetersPerSecond, robotSpeeds.vyMetersPerSecond);
-
-        // scale translation if needed
-        double scaledVx = robotSpeeds.vxMetersPerSecond;
-        double scaledVy = robotSpeeds.vyMetersPerSecond;
-        if (translationMag > remainingCapacity && translationMag > 0.01) {
-            double scale = remainingCapacity / translationMag;
-            scaledVx *= scale;
-            scaledVy *= scale;
-        }
-
-        // combine scaled translation with full rotation
-        ChassisSpeeds finalSpeeds = new ChassisSpeeds(scaledVx, scaledVy, robotSpeeds.omegaRadiansPerSecond);
-        SwerveModuleState[] states = KINEMATICS.toSwerveModuleStates(finalSpeeds);
-
-        // NO desaturation - we already calculated to stay within limits
-        // desaturation would scale down rotation which defeats the purpose
-        hardware.setModuleStates(states);
-        latestSpeed = finalSpeeds;
     }
 
     /**

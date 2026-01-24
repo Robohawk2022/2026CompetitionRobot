@@ -96,41 +96,4 @@ public class SwerveHardwareSim implements SwerveHardware {
             modulePositions[i] = new SwerveModulePosition(0, modulePositions[i].angle);
         }
     }
-
-    //==========================================================================
-    // SysId simulation methods
-    //==========================================================================
-
-    // simulated kV for voltage -> velocity conversion (V / (m/s))
-    private static final double SIM_KV = 2.0;  // 2V per m/s
-
-    @Override
-    public void setDriveVoltage(double volts) {
-        // simulate: velocity = volts / kV
-        double velocityMps = volts / SIM_KV;
-
-        // apply to all modules (wheels pointing forward)
-        for (int i = 0; i < 4; i++) {
-            moduleStates[i] = new SwerveModuleState(velocityMps, moduleStates[i].angle);
-
-            // integrate velocity to update position
-            double distanceDelta = velocityMps * Util.DT;
-            modulePositions[i] = new SwerveModulePosition(
-                    modulePositions[i].distanceMeters + distanceDelta,
-                    moduleStates[i].angle);
-        }
-
-        // no rotation when driving straight
-        yawRateDps = 0;
-    }
-
-    @Override
-    public void lockTurnMotors() {
-        // point all wheels forward (0 degrees)
-        Rotation2d forward = Rotation2d.fromDegrees(0);
-        for (int i = 0; i < 4; i++) {
-            moduleStates[i] = new SwerveModuleState(moduleStates[i].speedMetersPerSecond, forward);
-            modulePositions[i] = new SwerveModulePosition(modulePositions[i].distanceMeters, forward);
-        }
-    }
 }

@@ -10,8 +10,10 @@ import java.util.function.DoubleSupplier;
 
 import static frc.robot.Config.Shooter.*;
 import static frc.robot.Config.Shooter.d;
+import static frc.robot.Config.Shooter.gearRatio;
 import static frc.robot.Config.Shooter.p;
 import static frc.robot.Config.Shooter.v;
+import static frc.robot.Config.Shooter.wheelCircumference;
 
 /**
  * Implements a shooter. The "heavy lifting" of the feedback and feedforward
@@ -62,7 +64,7 @@ public class ShooterSubsystem implements Subsystem {
         currentRps = hardware.getMotorRevolutionsPerSecond();
 
         // convert the speed in revolutions per second to a speed in
-        // feet per second using the gear ratio and wheel circumference
+        // feet per second using the gear ratio and wheel diameter
         currentFps = currentRps * gearRatio * wheelCircumference;
     }
 

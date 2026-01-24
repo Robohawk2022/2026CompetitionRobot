@@ -96,7 +96,9 @@ public class LimelightHardwareSim {
         this.fieldLayout = Util.getFieldLayout();
 
         // get NetworkTables table for the limelight
+        NetworkTable table = NetworkTableInstance.getDefault().getTable(limelightName);
         table = NetworkTableInstance.getDefault().getTable(limelightName);
+     
 
         // create publishers
         botposePublisher = table.getDoubleArrayTopic("botpose_wpiblue").publish();
@@ -126,7 +128,7 @@ public class LimelightHardwareSim {
         // simulate frame drops
         if (random.nextDouble() < frameDropProbability.getAsDouble()) {
             if (verboseLogging) {
-                Util.log("LimelightSim: frame dropped");
+                Util.log("LimelightHardwareSim: frame dropped");
             }
             // don't update NetworkTables on dropped frames
             return;
@@ -160,11 +162,11 @@ public class LimelightHardwareSim {
         frameCount++;
         double now = Timer.getFPGATimestamp();
         if (now - lastUpdateTime > 1.0) {
-            SmartDashboard.putNumber("LimelightSim/FPS", frameCount / (now - lastUpdateTime));
+            SmartDashboard.putNumber("LimelightHardwareSim/FPS", frameCount / (now - lastUpdateTime));
             frameCount = 0;
             lastUpdateTime = now;
         }
-        SmartDashboard.putNumber("LimelightSim/TagCount", visibleTags.size());
+        SmartDashboard.putNumber("LimelightHardwareSim/TagCount", visibleTags.size());
     }
 
     /**
@@ -267,7 +269,7 @@ public class LimelightHardwareSim {
             visible.add(new DetectedTag(tag.ID, distToCamera, distToRobot, tx, ty, area, ambiguity, tagPose3d));
 
             if (verboseLogging) {
-                Util.log("LimelightSim: tag %d visible at %.2fm, tx=%.1f ty=%.1f area=%.2f",
+                Util.log("LimelightHardwareSim: tag %d visible at %.2fm, tx=%.1f ty=%.1f area=%.2f",
                         tag.ID, distToCamera, tx, ty, area);
             }
         }
@@ -441,6 +443,6 @@ public class LimelightHardwareSim {
         botposePublisher.set(emptyPose);
         botposeOrbPublisher.set(emptyPose);
 
-        SmartDashboard.putNumber("LimelightSim/TagCount", 0);
+        SmartDashboard.putNumber("LimelightHardwareSim/TagCount", 0);
     }
 }

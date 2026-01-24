@@ -8,7 +8,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
  * Hardware interface for a swerve drive system.
  * <p>
  * Implementations include {@link SwerveHardwareCTRE} for real hardware
- * and {@link SwerveSim} for simulation.
+ * and {@link SwerveHardwareSim} for simulation.
  */
 public interface SwerveHardware {
 
