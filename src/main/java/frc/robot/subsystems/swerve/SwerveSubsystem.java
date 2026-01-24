@@ -287,6 +287,72 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
+     * Drives with rotation-priority desaturation.
+     * <p>
+     * When wheel speeds would exceed limits, this method scales down translation
+     * to preserve rotation authority. This ensures heading control isn't starved
+     * during orbit/face-target modes.
+     *
+     * @param vx       field-relative X velocity (m/s)
+     * @param vy       field-relative Y velocity (m/s)
+     * @param omega    rotation rate (rad/s)
+     * @param maxSpeed maximum wheel speed for desaturation (m/s)
+     */
+    private void drivePreserveRotation(double vx, double vy, double omega, double maxSpeed) {
+        // convert field-relative to robot-relative
+        ChassisSpeeds fieldSpeeds = new ChassisSpeeds(vx, vy, omega);
+        ChassisSpeeds robotSpeeds = Util.fromDriverRelativeSpeeds(fieldSpeeds, getHeading());
+
+        // get module states
+        SwerveModuleState[] states = KINEMATICS.toSwerveModuleStates(robotSpeeds);
+
+        // find max wheel speed
+        double maxWheelSpeed = 0;
+        for (SwerveModuleState state : states) {
+            maxWheelSpeed = Math.max(maxWheelSpeed, Math.abs(state.speedMetersPerSecond));
+        }
+
+        // if within limits, just drive normally
+        if (maxWheelSpeed <= maxSpeed) {
+            hardware.setModuleStates(states);
+            latestSpeed = robotSpeeds;
+            return;
+        }
+
+        // calculate how much rotation alone would use
+        ChassisSpeeds rotationOnly = new ChassisSpeeds(0, 0, omega);
+        SwerveModuleState[] rotationStates = KINEMATICS.toSwerveModuleStates(rotationOnly);
+        double maxRotationSpeed = 0;
+        for (SwerveModuleState state : rotationStates) {
+            maxRotationSpeed = Math.max(maxRotationSpeed, Math.abs(state.speedMetersPerSecond));
+        }
+
+        // calculate available headroom for translation
+        double availableForTranslation = maxSpeed - maxRotationSpeed;
+        if (availableForTranslation <= 0) {
+            // rotation alone exceeds max - scale rotation and skip translation
+            double scale = maxSpeed / maxRotationSpeed;
+            robotSpeeds = new ChassisSpeeds(0, 0, omega * scale);
+        } else {
+            // scale translation to fit in remaining headroom
+            double translationMag = Math.hypot(robotSpeeds.vxMetersPerSecond, robotSpeeds.vyMetersPerSecond);
+            if (translationMag > 0) {
+                double scale = Math.min(1.0, availableForTranslation / translationMag);
+                robotSpeeds = new ChassisSpeeds(
+                    robotSpeeds.vxMetersPerSecond * scale,
+                    robotSpeeds.vyMetersPerSecond * scale,
+                    omega
+                );
+            }
+        }
+
+        states = KINEMATICS.toSwerveModuleStates(robotSpeeds);
+        SwerveDriveKinematics.desaturateWheelSpeeds(states, maxSpeed);
+        hardware.setModuleStates(states);
+        latestSpeed = robotSpeeds;
+    }
+
+    /**
      * @return the current chassis speeds
      */
     public ChassisSpeeds getCurrentSpeeds() {
