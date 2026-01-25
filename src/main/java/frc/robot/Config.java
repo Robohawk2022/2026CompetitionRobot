@@ -472,4 +472,25 @@ public interface Config {
         DoubleSupplier rotationPriority = pref("Orbit/RotationPriority", 0.5);
     }
 
+    /**
+     * Configuration for the LED subsystem.
+     */
+    interface LED {
+
+        /** PWM port for the LED strip */
+        int PWM_PORT = 0;
+
+        /** Number of LEDs in the strip */
+        int LED_COUNT = 60;
+
+        /** Default brightness (0.0 to 1.0) */
+        DoubleSupplier brightness = pref("LED/Brightness", 1.0);
+
+        /** Blink duration in seconds (for blinking patterns) */
+        DoubleSupplier blinkPeriod = pref("LED/BlinkPeriod", 0.5);
+
+        /** Rainbow cycle speed (higher = faster) */
+        DoubleSupplier rainbowSpeed = pref("LED/RainbowSpeed", 3.0);
+    }
+
 }

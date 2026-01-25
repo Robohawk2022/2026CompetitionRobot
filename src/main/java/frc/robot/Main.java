@@ -6,6 +6,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
+import frc.robot.testbots.LEDTestbot;
 import frc.robot.testbots.SysIdTestbot;
 import frc.robot.testbots.ShooterTestbot;
 import frc.robot.testbots.SwerveTestbot;
@@ -17,7 +18,7 @@ public final class Main {
   private Main() {}
 
   public static void main(String... args) {
-          RobotBase.startRobot(SwerveTestbot::new);
+          RobotBase.startRobot(LEDTestbot::new);
       }
 }
 
