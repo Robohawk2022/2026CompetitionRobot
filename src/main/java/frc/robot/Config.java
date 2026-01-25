@@ -472,4 +472,23 @@ public interface Config {
         DoubleSupplier rotationPriority = pref("Orbit/RotationPriority", 0.5);
     }
 
+    /**
+     * Configuration for the front intake subsystem.
+     */
+    interface IntakeFront {
+
+        /** CAN ID for the intake motor */
+        int MOTOR_CAN_ID = 20;
+
+        /** Speed percentage for intake (0-100) */
+        DoubleSupplier speedPercent = pref("IntakeFront/SpeedPercent", 100.0);
+
+        /**
+         * Invert the motor direction.
+         * <p>
+         * Toggle this if the motor spins the wrong way (ejecting instead of intaking).
+         */
+        BooleanSupplier inverted = pref("IntakeFront/Inverted?", false);
+    }
+
 }
