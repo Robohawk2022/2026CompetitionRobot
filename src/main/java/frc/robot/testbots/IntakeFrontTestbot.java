@@ -20,10 +20,22 @@ import frc.robot.subsystems.intakefront.IntakeFrontSubsystem;
  * <p>
  * <b>Configuration (via Elastic/Shuffleboard):</b>
  * <ul>
- *   <li>{@code IntakeFront/SpeedPercent} - Motor speed (0-100%)</li>
+ *   <li>{@code IntakeFront/IntakeSpeedRPS} - Intake speed in rev/sec</li>
+ *   <li>{@code IntakeFront/EjectSpeedRPS} - Eject speed in rev/sec</li>
  *   <li>{@code IntakeFront/Inverted?} - Toggle if motor spins wrong direction</li>
+ *   <li>{@code IntakeFront/kV} - Velocity feedforward gain</li>
+ *   <li>{@code IntakeFront/kP} - Proportional gain</li>
+ *   <li>{@code IntakeFront/StallThresholdRPM} - Stall detection velocity threshold</li>
+ *   <li>{@code IntakeFront/StallTimeSec} - Stall detection time threshold</li>
  *   <li>{@code IntakeFront/CurrentLimit} - Motor current limit in amps</li>
  * </ul>
+ * <p>
+ * <b>Stall Detection:</b>
+ * <p>
+ * The intake monitors for stalls (low velocity while commanding motor).
+ * When stalled for the configured time, the dashboard shows "Stalled? = true".
+ * This indicates the hopper is likely full. In production, wire the stall
+ * callback to an LED subsystem for driver alerts.
  */
 public class IntakeFrontTestbot extends TimedRobot {
 
@@ -39,6 +51,15 @@ public class IntakeFrontTestbot extends TimedRobot {
                 isSimulation() ? new IntakeFrontHardwareSim() : new IntakeFrontHardwareSparkMax());
         controller = new CommandXboxController(0);
 
+        // Set up stall callback (would wire to LED in production)
+        intake.setStallCallback(stalled -> {
+            if (stalled) {
+                System.out.println(">>> STALL DETECTED - Hopper may be full!");
+            } else {
+                System.out.println(">>> Stall cleared");
+            }
+        });
+
         // Set default command to idle
         intake.setDefaultCommand(intake.idleCommand());
 
@@ -51,9 +72,16 @@ public class IntakeFrontTestbot extends TimedRobot {
         System.out.println("    B (hold) = Eject (spit out)");
         System.out.println("");
         System.out.println(">>> Configuration:");
-        System.out.println("    IntakeFront/SpeedPercent = Motor speed (0-100%)");
+        System.out.println("    IntakeFront/IntakeSpeedRPS = Intake speed (rev/sec)");
+        System.out.println("    IntakeFront/EjectSpeedRPS = Eject speed (rev/sec)");
         System.out.println("    IntakeFront/Inverted? = Toggle if motor spins wrong direction");
-        System.out.println("    IntakeFront/CurrentLimit = Motor current limit in amps");
+        System.out.println("    IntakeFront/kV = Velocity feedforward gain");
+        System.out.println("    IntakeFront/kP = Proportional gain");
+        System.out.println("    IntakeFront/StallThresholdRPM = Stall detection threshold");
+        System.out.println("    IntakeFront/StallTimeSec = Time before stall triggers");
+        System.out.println("");
+        System.out.println(">>> Stall Detection:");
+        System.out.println("    Watch 'Stalled?' on dashboard - true indicates hopper full");
     }
 
     @Override
