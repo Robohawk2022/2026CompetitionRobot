@@ -6,34 +6,45 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.subsystems.led.LEDHardwareBlinkin;
 import frc.robot.subsystems.led.LEDHardwareSim;
-import frc.robot.subsystems.led.LEDHardwareWPILib;
+import frc.robot.subsystems.led.LEDSignal;
 import frc.robot.subsystems.led.LEDSubsystem;
-import frc.robot.subsystems.led.LEDSubsystem.LEDColor;
 
 /**
- * Standalone test program for the LED subsystem.
+ * Standalone test program for the LED subsystem using REV Blinkin.
  * <p>
  * Run with: {@code ./gradlew simulateJava -Probot=LEDTestbot}
  * <p>
  * <b>Testing with Elastic:</b>
  * <ol>
  *   <li>Start Elastic and connect to the simulation</li>
- *   <li>Add the "LEDSubsystem" widget to see current mode, pattern, and color</li>
- *   <li>Use the "LED/ColorChooser" and "LED/PatternChooser" to change settings</li>
- *   <li>Or use controller buttons to cycle through colors and patterns</li>
+ *   <li>Add the "LEDSubsystem" widget to see current signal and Blinkin code</li>
+ *   <li>Add the "LED/SimSignal" string to see the signal name in simulation</li>
+ *   <li>Use the "LED/SignalChooser" dropdown to select signals</li>
+ *   <li>Or use controller buttons to test common signals</li>
  * </ol>
+ * <p>
+ * <b>Button mappings:</b>
+ * <ul>
+ *   <li>A - Intaking (green)</li>
+ *   <li>B - Intake Full (red strobe)</li>
+ *   <li>X - Ready to Shoot (gold strobe)</li>
+ *   <li>Y - Off</li>
+ *   <li>LB (hold) - Alliance Blue</li>
+ *   <li>RB (hold) - Alliance Red</li>
+ *   <li>LT (hold) - Rainbow/Celebration</li>
+ *   <li>RT (hold) - Error signal</li>
+ *   <li>D-pad Up - Target Locked</li>
+ *   <li>D-pad Down - Target Searching</li>
+ * </ul>
  */
 public class LEDTestbot extends TimedRobot {
 
     private LEDSubsystem led;
     private CommandXboxController controller;
-
-    private SendableChooser<LEDColor> colorChooser;
-    private SendableChooser<String> patternChooser;
-
-    private LEDColor currentColor = LEDColor.BLUE;
-    private String currentPattern = "Solid";
+    private SendableChooser<LEDSignal> signalChooser;
+    private LEDSignal currentSignal = LEDSignal.IDLE;
 
     @Override
     public void robotInit() {
@@ -41,150 +52,99 @@ public class LEDTestbot extends TimedRobot {
 
         // Use appropriate hardware based on environment
         led = new LEDSubsystem(
-                isSimulation() ? new LEDHardwareSim() : new LEDHardwareWPILib());
+                isSimulation() ? new LEDHardwareSim() : new LEDHardwareBlinkin());
         controller = new CommandXboxController(0);
 
-        // Create color chooser for Elastic
-        colorChooser = new SendableChooser<>();
-        for (LEDColor color : LEDColor.values()) {
-            if (color == LEDColor.BLUE) {
-                colorChooser.setDefaultOption(color.name(), color);
-            } else {
-                colorChooser.addOption(color.name(), color);
+        // Create signal chooser for Elastic
+        signalChooser = new SendableChooser<>();
+        signalChooser.setDefaultOption("IDLE", LEDSignal.IDLE);
+        for (LEDSignal signal : LEDSignal.values()) {
+            if (signal != LEDSignal.IDLE) {
+                signalChooser.addOption(signal.name(), signal);
             }
         }
-        SmartDashboard.putData("LED/ColorChooser", colorChooser);
+        SmartDashboard.putData("LED/SignalChooser", signalChooser);
 
-        // Create pattern chooser for Elastic
-        patternChooser = new SendableChooser<>();
-        patternChooser.setDefaultOption("Solid", "Solid");
-        patternChooser.addOption("Blink", "Blink");
-        patternChooser.addOption("Rainbow", "Rainbow");
-        patternChooser.addOption("Breathing", "Breathing");
-        patternChooser.addOption("Chase", "Chase");
-        patternChooser.addOption("Off", "Off");
-        SmartDashboard.putData("LED/PatternChooser", patternChooser);
+        // Button bindings for common signals
+        controller.a().onTrue(Commands.runOnce(() -> setSignal(LEDSignal.INTAKING)));
+        controller.b().onTrue(Commands.runOnce(() -> setSignal(LEDSignal.INTAKE_FULL)));
+        controller.x().onTrue(Commands.runOnce(() -> setSignal(LEDSignal.READY_TO_SHOOT)));
+        controller.y().onTrue(Commands.runOnce(() -> setSignal(LEDSignal.OFF)));
 
-        // Button bindings - use Commands.runOnce to avoid subsystem conflicts
-        // A = cycle colors forward
-        controller.a().onTrue(Commands.runOnce(() -> {
-            LEDColor[] colors = LEDColor.values();
-            int nextIndex = (currentColor.ordinal() + 1) % colors.length;
-            currentColor = colors[nextIndex];
-            System.out.println(">>> Color: " + currentColor.name());
-        }));
-
-        // B = cycle patterns
-        controller.b().onTrue(Commands.runOnce(() -> {
-            String[] patterns = {"Solid", "Blink", "Rainbow", "Breathing", "Chase", "Off"};
-            int currentIndex = 0;
-            for (int i = 0; i < patterns.length; i++) {
-                if (patterns[i].equals(currentPattern)) {
-                    currentIndex = i;
-                    break;
-                }
-            }
-            currentPattern = patterns[(currentIndex + 1) % patterns.length];
-            System.out.println(">>> Pattern: " + currentPattern);
-        }));
-
-        // Bumpers for alliance colors (override current settings while held)
+        // Bumpers for alliance colors (while held)
         controller.leftBumper()
-            .onTrue(Commands.runOnce(() -> currentColor = LEDColor.ALLIANCE_BLUE))
-            .onFalse(Commands.runOnce(() -> currentColor = colorChooser.getSelected()));
+            .onTrue(Commands.runOnce(() -> setSignal(LEDSignal.ALLIANCE_BLUE)))
+            .onFalse(Commands.runOnce(() -> setSignal(signalChooser.getSelected())));
         controller.rightBumper()
-            .onTrue(Commands.runOnce(() -> currentColor = LEDColor.ALLIANCE_RED))
-            .onFalse(Commands.runOnce(() -> currentColor = colorChooser.getSelected()));
+            .onTrue(Commands.runOnce(() -> setSignal(LEDSignal.ALLIANCE_RED)))
+            .onFalse(Commands.runOnce(() -> setSignal(signalChooser.getSelected())));
 
-        // Triggers for special patterns (override while held)
+        // Triggers for special effects (while held)
         controller.leftTrigger()
-            .onTrue(Commands.runOnce(() -> currentPattern = "Rainbow"))
-            .onFalse(Commands.runOnce(() -> currentPattern = patternChooser.getSelected()));
+            .onTrue(Commands.runOnce(() -> setSignal(LEDSignal.CELEBRATION)))
+            .onFalse(Commands.runOnce(() -> setSignal(signalChooser.getSelected())));
         controller.rightTrigger()
-            .onTrue(Commands.runOnce(() -> { currentPattern = "Chase"; currentColor = LEDColor.GREEN; }))
-            .onFalse(Commands.runOnce(() -> {
-                currentPattern = patternChooser.getSelected();
-                currentColor = colorChooser.getSelected();
-            }));
+            .onTrue(Commands.runOnce(() -> setSignal(LEDSignal.ERROR)))
+            .onFalse(Commands.runOnce(() -> setSignal(signalChooser.getSelected())));
 
-        // Y = off
-        controller.y().onTrue(Commands.runOnce(() -> currentPattern = "Off"));
-
-        // X = breathing with current color (while held)
-        controller.x()
-            .onTrue(Commands.runOnce(() -> currentPattern = "Breathing"))
-            .onFalse(Commands.runOnce(() -> currentPattern = patternChooser.getSelected()));
+        // D-pad for targeting signals
+        controller.povUp().onTrue(Commands.runOnce(() -> setSignal(LEDSignal.TARGET_LOCKED)));
+        controller.povDown().onTrue(Commands.runOnce(() -> setSignal(LEDSignal.TARGET_SEARCHING)));
+        controller.povLeft().onTrue(Commands.runOnce(() -> setSignal(LEDSignal.SHOOT_RANGE_FAR)));
+        controller.povRight().onTrue(Commands.runOnce(() -> setSignal(LEDSignal.SHOOT_RANGE_CLOSE)));
 
         System.out.println(">>> Button mappings:");
-        System.out.println("    A = Cycle colors");
-        System.out.println("    B = Cycle patterns");
-        System.out.println("    X (hold) = Breathing effect");
+        System.out.println("    A = Intaking (green)");
+        System.out.println("    B = Intake Full (red strobe)");
+        System.out.println("    X = Ready to Shoot (gold strobe)");
         System.out.println("    Y = Off");
-        System.out.println("    LB (hold) = Blue alliance");
-        System.out.println("    RB (hold) = Red alliance");
-        System.out.println("    LT (hold) = Rainbow");
-        System.out.println("    RT (hold) = Green chase");
+        System.out.println("    LB (hold) = Alliance Blue");
+        System.out.println("    RB (hold) = Alliance Red");
+        System.out.println("    LT (hold) = Celebration (rainbow)");
+        System.out.println("    RT (hold) = Error (red strobe)");
+        System.out.println("    D-pad Up = Target Locked");
+        System.out.println("    D-pad Down = Target Searching");
+        System.out.println("    D-pad Left = Shoot Range Far");
+        System.out.println("    D-pad Right = Shoot Range Close");
         System.out.println("");
-        System.out.println(">>> Use Elastic choosers to select color/pattern!");
+        System.out.println(">>> Use Elastic 'LED/SignalChooser' to test any signal!");
+    }
+
+    private void setSignal(LEDSignal signal) {
+        currentSignal = signal;
+        led.setSignal(signal);
+        System.out.println(">>> Signal: " + signal.name() + " (code: " + signal.getBlinkinCode() + ")");
     }
 
     @Override
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
 
-        // Sync chooser selections to current settings (when not overridden by buttons)
-        LEDColor selectedColor = colorChooser.getSelected();
-        String selectedPattern = patternChooser.getSelected();
-
-        if (selectedColor != null && selectedColor != currentColor) {
+        // Sync chooser selection (when not overridden by buttons)
+        LEDSignal selected = signalChooser.getSelected();
+        if (selected != null && selected != currentSignal) {
+            // Only update if no buttons are being held
             if (!controller.getHID().getLeftBumper() &&
                 !controller.getHID().getRightBumper() &&
+                controller.getHID().getLeftTriggerAxis() < 0.5 &&
                 controller.getHID().getRightTriggerAxis() < 0.5) {
-                currentColor = selectedColor;
+                setSignal(selected);
             }
-        }
-        if (selectedPattern != null && !selectedPattern.equals(currentPattern)) {
-            if (controller.getHID().getLeftTriggerAxis() < 0.5 &&
-                controller.getHID().getRightTriggerAxis() < 0.5 &&
-                !controller.getHID().getXButton()) {
-                currentPattern = selectedPattern;
-            }
-        }
-
-        // Apply current pattern using direct control methods
-        applyCurrentSettings();
-    }
-
-    /**
-     * Applies the current color and pattern settings to the LEDs.
-     * Uses direct control methods (not commands) for immediate updates.
-     */
-    private void applyCurrentSettings() {
-        switch (currentPattern) {
-            case "Solid":
-                led.setSolid(currentColor);
-                break;
-            case "Blink":
-                led.setBlink(currentColor);
-                break;
-            case "Rainbow":
-                led.setRainbow();
-                break;
-            case "Breathing":
-                led.setBreathing(currentColor);
-                break;
-            case "Chase":
-                led.setChase(currentColor);
-                break;
-            case "Off":
-                led.setOff();
-                break;
         }
     }
 
     @Override
-    public void teleopInit() {}
+    public void disabledInit() {
+        led.setSignal(LEDSignal.DISABLED);
+    }
 
     @Override
-    public void autonomousInit() {}
+    public void teleopInit() {
+        led.setSignal(LEDSignal.IDLE);
+    }
+
+    @Override
+    public void autonomousInit() {
+        led.setSignal(LEDSignal.AUTO_MODE);
+    }
 }

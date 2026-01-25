@@ -1,42 +1,32 @@
 package frc.robot.subsystems.led;
 
-import edu.wpi.first.wpilibj.util.Color;
-
 /**
- * Interface for LED strip hardware.
+ * Interface for LED hardware.
  * <p>
- * Abstracts the LED hardware to allow simulation and testing.
+ * Abstracts the LED hardware to allow different implementations:
+ * <ul>
+ *   <li>{@link LEDHardwareBlinkin} - REV Blinkin LED controller</li>
+ *   <li>{@link LEDHardwareSim} - Simulation (posts signal name to dashboard)</li>
+ * </ul>
  */
 public interface LEDHardware {
 
     /**
-     * Sets all LEDs to a solid color.
+     * Applies an LED signal (color/pattern) to the hardware.
      *
-     * @param color the color to set
+     * @param signal the signal to display
      */
-    void setSolidColor(Color color);
+    void applySignal(LEDSignal signal);
 
     /**
-     * Sets a specific LED to a color.
-     *
-     * @param index the LED index (0-based)
-     * @param color the color to set
+     * @return the currently applied signal, or null if none
      */
-    void setLED(int index, Color color);
+    LEDSignal getCurrentSignal();
 
     /**
-     * Updates the LED strip with the current buffer.
-     * Call this after making changes to apply them.
+     * Turns off the LEDs.
      */
-    void update();
-
-    /**
-     * @return the number of LEDs in the strip
-     */
-    int getLength();
-
-    /**
-     * Turns off all LEDs.
-     */
-    void off();
+    default void off() {
+        applySignal(LEDSignal.OFF);
+    }
 }

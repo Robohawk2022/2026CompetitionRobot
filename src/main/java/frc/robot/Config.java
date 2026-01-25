@@ -473,24 +473,17 @@ public interface Config {
     }
 
     /**
-     * Configuration for the LED subsystem.
+     * Configuration for the LED subsystem using REV Blinkin.
+     * <p>
+     * The Blinkin is controlled via PWM like a Spark motor controller.
+     * Different "speed" values (-1.0 to 1.0) select colors and patterns.
+     *
+     * @see frc.robot.subsystems.led.LEDSignal
      */
     interface LED {
 
-        /** PWM port for the LED strip */
+        /** PWM port for the REV Blinkin LED controller */
         int PWM_PORT = 0;
-
-        /** Number of LEDs in the strip */
-        int LED_COUNT = 60;
-
-        /** Default brightness (0.0 to 1.0) */
-        DoubleSupplier brightness = pref("LED/Brightness", 1.0);
-
-        /** Blink duration in seconds (for blinking patterns) */
-        DoubleSupplier blinkPeriod = pref("LED/BlinkPeriod", 0.5);
-
-        /** Rainbow cycle speed (higher = faster) */
-        DoubleSupplier rainbowSpeed = pref("LED/RainbowSpeed", 3.0);
     }
 
 }
