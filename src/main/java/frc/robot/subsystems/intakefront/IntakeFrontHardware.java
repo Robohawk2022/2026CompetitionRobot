@@ -3,18 +3,27 @@ package frc.robot.subsystems.intakefront;
 /**
  * Interface for the front intake hardware.
  * <p>
- * The front intake is a simple motor that spins to suck in game pieces.
+ * The front intake uses closed-loop velocity control to spin
+ * and suck in game pieces.
  */
 public interface IntakeFrontHardware {
 
     /**
-     * Applies voltage to the intake motor.
-     * <p>
-     * Implementations should clamp voltage to [-12, 12] for safety.
+     * Sets the target speed for the intake motor using closed-loop velocity control.
      *
-     * @param volts the voltage to apply (-12 to 12)
+     * @param speedRPS the target speed in revolutions per second (positive = intake direction)
      */
-    void applyVolts(double volts);
+    void setSpeed(double speedRPS);
+
+    /**
+     * Resets/reconfigures the velocity PID controller with new gains.
+     * <p>
+     * Call this when starting a command to ensure gains are up-to-date.
+     *
+     * @param kV feedforward gain (volts per rev/sec)
+     * @param kP proportional gain
+     */
+    void resetPid(double kV, double kP);
 
     /**
      * @return the current motor velocity in RPM
@@ -30,6 +39,6 @@ public interface IntakeFrontHardware {
      * Stops the motor.
      */
     default void stop() {
-        applyVolts(0);
+        setSpeed(0);
     }
 }

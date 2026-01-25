@@ -1,20 +1,22 @@
 package frc.robot.subsystems.intakefront;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 
-import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.util.Util;
 
 import static frc.robot.Config.IntakeFront.*;
 
 /**
  * Subsystem for the front intake mechanism.
  * <p>
- * Spins intake motors to suck in game pieces. Direction is configurable
- * via the {@code IntakeFront/Inverted?} preference.
+ * Uses closed-loop velocity control with separate intake and eject speeds.
+ * Includes stall detection to indicate when the hopper is full.
+ * <p>
+ * Direction is configurable via the {@code IntakeFront/Inverted?} preference.
  */
 public class IntakeFrontSubsystem extends SubsystemBase {
 
@@ -22,7 +24,14 @@ public class IntakeFrontSubsystem extends SubsystemBase {
 
     private final IntakeFrontHardware hardware;
     private String currentMode = "idle";
-    private double latestVolts = 0;
+    private double targetSpeedRPS = 0;
+    private double currentSpeedRPM = 0;
+
+    // Stall detection
+    private final Timer stallTimer = new Timer();
+    private boolean isStalled = false;
+    private boolean wasStalled = false;
+    private Consumer<Boolean> stallCallback = null;
 
     /**
      * Creates an {@link IntakeFrontSubsystem}.
@@ -31,42 +40,95 @@ public class IntakeFrontSubsystem extends SubsystemBase {
      */
     public IntakeFrontSubsystem(IntakeFrontHardware hardware) {
         this.hardware = Objects.requireNonNull(hardware);
+        stallTimer.start();
 
         // Dashboard telemetry
         SmartDashboard.putData(getName(), builder -> {
             builder.addStringProperty("Mode", () -> currentMode, null);
-            builder.addDoubleProperty("Volts", () -> latestVolts, null);
-            builder.addDoubleProperty("VelocityRPM", hardware::getVelocityRPM, null);
+            builder.addDoubleProperty("TargetRPS", () -> targetSpeedRPS, null);
+            builder.addDoubleProperty("VelocityRPM", () -> currentSpeedRPM, null);
             builder.addDoubleProperty("Amps", hardware::getMotorAmps, null);
             builder.addBooleanProperty("Inverted?", inverted::getAsBoolean, null);
-            builder.addDoubleProperty("SpeedPct", speedPercent::getAsDouble, null);
+            builder.addBooleanProperty("Stalled?", () -> isStalled, null);
         });
     }
 
     @Override
     public void periodic() {
-        // Nothing to do - commands handle motor control
+        currentSpeedRPM = hardware.getVelocityRPM();
+        updateStallDetection();
     }
 
     /**
-     * Gets the clamped speed percentage (0-100).
-     */
-    private double getSpeedFactor() {
-        return MathUtil.clamp(speedPercent.getAsDouble(), 0, 100) / 100.0;
-    }
-
-    /**
-     * Applies voltage to the intake motor, respecting the inversion setting.
+     * Sets a callback to be notified when stall state changes.
+     * <p>
+     * Use this to integrate with LEDs or other alert systems.
+     * The callback receives {@code true} when stalled (hopper full),
+     * {@code false} when not stalled.
      *
-     * @param volts the voltage to apply (positive = intake direction)
+     * @param callback the callback to invoke on stall state change, or null to clear
      */
-    private void applyVolts(double volts) {
+    public void setStallCallback(Consumer<Boolean> callback) {
+        this.stallCallback = callback;
+    }
+
+    /**
+     * @return true if the intake is currently stalled (likely hopper full)
+     */
+    public boolean isStalled() {
+        return isStalled;
+    }
+
+    /**
+     * Updates stall detection logic.
+     * <p>
+     * Stall is detected when:
+     * - Motor is being commanded (targetSpeedRPS != 0)
+     * - Actual velocity is below threshold
+     * - This condition persists for the configured time
+     */
+    private void updateStallDetection() {
+        boolean commanding = Math.abs(targetSpeedRPS) > 0.1;
+        double thresholdRPM = stallThresholdRPM.getAsDouble();
+        boolean velocityLow = Math.abs(currentSpeedRPM) < thresholdRPM;
+
+        if (commanding && velocityLow) {
+            // Might be stalled - check timer
+            if (stallTimer.hasElapsed(stallTimeSec.getAsDouble())) {
+                isStalled = true;
+            }
+        } else {
+            // Not stalled - reset timer
+            stallTimer.reset();
+            isStalled = false;
+        }
+
+        // Notify callback on state change
+        if (isStalled != wasStalled && stallCallback != null) {
+            stallCallback.accept(isStalled);
+        }
+        wasStalled = isStalled;
+    }
+
+    /**
+     * Applies speed to the intake motor, respecting the inversion setting.
+     *
+     * @param speedRPS the speed in revolutions per second (positive = intake direction)
+     */
+    private void applySpeed(double speedRPS) {
         // Apply inversion if configured
         if (inverted.getAsBoolean()) {
-            volts = -volts;
+            speedRPS = -speedRPS;
         }
-        latestVolts = Util.clampVolts(volts);
-        hardware.applyVolts(latestVolts);
+        targetSpeedRPS = speedRPS;
+        hardware.setSpeed(speedRPS);
+    }
+
+    /**
+     * Resets the PID controller with current config values.
+     */
+    private void resetPid() {
+        hardware.resetPid(kV.getAsDouble(), kP.getAsDouble());
     }
 
     /**
@@ -75,7 +137,9 @@ public class IntakeFrontSubsystem extends SubsystemBase {
     private void cleanup() {
         hardware.stop();
         currentMode = "idle";
-        latestVolts = 0;
+        targetSpeedRPS = 0;
+        stallTimer.reset();
+        isStalled = false;
     }
 
     //endregion
@@ -88,7 +152,7 @@ public class IntakeFrontSubsystem extends SubsystemBase {
     public Command stopCommand() {
         return runOnce(() -> {
             currentMode = "stopped";
-            latestVolts = 0;
+            targetSpeedRPS = 0;
             hardware.stop();
         });
     }
@@ -97,20 +161,28 @@ public class IntakeFrontSubsystem extends SubsystemBase {
      * @return a command that runs the intake to suck in game pieces
      */
     public Command intakeCommand() {
-        return run(() -> {
-            currentMode = "intaking";
-            applyVolts(Util.MAX_VOLTS * getSpeedFactor());
-        }).finallyDo(this::cleanup);
+        return startRun(
+            () -> {
+                currentMode = "intaking";
+                resetPid();
+                stallTimer.reset();
+            },
+            () -> applySpeed(intakeSpeedRPS.getAsDouble())
+        ).finallyDo(this::cleanup);
     }
 
     /**
      * @return a command that runs the intake in reverse (eject)
      */
     public Command ejectCommand() {
-        return run(() -> {
-            currentMode = "ejecting";
-            applyVolts(-Util.MAX_VOLTS * getSpeedFactor());
-        }).finallyDo(this::cleanup);
+        return startRun(
+            () -> {
+                currentMode = "ejecting";
+                resetPid();
+                stallTimer.reset();
+            },
+            () -> applySpeed(-ejectSpeedRPS.getAsDouble())
+        ).finallyDo(this::cleanup);
     }
 
     /**
@@ -121,7 +193,7 @@ public class IntakeFrontSubsystem extends SubsystemBase {
             () -> {
                 // Initialize: stop motor once
                 currentMode = "idle";
-                latestVolts = 0;
+                targetSpeedRPS = 0;
                 hardware.stop();
             },
             () -> {
@@ -145,7 +217,8 @@ public class IntakeFrontSubsystem extends SubsystemBase {
      */
     public void runIntake() {
         currentMode = "intaking";
-        applyVolts(Util.MAX_VOLTS * getSpeedFactor());
+        resetPid();
+        applySpeed(intakeSpeedRPS.getAsDouble());
     }
 
     /**
@@ -156,7 +229,8 @@ public class IntakeFrontSubsystem extends SubsystemBase {
      */
     public void runEject() {
         currentMode = "ejecting";
-        applyVolts(-Util.MAX_VOLTS * getSpeedFactor());
+        resetPid();
+        applySpeed(-ejectSpeedRPS.getAsDouble());
     }
 
     /**
