@@ -22,6 +22,7 @@ import frc.robot.subsystems.intakefront.IntakeFrontSubsystem;
  * <ul>
  *   <li>{@code IntakeFront/SpeedPercent} - Motor speed (0-100%)</li>
  *   <li>{@code IntakeFront/Inverted?} - Toggle if motor spins wrong direction</li>
+ *   <li>{@code IntakeFront/CurrentLimit} - Motor current limit in amps</li>
  * </ul>
  */
 public class IntakeFrontTestbot extends TimedRobot {
@@ -52,6 +53,7 @@ public class IntakeFrontTestbot extends TimedRobot {
         System.out.println(">>> Configuration:");
         System.out.println("    IntakeFront/SpeedPercent = Motor speed (0-100%)");
         System.out.println("    IntakeFront/Inverted? = Toggle if motor spins wrong direction");
+        System.out.println("    IntakeFront/CurrentLimit = Motor current limit in amps");
     }
 
     @Override
@@ -60,8 +62,8 @@ public class IntakeFrontTestbot extends TimedRobot {
     }
 
     @Override
-    public void teleopInit() {}
-
-    @Override
-    public void autonomousInit() {}
+    public void disabledInit() {
+        // Stop motors immediately when robot is disabled
+        intake.stop();
+    }
 }

@@ -2,6 +2,7 @@ package frc.robot.subsystems.intakefront;
 
 import java.util.Objects;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -48,6 +49,13 @@ public class IntakeFrontSubsystem extends SubsystemBase {
     }
 
     /**
+     * Gets the clamped speed percentage (0-100).
+     */
+    private double getSpeedFactor() {
+        return MathUtil.clamp(speedPercent.getAsDouble(), 0, 100) / 100.0;
+    }
+
+    /**
      * Applies voltage to the intake motor, respecting the inversion setting.
      *
      * @param volts the voltage to apply (positive = intake direction)
@@ -59,6 +67,15 @@ public class IntakeFrontSubsystem extends SubsystemBase {
         }
         latestVolts = Util.clampVolts(volts);
         hardware.applyVolts(latestVolts);
+    }
+
+    /**
+     * Cleanup helper - stops motor and resets state.
+     */
+    private void cleanup() {
+        hardware.stop();
+        currentMode = "idle";
+        latestVolts = 0;
     }
 
     //endregion
@@ -82,13 +99,8 @@ public class IntakeFrontSubsystem extends SubsystemBase {
     public Command intakeCommand() {
         return run(() -> {
             currentMode = "intaking";
-            double pct = speedPercent.getAsDouble() / 100.0;
-            applyVolts(12.0 * pct);
-        }).finallyDo(() -> {
-            hardware.stop();
-            currentMode = "idle";
-            latestVolts = 0;
-        });
+            applyVolts(Util.MAX_VOLTS * getSpeedFactor());
+        }).finallyDo(this::cleanup);
     }
 
     /**
@@ -97,55 +109,61 @@ public class IntakeFrontSubsystem extends SubsystemBase {
     public Command ejectCommand() {
         return run(() -> {
             currentMode = "ejecting";
-            double pct = speedPercent.getAsDouble() / 100.0;
-            applyVolts(-12.0 * pct);
-        }).finallyDo(() -> {
-            hardware.stop();
-            currentMode = "idle";
-            latestVolts = 0;
-        });
+            applyVolts(-Util.MAX_VOLTS * getSpeedFactor());
+        }).finallyDo(this::cleanup);
     }
 
     /**
-     * @return a command that does nothing (idle)
+     * @return a command that idles the intake (stops motor once, then does nothing)
      */
     public Command idleCommand() {
-        return run(() -> {
-            currentMode = "idle";
-            latestVolts = 0;
-            hardware.stop();
-        });
+        return startRun(
+            () -> {
+                // Initialize: stop motor once
+                currentMode = "idle";
+                latestVolts = 0;
+                hardware.stop();
+            },
+            () -> {
+                // Execute: do nothing (motor stays stopped)
+            }
+        );
     }
 
     //endregion
 
     //region Direct control methods ------------------------------------------------
+    // WARNING: These methods do not have automatic cleanup like commands.
+    // If you call runIntake() or runEject(), you MUST call stop() when done,
+    // or the motor will keep running indefinitely.
 
     /**
      * Directly runs the intake (for use outside command system).
+     * <p>
+     * <b>WARNING:</b> You must call {@link #stop()} when done, or the motor
+     * will keep running indefinitely.
      */
     public void runIntake() {
         currentMode = "intaking";
-        double pct = speedPercent.getAsDouble() / 100.0;
-        applyVolts(12.0 * pct);
+        applyVolts(Util.MAX_VOLTS * getSpeedFactor());
     }
 
     /**
      * Directly runs the intake in reverse (for use outside command system).
+     * <p>
+     * <b>WARNING:</b> You must call {@link #stop()} when done, or the motor
+     * will keep running indefinitely.
      */
     public void runEject() {
         currentMode = "ejecting";
-        double pct = speedPercent.getAsDouble() / 100.0;
-        applyVolts(-12.0 * pct);
+        applyVolts(-Util.MAX_VOLTS * getSpeedFactor());
     }
 
     /**
      * Directly stops the intake (for use outside command system).
      */
     public void stop() {
-        currentMode = "idle";
-        latestVolts = 0;
-        hardware.stop();
+        cleanup();
     }
 
     //endregion

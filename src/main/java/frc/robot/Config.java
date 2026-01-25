@@ -489,6 +489,9 @@ public interface Config {
          * Toggle this if the motor spins the wrong way (ejecting instead of intaking).
          */
         BooleanSupplier inverted = pref("IntakeFront/Inverted?", false);
+
+        /** Current limit for the intake motor in amps */
+        DoubleSupplier currentLimit = pref("IntakeFront/CurrentLimit", 40.0);
     }
 
 }

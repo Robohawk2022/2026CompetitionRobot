@@ -7,12 +7,16 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import edu.wpi.first.math.MathUtil;
+
 import static frc.robot.Config.IntakeFront.*;
 
 /**
  * Implements {@link IntakeFrontHardware} using a REV SparkMax motor controller.
  */
 public class IntakeFrontHardwareSparkMax implements IntakeFrontHardware {
+
+    private static final double MAX_VOLTAGE = 12.0;
 
     private final SparkMax motor;
     private final RelativeEncoder encoder;
@@ -28,12 +32,14 @@ public class IntakeFrontHardwareSparkMax implements IntakeFrontHardware {
         // Configure motor
         SparkMaxConfig config = new SparkMaxConfig();
         config.idleMode(IdleMode.kBrake);
-        config.smartCurrentLimit(40);
+        config.smartCurrentLimit((int) currentLimit.getAsDouble());
         motor.configure(config, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters);
     }
 
     @Override
     public void applyVolts(double volts) {
+        // Clamp voltage for safety
+        volts = MathUtil.clamp(volts, -MAX_VOLTAGE, MAX_VOLTAGE);
         motor.setVoltage(volts);
     }
 
@@ -45,10 +51,5 @@ public class IntakeFrontHardwareSparkMax implements IntakeFrontHardware {
     @Override
     public double getMotorAmps() {
         return motor.getOutputCurrent();
-    }
-
-    @Override
-    public void stop() {
-        motor.setVoltage(0);
     }
 }

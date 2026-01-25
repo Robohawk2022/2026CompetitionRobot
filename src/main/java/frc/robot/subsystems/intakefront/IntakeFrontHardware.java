@@ -9,6 +9,8 @@ public interface IntakeFrontHardware {
 
     /**
      * Applies voltage to the intake motor.
+     * <p>
+     * Implementations should clamp voltage to [-12, 12] for safety.
      *
      * @param volts the voltage to apply (-12 to 12)
      */
@@ -27,5 +29,7 @@ public interface IntakeFrontHardware {
     /**
      * Stops the motor.
      */
-    void stop();
+    default void stop() {
+        applyVolts(0);
+    }
 }
