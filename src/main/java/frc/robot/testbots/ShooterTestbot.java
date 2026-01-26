@@ -1,8 +1,11 @@
 package frc.robot.testbots;
 
+import java.util.Set;
+
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.shooter.ShooterHardware;
@@ -39,7 +42,10 @@ public class ShooterTestbot extends TimedRobot {
 
         // this will run the shooter at the desired speed whenever someone
         // holds down the A button (you can use this for tuning)
-        controller.a().whileTrue(shooter.speedCommand(desiredSpeed));
+        // using defer() so the command reads the current desiredSpeed each time
+        // the button is pressed, not the value at binding time
+        controller.a().whileTrue(
+            Commands.defer(() -> shooter.speedCommand(desiredSpeed), Set.of(shooter)));
 
         // this displays desired speed in the dashboard so you can configure
         // it during testing
