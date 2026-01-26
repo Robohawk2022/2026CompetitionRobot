@@ -473,6 +473,21 @@ public interface Config {
     }
 
     /**
+     * Configuration for the LED subsystem using REV Blinkin.
+     * <p>
+     * The Blinkin is controlled via PWM like a Spark motor controller.
+     * Different "speed" values (-1.0 to 1.0) select colors and patterns.
+     *
+     * @see frc.robot.subsystems.led.LEDSignal
+     */
+    interface LED {
+
+        /** PWM port for the REV Blinkin LED controller */
+        int PWM_PORT = 0;
+
+    }
+
+    /*
      * Configuration for the front intake subsystem.
      * <p>
      * Uses closed-loop velocity control with separate intake/eject speeds.
