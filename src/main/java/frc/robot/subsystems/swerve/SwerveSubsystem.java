@@ -1,6 +1,7 @@
 package frc.robot.subsystems.swerve;
 
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.MathUtil;
@@ -21,7 +22,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.vision.LimelightEstimator;
 import frc.robot.subsystems.vision.VisionEstimateResult;
-import frc.robot.util.PDController;
 import frc.robot.util.Util;
 
 import static frc.robot.Config.Swerve.*;
@@ -470,8 +470,8 @@ public class SwerveSubsystem extends SubsystemBase {
      * @param xSupplier      forward/backward speed (-1 to 1)
      * @param ySupplier      left/right speed (-1 to 1)
      * @param rotSupplier    rotation speed (-1 to 1)
-     * @param sniperTrigger  sniper mode trigger axis (0 to 1)
-     * @param turboTrigger   turbo mode trigger axis (0 to 1)
+     * @param sniperTrigger   sniper mode trigger
+     * @param turboTrigger    turbo mode trigger
      * @param fieldRelative  whether to drive field-relative
      * @return the drive command
      */
@@ -479,8 +479,8 @@ public class SwerveSubsystem extends SubsystemBase {
             DoubleSupplier xSupplier,
             DoubleSupplier ySupplier,
             DoubleSupplier rotSupplier,
-            DoubleSupplier sniperTrigger,
-            DoubleSupplier turboTrigger,
+            BooleanSupplier sniperTrigger,
+            BooleanSupplier turboTrigger,
             boolean fieldRelative) {
 
         return run(() -> {
@@ -491,8 +491,8 @@ public class SwerveSubsystem extends SubsystemBase {
             double rot = rotSupplier.getAsDouble();
 
             // check trigger thresholds
-            sniperActive = sniperTrigger.getAsDouble() > 0.5;
-            turboActive = turboTrigger.getAsDouble() > 0.5;
+            sniperActive = sniperTrigger.getAsBoolean();
+            turboActive = turboTrigger.getAsBoolean();
 
             // clamp inputs to [-1, 1]
             x = MathUtil.clamp(x, -1.0, 1.0);
@@ -581,16 +581,16 @@ public class SwerveSubsystem extends SubsystemBase {
      * @param xSupplier       forward/back speed (-1 to 1)
      * @param ySupplier       left/right strafe speed (-1 to 1)
      * @param rotSupplier     rotation trim input (-1 to 1)
-     * @param sniperTrigger   sniper mode trigger axis (0 to 1)
-     * @param turboTrigger    turbo mode trigger axis (0 to 1)
+     * @param sniperTrigger   sniper mode trigger
+     * @param turboTrigger    turbo mode trigger
      * @return the face-target drive command
      */
     public Command faceTargetDriveCommand(
             DoubleSupplier xSupplier,
             DoubleSupplier ySupplier,
             DoubleSupplier rotSupplier,
-            DoubleSupplier sniperTrigger,
-            DoubleSupplier turboTrigger) {
+            BooleanSupplier sniperTrigger,
+            BooleanSupplier turboTrigger) {
 
         return startRun(
             () -> {
@@ -623,8 +623,8 @@ public class SwerveSubsystem extends SubsystemBase {
                 double vy = y * maxSpeedMps;
 
                 // check trigger thresholds
-                sniperActive = sniperTrigger.getAsDouble() > 0.5;
-                turboActive = turboTrigger.getAsDouble() > 0.5;
+                sniperActive = sniperTrigger.getAsBoolean();
+                turboActive = turboTrigger.getAsBoolean();
 
                 // track effective max speed for desaturation
                 double effectiveMaxSpeed = maxSpeedMps;
@@ -695,16 +695,16 @@ public class SwerveSubsystem extends SubsystemBase {
      * @param radialSupplier   radial input (-1 to 1), positive = toward target
      * @param tangentSupplier  tangent input (-1 to 1), positive = CCW orbit
      * @param rotSupplier      rotation trim input (-1 to 1)
-     * @param sniperTrigger    sniper mode trigger axis (0 to 1)
-     * @param turboTrigger     turbo mode trigger axis (0 to 1)
+     * @param sniperTrigger    sniper mode trigger
+     * @param turboTrigger     turbo mode trigger
      * @return the orbit command
      */
     public Command orbitCommand(
             DoubleSupplier radialSupplier,
             DoubleSupplier tangentSupplier,
             DoubleSupplier rotSupplier,
-            DoubleSupplier sniperTrigger,
-            DoubleSupplier turboTrigger) {
+            BooleanSupplier sniperTrigger,
+            BooleanSupplier turboTrigger) {
 
         return startRun(
             () -> {
@@ -752,8 +752,8 @@ public class SwerveSubsystem extends SubsystemBase {
                 double tangentSpeed = tangentInput * Units.feetToMeters(maxTangentSpeedFps.getAsDouble());
 
                 // check trigger thresholds
-                sniperActive = sniperTrigger.getAsDouble() > 0.5;
-                turboActive = turboTrigger.getAsDouble() > 0.5;
+                sniperActive = sniperTrigger.getAsBoolean();
+                turboActive = turboTrigger.getAsBoolean();
 
                 // apply speed modifiers (sniper takes priority)
                 if (sniperActive) {

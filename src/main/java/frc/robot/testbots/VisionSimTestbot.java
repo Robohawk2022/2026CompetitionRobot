@@ -7,7 +7,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.GameController;
 import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.vision.LimelightHardwareSim;
@@ -30,7 +30,7 @@ public class VisionSimTestbot extends TimedRobot {
 
     private SwerveSubsystem swerve;
     private LimelightHardwareSim limelightSim;
-    private CommandXboxController controller;
+    private GameController controller;
 
     @Override
     public void robotInit() {
@@ -38,7 +38,7 @@ public class VisionSimTestbot extends TimedRobot {
 
         // create swerve with simulation hardware
         swerve = new SwerveSubsystem(new SwerveHardwareSim());
-        controller = new CommandXboxController(0);
+        controller = new GameController(0);
 
         // create limelight simulation
         limelightSim = new LimelightHardwareSim();
@@ -53,9 +53,9 @@ public class VisionSimTestbot extends TimedRobot {
 
         // default to field-relative driving
         swerve.setDefaultCommand(swerve.driveCommand(
-                () -> -MathUtil.applyDeadband(controller.getRawAxis(1), DEADZONE),
-                () -> -MathUtil.applyDeadband(controller.getRawAxis(0), DEADZONE),
-                () -> -MathUtil.applyDeadband(controller.getRawAxis(2), DEADZONE),
+                () -> -MathUtil.applyDeadband(controller.getLeftY(), DEADZONE),
+                () -> -MathUtil.applyDeadband(controller.getLeftX(), DEADZONE),
+                () -> -MathUtil.applyDeadband(controller.getRightX(), DEADZONE),
                 true));
 
         // button bindings

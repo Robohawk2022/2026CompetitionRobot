@@ -5,7 +5,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.GameController;
 import frc.robot.subsystems.led.LEDHardwareBlinkin;
 import frc.robot.subsystems.led.LEDHardwareSim;
 import frc.robot.subsystems.led.LEDSignal;
@@ -42,7 +42,7 @@ import frc.robot.subsystems.led.LEDSubsystem;
 public class LEDTestbot extends TimedRobot {
 
     private LEDSubsystem led;
-    private CommandXboxController controller;
+    private GameController controller;
     private SendableChooser<LEDSignal> signalChooser;
     private LEDSignal currentSignal = LEDSignal.IDLE;
 
@@ -53,7 +53,7 @@ public class LEDTestbot extends TimedRobot {
         // Use appropriate hardware based on environment
         led = new LEDSubsystem(
                 isSimulation() ? new LEDHardwareSim() : new LEDHardwareBlinkin());
-        controller = new CommandXboxController(0);
+        controller = new GameController(0);
 
         // Create signal chooser for Elastic
         signalChooser = new SendableChooser<>();
@@ -124,10 +124,10 @@ public class LEDTestbot extends TimedRobot {
         LEDSignal selected = signalChooser.getSelected();
         if (selected != null && selected != currentSignal) {
             // Only update if no buttons are being held
-            if (!controller.getHID().getLeftBumper() &&
-                !controller.getHID().getRightBumper() &&
-                controller.getHID().getLeftTriggerAxis() < 0.5 &&
-                controller.getHID().getRightTriggerAxis() < 0.5) {
+            if (!controller.leftBumper().getAsBoolean() &&
+                !controller.rightBumper().getAsBoolean() &&
+                controller.getLeftTriggerAxis() < 0.5 &&
+                controller.getRightTriggerAxis() < 0.5) {
                 setSignal(selected);
             }
         }

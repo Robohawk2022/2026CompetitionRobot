@@ -1,12 +1,13 @@
 package frc.robot.subsystems.swerve;
 
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.GameController;
 
 import static frc.robot.Config.Swerve.*;
 
@@ -23,62 +24,17 @@ import static frc.robot.Config.Swerve.*;
  * </ul>
  * <p>
  * Applies deadband from {@code Config.Swerve.deadzone}.
- * <p>
- * Supports two controller types via {@code Config.Swerve.useXboxMapping}:
- * <ul>
- *   <li>8BitDo (default): Right stick X on axis 2, triggers on axes 4/5 (-1 to 1)</li>
- *   <li>Xbox (for simulation): Right stick X on axis 4, triggers on axes 2/3 (0 to 1)</li>
- * </ul>
  */
 public class SwerveTeleopSpeedSupplier {
 
-    // Axis indices for 8BitDo Ultimate controller (DirectInput mode)
-    private static final int BITDO_LEFT_X_AXIS = 0;
-    private static final int BITDO_LEFT_Y_AXIS = 1;
-    private static final int BITDO_RIGHT_X_AXIS = 2;
-    private static final int BITDO_LEFT_TRIGGER_AXIS = 5;   // swapped in DirectInput mode
-    private static final int BITDO_RIGHT_TRIGGER_AXIS = 4;  // swapped in DirectInput mode
-
-    // Button indices for 8BitDo Ultimate controller (DirectInput mode, WPILib 1-indexed)
-    // Based on SDL GameControllerDB mappings for 8BitDo Ultimate
-    private static final int BITDO_A_BUTTON = 1;            // b0 + 1
-    private static final int BITDO_B_BUTTON = 2;            // b1 + 1
-    private static final int BITDO_X_BUTTON = 4;            // b3 + 1
-    private static final int BITDO_Y_BUTTON = 5;            // b4 + 1
-    private static final int BITDO_LEFT_BUMPER = 7;         // b6 + 1
-    private static final int BITDO_RIGHT_BUMPER = 8;        // b7 + 1
-    private static final int BITDO_BACK_BUTTON = 11;        // b10 + 1
-    private static final int BITDO_START_BUTTON = 12;       // b11 + 1
-    private static final int BITDO_LEFT_STICK_BUTTON = 14;  // b13 + 1
-    private static final int BITDO_RIGHT_STICK_BUTTON = 15; // b14 + 1
-
-    // Axis indices for Xbox controller (WPILib standard)
-    private static final int XBOX_LEFT_X_AXIS = 0;
-    private static final int XBOX_LEFT_Y_AXIS = 1;
-    private static final int XBOX_RIGHT_X_AXIS = 4;
-    private static final int XBOX_LEFT_TRIGGER_AXIS = 2;
-    private static final int XBOX_RIGHT_TRIGGER_AXIS = 3;
-
-    // Button indices for Xbox controller (WPILib standard)
-    private static final int XBOX_A_BUTTON = 1;
-    private static final int XBOX_B_BUTTON = 2;
-    private static final int XBOX_X_BUTTON = 3;
-    private static final int XBOX_Y_BUTTON = 4;
-    private static final int XBOX_LEFT_BUMPER = 5;
-    private static final int XBOX_RIGHT_BUMPER = 6;
-    private static final int XBOX_BACK_BUTTON = 7;
-    private static final int XBOX_START_BUTTON = 8;
-    private static final int XBOX_LEFT_STICK_BUTTON = 9;
-    private static final int XBOX_RIGHT_STICK_BUTTON = 10;
-
-    private final CommandXboxController controller;
+    private final GameController controller;
 
     /**
      * Creates a {@link SwerveTeleopSpeedSupplier}.
      *
-     * @param controller the Xbox controller for driver input (required)
+     * @param controller the game controller for driver input (required)
      */
-    public SwerveTeleopSpeedSupplier(CommandXboxController controller) {
+    public SwerveTeleopSpeedSupplier(GameController controller) {
         this.controller = Objects.requireNonNull(controller);
     }
 
@@ -86,60 +42,35 @@ public class SwerveTeleopSpeedSupplier {
      * @return supplier for forward/backward speed (-1 to 1), with deadband applied
      */
     public DoubleSupplier xSupplier() {
-        return () -> {
-            int axis = useXboxMapping.getAsBoolean() ? XBOX_LEFT_Y_AXIS : BITDO_LEFT_Y_AXIS;
-            return -MathUtil.applyDeadband(controller.getHID().getRawAxis(axis), deadzone.getAsDouble());
-        };
+        return () -> -MathUtil.applyDeadband(controller.getLeftY(), deadzone.getAsDouble());
     }
 
     /**
      * @return supplier for left/right strafe speed (-1 to 1), with deadband applied
      */
     public DoubleSupplier ySupplier() {
-        return () -> {
-            int axis = useXboxMapping.getAsBoolean() ? XBOX_LEFT_X_AXIS : BITDO_LEFT_X_AXIS;
-            return -MathUtil.applyDeadband(controller.getHID().getRawAxis(axis), deadzone.getAsDouble());
-        };
+        return () -> -MathUtil.applyDeadband(controller.getLeftX(), deadzone.getAsDouble());
     }
 
     /**
      * @return supplier for rotation speed (-1 to 1), with deadband applied
      */
     public DoubleSupplier rotSupplier() {
-        return () -> {
-            int axis = useXboxMapping.getAsBoolean() ? XBOX_RIGHT_X_AXIS : BITDO_RIGHT_X_AXIS;
-            return -MathUtil.applyDeadband(controller.getHID().getRawAxis(axis), deadzone.getAsDouble());
-        };
+        return () -> -MathUtil.applyDeadband(controller.getRightX(), deadzone.getAsDouble());
     }
 
     /**
      * @return supplier for sniper mode trigger axis (0 to 1)
      */
-    public DoubleSupplier sniperTrigger() {
-        return () -> {
-            if (useXboxMapping.getAsBoolean()) {
-                // Xbox triggers: 0 (not pressed) to 1 (fully pressed)
-                return controller.getHID().getRawAxis(XBOX_LEFT_TRIGGER_AXIS);
-            } else {
-                // 8BitDo triggers: -1 (not pressed) to 1 (fully pressed), normalize to 0-1
-                return (controller.getHID().getRawAxis(BITDO_LEFT_TRIGGER_AXIS) + 1) / 2;
-            }
-        };
+    public BooleanSupplier sniperTrigger() {
+        return controller.leftTriggerSupplier();
     }
 
     /**
      * @return supplier for turbo mode trigger axis (0 to 1)
      */
-    public DoubleSupplier turboTrigger() {
-        return () -> {
-            if (useXboxMapping.getAsBoolean()) {
-                // Xbox triggers: 0 (not pressed) to 1 (fully pressed)
-                return controller.getHID().getRawAxis(XBOX_RIGHT_TRIGGER_AXIS);
-            } else {
-                // 8BitDo triggers: -1 (not pressed) to 1 (fully pressed), normalize to 0-1
-                return (controller.getHID().getRawAxis(BITDO_RIGHT_TRIGGER_AXIS) + 1) / 2;
-            }
-        };
+    public BooleanSupplier turboTrigger() {
+        return controller.rightTriggerSupplier();
     }
 
     /**
@@ -214,66 +145,56 @@ public class SwerveTeleopSpeedSupplier {
                 turboTrigger());
     }
 
-    //region Button triggers ----------------------------------------------------
+    //region Button triggers (delegated to GameController) ---------------------
 
-    /** @return trigger for A button (mapped for controller type) */
+    /** @return trigger for A button */
     public Trigger a() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_A_BUTTON : BITDO_A_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return controller.a();
     }
 
-    /** @return trigger for B button (mapped for controller type) */
+    /** @return trigger for B button */
     public Trigger b() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_B_BUTTON : BITDO_B_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return controller.b();
     }
 
-    /** @return trigger for X button (mapped for controller type) */
+    /** @return trigger for X button */
     public Trigger x() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_X_BUTTON : BITDO_X_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return controller.x();
     }
 
-    /** @return trigger for Y button (mapped for controller type) */
+    /** @return trigger for Y button */
     public Trigger y() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_Y_BUTTON : BITDO_Y_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return controller.y();
     }
 
-    /** @return trigger for left bumper (mapped for controller type) */
+    /** @return trigger for left bumper */
     public Trigger leftBumper() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_LEFT_BUMPER : BITDO_LEFT_BUMPER;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return controller.leftBumper();
     }
 
-    /** @return trigger for right bumper (mapped for controller type) */
+    /** @return trigger for right bumper */
     public Trigger rightBumper() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_RIGHT_BUMPER : BITDO_RIGHT_BUMPER;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return controller.rightBumper();
     }
 
-    /** @return trigger for back/select button (mapped for controller type) */
+    /** @return trigger for back/select button */
     public Trigger back() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_BACK_BUTTON : BITDO_BACK_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return controller.back();
     }
 
-    /** @return trigger for start button (mapped for controller type) */
+    /** @return trigger for start button */
     public Trigger start() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_START_BUTTON : BITDO_START_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return controller.start();
     }
 
-    /** @return trigger for left stick click (mapped for controller type) */
+    /** @return trigger for left stick click */
     public Trigger leftStick() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_LEFT_STICK_BUTTON : BITDO_LEFT_STICK_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return controller.leftStick();
     }
 
-    /** @return trigger for right stick click (mapped for controller type) */
+    /** @return trigger for right stick click */
     public Trigger rightStick() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_RIGHT_STICK_BUTTON : BITDO_RIGHT_STICK_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return controller.rightStick();
     }
 
     //endregion

@@ -17,7 +17,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.swerve.SwerveHardware;
 import frc.robot.subsystems.swerve.SwerveHardwareCTRE;
 import frc.robot.subsystems.swerve.SwerveHardwareSim;
@@ -31,8 +30,8 @@ import static frc.robot.Config.Swerve.*;
 
 public class RobotContainer {
 
-  final CommandXboxController driver = new CommandXboxController(0);
-  final CommandXboxController operator = new CommandXboxController(1);
+  final GameController driver = new GameController(0);
+  final GameController operator = new GameController(1);
 
   final SwerveSubsystem swerve;
 

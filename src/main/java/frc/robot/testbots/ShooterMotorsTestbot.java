@@ -11,7 +11,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.GameController;
 
 import static frc.robot.util.Util.clampVolts;
 
@@ -44,7 +44,7 @@ public class ShooterMotorsTestbot extends TimedRobot {
     final SparkMax intakeMotor;
     final SparkMax indexMotor;
     final SparkMax shootMotor;
-    final CommandXboxController controller;
+    final GameController controller;
 
     // configurable percentages (set via SmartDashboard)
     // intake function settings
@@ -75,7 +75,7 @@ public class ShooterMotorsTestbot extends TimedRobot {
         indexMotor.configure(config, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters);
         shootMotor.configure(config, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters);
 
-        controller = new CommandXboxController(0);
+        controller = new GameController(0);
 
         // button bindings
         controller.a().whileTrue(intakeCommand());

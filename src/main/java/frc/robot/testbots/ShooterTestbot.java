@@ -6,8 +6,8 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.GameController;
 import frc.robot.subsystems.shooter.ShooterHardware;
 import frc.robot.subsystems.shooter.ShooterHardwareSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
@@ -19,7 +19,7 @@ public class ShooterTestbot extends TimedRobot {
 
     final ShooterHardware hardware;
     final ShooterSubsystem shooter;
-    final CommandXboxController controller;
+    final GameController controller;
     double desiredSpeed;
 
     public ShooterTestbot() {
@@ -29,7 +29,7 @@ public class ShooterTestbot extends TimedRobot {
         // hardware = new ShooterHardwareRev();
 
         shooter = new ShooterSubsystem(hardware);
-        controller = new CommandXboxController(0);
+        controller = new GameController(0);
 
         // default behavior for the shooter is to be idle (0 volts)
         shooter.setDefaultCommand(shooter.idleCommand());
