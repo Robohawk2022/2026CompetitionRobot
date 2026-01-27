@@ -8,7 +8,6 @@ import frc.robot.GameController;
 import frc.robot.subsystems.swerve.SwerveHardwareCTRE;
 import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
-import frc.robot.subsystems.swerve.SwerveTeleopSpeedSupplier;
 
 /**
  * Standalone test program for the swerve drive subsystem.
@@ -39,37 +38,17 @@ public class SwerveTestbot extends TimedRobot {
         System.out.println(">>> Button bindings configured - press A, B, X, Y, Start, Back, etc.");
 
         // default to field-relative driving with turbo/sniper modes
-        // Uses SwerveTeleopSpeedSupplier which respects Config.Swerve.useXboxMapping toggle
-        SwerveTeleopSpeedSupplier driverInput = new SwerveTeleopSpeedSupplier(controller);
-        swerve.setDefaultCommand(driverInput.driveCommand(swerve));
-
-        // // button bindings with logging
-        // controller.start().onTrue(logButton("Start").andThen(swerve.zeroHeadingCommand()));
-        // controller.back().onTrue(logButton("Back").andThen(swerve.resetPoseCommand()));
-        // controller.x().onTrue(logButton("X")).whileTrue(swerve.idleCommand());
-        // controller.y().onTrue(logButton("Y"));
-        // controller.a().onTrue(logButton("A"));
-        // controller.b().onTrue(logButton("B"));
-        // controller.leftBumper().onTrue(logButton("LB"));
-        // controller.rightBumper().onTrue(logButton("RB"));
-        // controller.leftTrigger().onTrue(logButton("LT"));
-        // controller.rightTrigger().onTrue(logButton("RT"));
-        // controller.leftStick().onTrue(logButton("LeftStick"));
-        // controller.rightStick().onTrue(logButton("RightStick"));
-        // controller.pov(0).onTrue(logButton("DPad-Up"));
-        // controller.pov(90).onTrue(logButton("DPad-Right"));
-        // controller.pov(180).onTrue(logButton("DPad-Down"));
-        // controller.pov(270).onTrue(logButton("DPad-Left"));
+        swerve.setDefaultCommand(swerve.driveCommand(controller));
 
         // Odometry reset when both thumbsticks are clicked
-        driverInput.leftStick()
-                .and(driverInput.rightStick())
+        controller.leftStick()
+                .and(controller.rightStick())
                 .onTrue(logButton("BothSticks").andThen(swerve.resetPoseCommand()));
 
         // Orbit mode: hold left bumper to orbit around the Reef while facing it
-        driverInput.leftBumper()
+        controller.leftBumper()
                 .onTrue(logButton("LB-Orbit"))
-                .whileTrue(driverInput.orbitCommand(swerve));
+                .whileTrue(swerve.orbitCommand(controller));
 
         // publish button tracking to Shuffleboard
         SmartDashboard.putData("ButtonLog", builder -> {

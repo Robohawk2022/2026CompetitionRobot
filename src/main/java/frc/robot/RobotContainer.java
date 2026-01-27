@@ -21,7 +21,6 @@ import frc.robot.subsystems.swerve.SwerveHardware;
 import frc.robot.subsystems.swerve.SwerveHardwareCTRE;
 import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
-import frc.robot.subsystems.swerve.SwerveTeleopSpeedSupplier;
 import frc.robot.util.CommandLogger;
 import frc.robot.util.Util;
 
@@ -121,18 +120,16 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    SwerveTeleopSpeedSupplier driverInput = new SwerveTeleopSpeedSupplier(driver);
-
     // default command: normal teleop drive
-    swerve.setDefaultCommand(driverInput.driveCommand(swerve));
+    swerve.setDefaultCommand(swerve.driveCommand(driver));
 
     // hold left bumper for orbit mode (face and orbit around target)
-    driverInput.leftBumper()
-        .whileTrue(driverInput.orbitCommand(swerve));
+    driver.leftBumper()
+        .whileTrue(swerve.orbitCommand(driver));
 
     // reset heading when both sticks clicked
-    driverInput.leftStick()
-        .and(driverInput.rightStick())
+    driver.leftStick()
+        .and(driver.rightStick())
         .onTrue(swerve.resetPoseCommand());
   }
 
