@@ -5,7 +5,6 @@ import java.util.Objects;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
@@ -27,10 +26,6 @@ import frc.robot.util.Util;
 import static frc.robot.Config.Swerve.*;
 import static frc.robot.Config.Odometry.enableDiagnostics;
 import static frc.robot.Config.Odometry.driftWarning;
-import static frc.robot.Config.Orbit.redTargetX;
-import static frc.robot.Config.Orbit.redTargetY;
-import static frc.robot.Config.Orbit.blueTargetX;
-import static frc.robot.Config.Orbit.blueTargetY;
 
 /**
  * Swerve drive subsystem with odometry and pose estimation.
@@ -43,7 +38,7 @@ public class SwerveSubsystem extends SubsystemBase {
     /** Enable verbose logging for debugging */
     static final boolean verboseLogging = true;
 
-//region Implementation --------------------------------------------------------
+//region Members & constructor -------------------------------------------------
 
     private final SwerveHardware hardware;
 
@@ -52,11 +47,6 @@ public class SwerveSubsystem extends SubsystemBase {
     private final Field2d field2d;
 
     private String currentMode = "idle";
-    private boolean turboActive = false;
-    private boolean sniperActive = false;
-
-    private double maxSpeedMps;
-    private double maxRotationRps;
 
     private VisionEstimateResult latestVisionResult;
 
@@ -95,9 +85,6 @@ public class SwerveSubsystem extends SubsystemBase {
         field2d = new Field2d();
         SmartDashboard.putData("Field", field2d);
 
-        // set initial max speeds from config
-        updateSpeedLimits();
-
         // initialize diagnostics
         diagnostics = new OdometryDiagnostics();
 
@@ -105,8 +92,6 @@ public class SwerveSubsystem extends SubsystemBase {
         SmartDashboard.putData(getName(), builder -> {
             builder.addStringProperty("Mode", () -> currentMode, null);
             builder.addBooleanProperty("Enabled?", DriverStation::isEnabled, null);
-            builder.addBooleanProperty("TurboActive?", () -> turboActive, null);
-            builder.addBooleanProperty("SniperActive?", () -> sniperActive, null);
             if (verboseLogging) {
                 builder.addDoubleProperty("PoseX", () -> Units.metersToFeet(getPose().getX()), null);
                 builder.addDoubleProperty("PoseY", () -> Units.metersToFeet(getPose().getY()), null);
@@ -130,14 +115,9 @@ public class SwerveSubsystem extends SubsystemBase {
         });
     }
 
-    /**
-     * Updates speed limits from preferences. Call periodically to allow
-     * runtime tuning.
-     */
-    private void updateSpeedLimits() {
-        maxSpeedMps = Units.feetToMeters(maxSpeedFps.getAsDouble());
-        maxRotationRps = Math.toRadians(maxRotationDps.getAsDouble());
-    }
+//endregion
+
+//region Periodic --------------------------------------------------------------
 
     @Override
     public void periodic() {
@@ -188,6 +168,10 @@ public class SwerveSubsystem extends SubsystemBase {
             Util.publishPose("Vision", latestVisionResult.getPose());
         }
     }
+
+//endregion
+
+//region Pose accessors --------------------------------------------------------
 
     /**
      * @return the current robot heading from the gyro
@@ -246,33 +230,9 @@ public class SwerveSubsystem extends SubsystemBase {
         hardware.zeroHeading();
     }
 
-    /**
-     * Drives the robot using the given speeds.
-     *
-     * @param speeds        chassis speeds (vx, vy in m/s, omega in rad/s)
-     * @param fieldRelative whether speeds are field-relative
-     */
-    public void drive(ChassisSpeeds speeds, boolean fieldRelative) {
-        drive(speeds, fieldRelative, maxSpeedMps);
-    }
+//endregion
 
-    /**
-     * Drives the robot using the given speeds with a custom max speed limit.
-     *
-     * @param speeds        chassis speeds (vx, vy in m/s, omega in rad/s)
-     * @param fieldRelative whether speeds are field-relative
-     * @param maxSpeed      maximum wheel speed for desaturation (m/s)
-     */
-    public void drive(ChassisSpeeds speeds, boolean fieldRelative, double maxSpeed) {
-        if (fieldRelative) {
-            speeds = Util.fromDriverRelativeSpeeds(speeds, getHeading());
-        }
-
-        SwerveModuleState[] states = KINEMATICS.toSwerveModuleStates(speeds);
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, maxSpeed);
-        hardware.setModuleStates(states);
-        latestSpeed = speeds;
-    }
+//region Driving ---------------------------------------------------------------
 
     /**
      * @return the current chassis speeds
@@ -283,13 +243,11 @@ public class SwerveSubsystem extends SubsystemBase {
 
     /**
      * Drives the robot using robot-relative speeds.
-     * <p>
-     * This method is used by PathPlanner for autonomous path following.
-     *
+     * @param mode the mode to display for debugging
      * @param speeds robot-relative chassis speeds (vx, vy in m/s, omega in rad/s)
      */
-    public void driveRobotRelative(ChassisSpeeds speeds) {
-        currentMode = "path-following";
+    public void driveRobotRelative(String mode, ChassisSpeeds speeds) {
+        currentMode = mode;
 
         // Compensate for translational skew during rotation (20ms timestep)
         ChassisSpeeds discretizedSpeeds = ChassisSpeeds.discretize(speeds, Util.DT);
@@ -299,6 +257,23 @@ public class SwerveSubsystem extends SubsystemBase {
         hardware.setModuleStates(states);
         latestSpeed = discretizedSpeeds;
     }
+
+    /**
+     * Drives using pre-computed module states.
+     * <p>
+     * Used by commands that need custom desaturation logic (e.g., rotation-priority).
+     *
+     * @param mode the mode to display for debugging
+     * @param states the module states to apply
+     * @param speeds the chassis speeds for telemetry
+     */
+    public void driveStates(String mode, SwerveModuleState [] states, ChassisSpeeds speeds) {
+        currentMode = mode;
+        hardware.setModuleStates(states);
+        latestSpeed = speeds;
+    }
+
+//endregion
 
     /**
      * Sets the wheels to an X pattern to prevent movement.
@@ -326,34 +301,6 @@ public class SwerveSubsystem extends SubsystemBase {
      */
     public OdometryDiagnostics getDiagnostics() {
         return diagnostics;
-    }
-
-    /**
-     * Updates telemetry state for dashboard display.
-     * <p>
-     * Called by command classes to update mode and speed modifier indicators.
-     *
-     * @param mode         the current operating mode name
-     * @param sniperActive whether sniper mode is active
-     * @param turboActive  whether turbo mode is active
-     */
-    public void setTelemetry(String mode, boolean sniperActive, boolean turboActive) {
-        this.currentMode = mode;
-        this.sniperActive = sniperActive;
-        this.turboActive = turboActive;
-    }
-
-    /**
-     * Drives using pre-computed module states.
-     * <p>
-     * Used by commands that need custom desaturation logic (e.g., rotation-priority).
-     *
-     * @param states the module states to apply
-     * @param speeds the chassis speeds for telemetry
-     */
-    public void driveStates(SwerveModuleState[] states, ChassisSpeeds speeds) {
-        hardware.setModuleStates(states);
-        latestSpeed = speeds;
     }
 
 //endregion
@@ -426,21 +373,8 @@ public class SwerveSubsystem extends SubsystemBase {
      * @return the command
      */
     public Command fixedSpeedCommand(ChassisSpeeds speeds, double seconds) {
-        return run(() -> {
-            currentMode = "fixed";
-            drive(speeds, false);
-        }).withTimeout(seconds);
-    }
-
-    /**
-     * @return the target point (Tower position for 2026) for the current alliance
-     */
-    public Translation2d getTargetPoint() {
-        if (Util.isRedAlliance()) {
-            return new Translation2d(redTargetX.getAsDouble(), redTargetY.getAsDouble());
-        } else {
-            return new Translation2d(blueTargetX.getAsDouble(), blueTargetY.getAsDouble());
-        }
+        return run(() -> driveRobotRelative("auto", speeds))
+                .withTimeout(seconds);
     }
 
     /**

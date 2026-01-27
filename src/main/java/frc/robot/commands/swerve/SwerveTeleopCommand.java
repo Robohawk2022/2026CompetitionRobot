@@ -8,6 +8,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.GameController;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.util.Util;
 
 import static frc.robot.Config.Swerve.*;
 
@@ -87,11 +88,10 @@ public class SwerveTeleopCommand extends Command {
             mode = "teleop-field";
         }
 
-        // update subsystem telemetry
-        swerve.setTelemetry(mode, sniperActive, turboActive);
-
-        // drive field-relative
-        swerve.drive(new ChassisSpeeds(vx, vy, omega), true, effectiveMaxSpeed);
+        // always do field relative
+        ChassisSpeeds speeds = new ChassisSpeeds(vx, vy, omega);
+        speeds = Util.fromDriverRelativeSpeeds(speeds, swerve.getHeading());
+        swerve.driveRobotRelative("teleop", speeds);
     }
 
     @Override

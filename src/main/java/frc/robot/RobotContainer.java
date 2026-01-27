@@ -88,7 +88,7 @@ public class RobotContainer {
         swerve::getPose,                      // pose supplier
         swerve::resetPose,                    // pose reset consumer
         swerve::getCurrentSpeeds,             // chassis speeds supplier
-        swerve::driveRobotRelative,           // robot-relative chassis speeds consumer
+        speed -> swerve.driveRobotRelative("auto", speed),   // robot-relative chassis speeds consumer
         new PPHolonomicDriveController(       // path following controller
             new PIDConstants(                 // translation PID
                 translationKP.getAsDouble(),

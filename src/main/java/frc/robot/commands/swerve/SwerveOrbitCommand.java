@@ -51,9 +51,19 @@ public class SwerveOrbitCommand extends Command {
 
     @Override
     public void initialize() {
-        swerve.setTelemetry("orbit-locking", false, false);
         previousHeadingError = 0;
         initialLockAcquired = false;
+    }
+
+    /**
+     * @return the target point (Tower position for 2026) for the current alliance
+     */
+    public Translation2d getTargetPoint() {
+        if (Util.isRedAlliance()) {
+            return new Translation2d(redTargetX.getAsDouble(), redTargetY.getAsDouble());
+        } else {
+            return new Translation2d(blueTargetX.getAsDouble(), blueTargetY.getAsDouble());
+        }
     }
 
     @Override
@@ -63,7 +73,7 @@ public class SwerveOrbitCommand extends Command {
         double maxRotationRps = Math.toRadians(maxRotationDps.getAsDouble());
 
         // get orbit point for current alliance
-        Translation2d orbitPoint = swerve.getTargetPoint();
+        Translation2d orbitPoint = getTargetPoint();
         Pose2d robotPose = swerve.getPose();
         Translation2d robotPos = robotPose.getTranslation();
 
@@ -74,7 +84,7 @@ public class SwerveOrbitCommand extends Command {
         // prevent singularity when too close to orbit point
         double minDist = minDistance.getAsDouble();
         if (distance < minDist) {
-            swerve.drive(Util.ZERO_SPEED, false);
+            swerve.driveRobotRelative("orbit", Util.ZERO_SPEED);
             return;
         }
 
@@ -122,19 +132,6 @@ public class SwerveOrbitCommand extends Command {
             initialLockAcquired = true;
         }
         boolean canMove = initialLockAcquired;
-
-        // update mode based on lock state and speed mode
-        String mode;
-        if (!initialLockAcquired) {
-            mode = "orbit-locking";
-        } else if (sniperActive) {
-            mode = "orbit-sniper";
-        } else if (turboActive) {
-            mode = "orbit-turbo";
-        } else {
-            mode = "orbit";
-        }
-        swerve.setTelemetry(mode, sniperActive, turboActive);
 
         // combine radial and tangent into field-relative velocity
         // suppress translation until locked on target
@@ -191,7 +188,7 @@ public class SwerveOrbitCommand extends Command {
 
         // if within limits, just drive normally
         if (maxWheelSpeed <= maxSpeed) {
-            swerve.driveStates(states, robotSpeeds);
+            swerve.driveStates("orbit", states, robotSpeeds);
             return;
         }
 
@@ -224,7 +221,7 @@ public class SwerveOrbitCommand extends Command {
 
         states = KINEMATICS.toSwerveModuleStates(robotSpeeds);
         SwerveDriveKinematics.desaturateWheelSpeeds(states, maxSpeed);
-        swerve.driveStates(states, robotSpeeds);
+        swerve.driveStates("orbit", states, robotSpeeds);
     }
 
     @Override

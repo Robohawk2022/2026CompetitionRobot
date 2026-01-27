@@ -33,7 +33,7 @@ public class SwerveTestbot extends TimedRobot {
         controller = new GameController(0);
 
         // reset wheels to forward facing on startup
-        swerve.resetWheelsCommand().schedule();
+        CommandScheduler.getInstance().schedule(swerve.resetWheelsCommand());
 
         System.out.println(">>> Button bindings configured - press A, B, X, Y, Start, Back, etc.");
 
