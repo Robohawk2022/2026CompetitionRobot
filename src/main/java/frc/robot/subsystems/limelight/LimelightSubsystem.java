@@ -18,8 +18,8 @@ import java.util.Objects;
 import static frc.robot.Config.Limelight.closeRange;
 import static frc.robot.Config.Limelight.enabled;
 import static frc.robot.Config.Limelight.limelightName;
-import static frc.robot.Config.Limelight.maxPoseJumpFeet;
-import static frc.robot.Config.Limelight.maxYawRateDps;
+import static frc.robot.Config.Swerve.maxPoseJumpFeet;
+import static frc.robot.Config.Limelight.maxYawRate;
 
 /**
  * Subsystem that uses the Limelight to:
@@ -201,7 +201,7 @@ public class LimelightSubsystem extends SubsystemBase {
         // if we couldn't calculate a rate, or we did and it's too big,
         // we are spinning too fast for estimates to work
         spinningTooFast = Double.isNaN(lastYawRate)
-                || lastYawRate > maxYawRateDps.getAsDouble();
+                || lastYawRate > maxYawRate.getAsDouble();
 
         lastYaw = currentYaw;
         lastTime = currentTime;

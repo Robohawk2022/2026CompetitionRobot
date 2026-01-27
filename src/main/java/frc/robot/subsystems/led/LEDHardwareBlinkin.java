@@ -21,7 +21,7 @@ public class LEDHardwareBlinkin implements LEDHardware {
      * Creates the Blinkin hardware on the configured PWM port.
      */
     public LEDHardwareBlinkin() {
-        blinkin = new Spark(PWM_PORT);
+        blinkin = new Spark(pwmPort);
     }
 
     @Override

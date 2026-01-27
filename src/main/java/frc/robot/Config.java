@@ -5,6 +5,7 @@ import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.numbers.N3;
@@ -45,6 +46,8 @@ public interface Config {
             return verboseEnabled.getAsBoolean() && category.getAsBoolean();
         }
     }
+
+//region Swerve ----------------------------------------------------------------
 
     interface SwerveTeleop {
 
@@ -121,40 +124,16 @@ public interface Config {
                 new Translation2d(-WHEEL_BASE_METERS / 2, TRACK_WIDTH_METERS / 2),  // BL
                 new Translation2d(-WHEEL_BASE_METERS / 2, -TRACK_WIDTH_METERS / 2)  // BR
         );
+        /** Maximum pose jump */
+        DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 1.0);
     }
 
-    /**
-     * Configuration for the {@link frc.robot.subsystems.shooter.ShooterSubsystem}
-     * and related functionality
-     */
-    interface Shooter {
+//endregion
 
-        /** Physical properties of the mechanism */
-        double gearRatio = 1.0 / 3.0;
-        double wheelDiameter = 4.0 / 12.0;
-        double wheelCircumference = wheelDiameter * Math.PI;
-
-        /** Feedforward/feedback constants for speed */
-        DoubleSupplier p = pref("ShooterSubsystem/kP", 0.0);
-        DoubleSupplier d = pref("ShooterSubsystem/kD", 0.0);
-        DoubleSupplier v = pref("ShooterSubsystem/kV", 0.0);
-        DoubleSupplier tolerance = pref("ShooterSubsystem/Tolerance", 0.0);
-
-        /** Preset speeds in feet per seconds */
-        DoubleSupplier speed1 = pref("ShooterPresets/Speed1", 10.0);
-        DoubleSupplier speed2 = pref("ShooterPresets/Speed1", 20.0);
-        DoubleSupplier speed3 = pref("ShooterPresets/Speed3", 3.0);
-
-    }
+//region Vision ----------------------------------------------------------------
 
     /**
-     * Configuration for the Limelight vision and pose estimation.
-     * <p>
-     * Supports two estimation strategies:
-     * <ul>
-     *   <li>Classic (MegaTag1): Uses raw fiducial detection</li>
-     *   <li>MegaTag2: Uses robot orientation for improved accuracy</li>
-     * </ul>
+     * Configuration for the Limelight vision and pose estimation
      */
     interface Limelight {
 
@@ -168,66 +147,36 @@ public interface Config {
         DoubleSupplier closeRange = pref("Limelight/CloseRange", 10.0);
 
         /** Maximum yaw rate for MegaTag2 estimates (degrees per second) */
-        DoubleSupplier maxYawRateDps = pref("Limelight/MaxYawRateDPS", 720.0);
-
-        /** Maximum pose jump */
-        DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 1.0);
+        DoubleSupplier maxYawRate = pref("Limelight/MaxYawRate", 720.0);
 
         /** Confidence levels (lower numbers mean higher confidence) */
         Vector<N3> lowConfidence = VecBuilder.fill(2.0, 2.0, 9999999);
         Vector<N3> mediumConfidence = VecBuilder.fill(0.9, 0.9, 9999999);
         Vector<N3> highConfidence = VecBuilder.fill(0.5, 0.5, 9999999);
+
     }
 
     /**
-     * Configuration for the Limelight simulation.
-     * <p>
-     * Simulates AprilTag detection based on robot position, camera FOV, and tag visibility.
+     * Configuration for the Limelight simulation
      */
     interface LimelightSim {
 
-        //=======================================================================
-        // Camera mounting (relative to robot center, in meters)
-        //=======================================================================
+        /** Offsets from robot center to camera (meters) */
+        double cameraForwardOffset = Units.inchesToMeters(4.0);
+        double cameraSideOffset = Units.inchesToMeters(0.0);
+        double cameraHeight = Units.inchesToMeters(24.0);
+        double cameraPitch = Math.toRadians(20.0);
 
-        /** Forward offset from robot center to camera (meters) */
-        DoubleSupplier cameraForwardOffset = pref("LimelightSim/ForwardOffset", 0.3);
+        /** Horizontal/vertical field of view (degrees) */
+        double horizontalFov = 63.3;
+        double verticalFov = 50.0;
 
-        /** Side offset from robot center to camera (positive = left, meters) */
-        DoubleSupplier cameraSideOffset = pref("LimelightSim/SideOffset", 0.0);
-
-        /** Camera height from ground (meters) */
-        DoubleSupplier cameraHeight = pref("LimelightSim/Height", 0.5);
-
-        /** Camera pitch angle (positive = tilted up, degrees) */
-        DoubleSupplier cameraPitch = pref("LimelightSim/PitchDeg", 20.0);
-
-        //=======================================================================
-        // Camera FOV
-        //=======================================================================
-
-        /** Horizontal field of view (degrees) */
-        DoubleSupplier horizontalFov = pref("LimelightSim/HorizontalFOV", 63.3);
-
-        /** Vertical field of view (degrees) */
-        DoubleSupplier verticalFov = pref("LimelightSim/VerticalFOV", 49.7);
-
-        //=======================================================================
-        // Detection parameters
-        //=======================================================================
-
-        /** Maximum distance to detect tags (meters) */
+        /** Min/max distance to detect tags (meters) */
         DoubleSupplier maxDetectionDistance = pref("LimelightSim/MaxDistance", 5.0);
-
-        /** Minimum distance to detect tags (meters) */
         DoubleSupplier minDetectionDistance = pref("LimelightSim/MinDistance", 0.3);
 
         /** Maximum angle between camera and tag normal for detection (degrees) */
         DoubleSupplier maxTagAngle = pref("LimelightSim/MaxTagAngle", 60.0);
-
-        //=======================================================================
-        // Noise and latency simulation
-        //=======================================================================
 
         /** Standard deviation for position noise (meters) */
         DoubleSupplier positionNoiseStdDev = pref("LimelightSim/PositionNoise", 0.02);
@@ -241,32 +190,31 @@ public interface Config {
         /** Probability of dropping a frame (0.0-1.0) */
         DoubleSupplier frameDropProbability = pref("LimelightSim/FrameDropProb", 0.05);
 
-        //=======================================================================
-        // Enable
-        //=======================================================================
-
         /** Enable/disable the Limelight simulation */
         BooleanSupplier enabled = pref("LimelightSim/Enabled?", true);
 
-        //=======================================================================
-        // Constants
-        //=======================================================================
+        /** AprilTag size */
+        double tagSize = Units.inchesToMeters(6.5);
 
-        /** AprilTag size in meters (6.5 inches for 2024/2025) */
-        double TAG_SIZE_METERS = 0.1651;
     }
 
     /**
-     * Configuration for odometry diagnostics.
+     * Configuration for the QuestNav and pose estimation
      */
-    interface Odometry {
+    interface QuestNav {
 
-        /** Enable odometry diagnostics publishing to dashboard */
-        BooleanSupplier enableDiagnostics = pref("Odometry/Diagnostics?", true);
+        /** Master enable/disable for QuestNav */
+        BooleanSupplier enabled = pref("QuestNav/Enabled?", false);
 
-        /** Drift threshold for warning (meters) - logged when exceeded */
-        DoubleSupplier driftWarning = pref("Odometry/DriftWarning_m", 0.5);
+        /** Transformation based on mounting of camera on robot */
+        Transform3d robotToQuestTransform = new Transform3d();
+        Transform3d questToRobotTransform = robotToQuestTransform.inverse();
+
+        /** Confidence for position estimates */
+        Vector<N3> confidence = VecBuilder.fill(0.02, 0.02, 0.035);
     }
+
+//endregion
 
     /**
      * Configuration for PathPlanner autonomous path following.
@@ -343,7 +291,31 @@ public interface Config {
     interface LED {
 
         /** PWM port for the REV Blinkin LED controller */
-        int PWM_PORT = 0;
+        int pwmPort = 0;
+
+    }
+
+    /**
+     * Configuration for the {@link frc.robot.subsystems.shooter.ShooterSubsystem}
+     * and related functionality
+     */
+    interface Shooter {
+
+        /** Physical properties of the mechanism */
+        double gearRatio = 1.0 / 3.0;
+        double wheelDiameter = 4.0 / 12.0;
+        double wheelCircumference = wheelDiameter * Math.PI;
+
+        /** Feedforward/feedback constants for speed */
+        DoubleSupplier p = pref("ShooterSubsystem/kP", 0.0);
+        DoubleSupplier d = pref("ShooterSubsystem/kD", 0.0);
+        DoubleSupplier v = pref("ShooterSubsystem/kV", 0.0);
+        DoubleSupplier tolerance = pref("ShooterSubsystem/Tolerance", 0.0);
+
+        /** Preset speeds in feet per seconds */
+        DoubleSupplier speed1 = pref("ShooterPresets/Speed1", 10.0);
+        DoubleSupplier speed2 = pref("ShooterPresets/Speed1", 20.0);
+        DoubleSupplier speed3 = pref("ShooterPresets/Speed3", 3.0);
 
     }
 
