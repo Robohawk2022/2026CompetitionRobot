@@ -19,7 +19,7 @@ import static frc.robot.Config.SwerveTeleop.*;
 /**
  * Orbit drive command that orbits around a specified center point.
  * <ul>
- *   <li>Right X: controls tangential speed (orbiting around the center)</li>
+ *   <li>Left X: controls tangential speed (orbiting around the center)</li>
  *   <li>Right Y: controls radial speed (closer to or further from center)</li>
  * </ul>
  * <p>
@@ -89,8 +89,8 @@ public class SwerveOrbitCommand extends Command {
         distance = Units.metersToFeet(robotRelativeCenter.getNorm());
 
         // get conditioned joystick inputs
-        double radialInput = TeleopInput.conditionInput(-controller.getLeftY());
-        double tangentialInput = TeleopInput.conditionInput(-controller.getRightX());
+        double radialInput = TeleopInput.conditionInput(-controller.getRightY());
+        double tangentialInput = TeleopInput.conditionInput(-controller.getLeftX());
 
         // get speed factors for current mode
         TurboSniperMode mode = TeleopInput.getMode(controller);
