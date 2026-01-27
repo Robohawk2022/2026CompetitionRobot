@@ -43,6 +43,28 @@ public interface Config {
         }
     }
 
+    interface SwerveTeleop {
+
+        /** Maximum speeds */
+        DoubleSupplier maxTranslate = pref("SwerveTeleop/MaxTranslateFPS", 10.0);
+        DoubleSupplier maxRotate = pref("SwerveTeleop/MaxRotateDPS", 180.0);
+
+        /** Speed mode factors (turbo/sniper) */
+        DoubleSupplier sniperFactor = pref("SwerveTeleop/SniperFactor", 0.25);
+        DoubleSupplier turboFactor = pref("SwerveTeleop/TurboFactor", 1.5);
+        BooleanSupplier applySniperToRotation = pref("SwerveTeleop/SniperRotation?", true);
+
+        /** Driver relative mode */
+        BooleanSupplier driverRelative = pref("SwerveTeleop/DriverRelative?", true);
+
+        /** Joystick deadband & exponent */
+        DoubleSupplier deadband = pref("SwerveTeleop/Deadband", 0.1);
+        DoubleSupplier exponent = pref("SwerveTeleop/Exponent", 0.1);
+
+        /** Use XBox mapping */
+        BooleanSupplier useXboxMapping = pref("SwerveTeleop/UseXboxMapping?", true);
+    }
+
     /**
      * Configuration for the swerve drive subsystem.
      * <p>
@@ -57,17 +79,6 @@ public interface Config {
 
         DoubleSupplier maxSpeedFps = pref("Swerve/MaxSpeedFPS", 15.0);
         DoubleSupplier maxRotationDps = pref("Swerve/MaxRotationDPS", 360.0);
-
-        // Speed mode factors (turbo/sniper)
-        DoubleSupplier sniperFactor = pref("Swerve/SniperFactor", 0.25);
-        DoubleSupplier turboFactor = pref("Swerve/TurboFactor", 1.5);
-        BooleanSupplier applySniperToRotation = pref("Swerve/SniperRotation?", true);
-
-        // Joystick deadzone
-        DoubleSupplier deadzone = pref("Swerve/Deadzone", 0.1);
-
-        // Controller type: false = 8BitDo (real robot), true = Xbox (simulation/MCP)
-        BooleanSupplier useXboxMapping = pref("Swerve/UseXboxMapping?", true);
 
         // Module optimization settings
         /** Enable cosine compensation - scales drive output by cos(angle error) */

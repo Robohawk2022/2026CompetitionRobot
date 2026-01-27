@@ -10,6 +10,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Config.SwerveTeleop;
 import frc.robot.GameController;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.util.Util;
@@ -93,9 +94,9 @@ public class SwerveOrbitCommand extends Command {
         Translation2d tangentUnit = new Translation2d(-radialUnit.getY(), radialUnit.getX());
 
         // get controller inputs with deadband and inversion
-        double radialInput = -MathUtil.applyDeadband(controller.getLeftY(), deadzone.getAsDouble());
-        double tangentInput = -MathUtil.applyDeadband(controller.getLeftX(), deadzone.getAsDouble());
-        double rotInput = -MathUtil.applyDeadband(controller.getRightX(), deadzone.getAsDouble());
+        double radialInput = -MathUtil.applyDeadband(controller.getLeftY(), SwerveTeleop.deadband.getAsDouble());
+        double tangentInput = -MathUtil.applyDeadband(controller.getLeftX(), SwerveTeleop.deadband.getAsDouble());
+        double rotInput = -MathUtil.applyDeadband(controller.getRightX(), SwerveTeleop.deadband.getAsDouble());
 
         // clamp inputs
         radialInput = MathUtil.clamp(radialInput, -1.0, 1.0);
@@ -112,11 +113,11 @@ public class SwerveOrbitCommand extends Command {
 
         // apply speed modifiers (sniper takes priority)
         if (sniperActive) {
-            double sf = sniperFactor.getAsDouble();
+            double sf = SwerveTeleop.sniperFactor.getAsDouble();
             radialSpeed *= sf;
             tangentSpeed *= sf;
         } else if (turboActive) {
-            double tf = turboFactor.getAsDouble();
+            double tf = SwerveTeleop.turboFactor.getAsDouble();
             radialSpeed *= tf;
             tangentSpeed *= tf;
         }
