@@ -49,29 +49,6 @@ public interface Config {
 
 //region Swerve ----------------------------------------------------------------
 
-    interface SwerveTeleop {
-
-        /** Maximum speeds */
-        DoubleSupplier maxTranslate = pref("SwerveTeleop/MaxTranslateFPS", 10.0);
-        DoubleSupplier maxRotate = pref("SwerveTeleop/MaxRotateDPS", 180.0);
-        DoubleSupplier maxOrbit = pref("SwerveTeleop/MaxOrbitFPS", 8.0);
-
-        /** Speed mode factors (turbo/sniper) */
-        DoubleSupplier sniperFactor = pref("SwerveTeleop/SniperFactor", 0.25);
-        DoubleSupplier turboFactor = pref("SwerveTeleop/TurboFactor", 1.5);
-        BooleanSupplier applySniperToRotation = pref("SwerveTeleop/SniperRotation?", true);
-
-        /** Driver relative mode */
-        BooleanSupplier driverRelative = pref("SwerveTeleop/DriverRelative?", true);
-
-        /** Joystick deadband & exponent */
-        DoubleSupplier deadband = pref("SwerveTeleop/Deadband", 0.1);
-        DoubleSupplier exponent = pref("SwerveTeleop/Exponent", 2.0);
-
-        /** Use XBox mapping */
-        BooleanSupplier useXboxMapping = pref("SwerveTeleop/UseXboxMapping?", true);
-    }
-
     /**
      * Configuration for the swerve drive subsystem.
      * <p>
@@ -126,6 +103,64 @@ public interface Config {
         );
         /** Maximum pose jump */
         DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 1.0);
+    }
+
+    /**
+     * Configuration for swerve teleop operation
+     */
+    interface SwerveTeleop {
+
+        /** Maximum speeds */
+        DoubleSupplier maxTranslate = pref("SwerveTeleop/MaxTranslateFPS", 10.0);
+        DoubleSupplier maxRotate = pref("SwerveTeleop/MaxRotateDPS", 180.0);
+        DoubleSupplier maxOrbit = pref("SwerveTeleop/MaxOrbitFPS", 15.0);
+
+        /** Speed mode factors (turbo/sniper) */
+        DoubleSupplier sniperFactor = pref("SwerveTeleop/SniperFactor", 0.25);
+        DoubleSupplier turboFactor = pref("SwerveTeleop/TurboFactor", 1.5);
+        BooleanSupplier applySniperToRotation = pref("SwerveTeleop/SniperRotation?", true);
+
+        /** Driver relative mode */
+        BooleanSupplier driverRelative = pref("SwerveTeleop/DriverRelative?", true);
+
+        /** Joystick deadband & exponent */
+        DoubleSupplier deadband = pref("SwerveTeleop/Deadband", 0.1);
+        DoubleSupplier exponent = pref("SwerveTeleop/Exponent", 2.0);
+
+        /** Use XBox mapping */
+        BooleanSupplier useXboxMapping = pref("SwerveTeleop/UseXboxMapping?", true);
+    }
+
+    /**
+     * Configuration for autonomous swerve commands (heading control, etc.)
+     */
+    interface SwerveAuto {
+
+        //=======================================================================
+        // Translation profile
+        //=======================================================================
+
+        /** Maximum translation velocity in feet per second */
+        DoubleSupplier maxTranslationVelocity = pref("SwerveAuto/MaxTranslationFPS", 12.0);
+
+        /** Maximum translation acceleration in feet per second squared */
+        DoubleSupplier maxTranslationAcceleration = pref("SwerveAuto/MaxTranslationFPSS", 24.0);
+
+        /** Tolerance for position commands in feet */
+        DoubleSupplier positionTolerance = pref("SwerveAuto/PositionToleranceFeet", 0.1);
+
+        //=======================================================================
+        // Rotation profile
+        //=======================================================================
+
+        /** Maximum rotation velocity in degrees per second */
+        DoubleSupplier maxRotationVelocity = pref("SwerveAuto/MaxRotationDPS", 360.0);
+
+        /** Maximum rotation acceleration in degrees per second squared */
+        DoubleSupplier maxRotationAcceleration = pref("SwerveAuto/MaxRotationDPSS", 720.0);
+
+        /** Tolerance for heading commands in degrees */
+        DoubleSupplier headingTolerance = pref("SwerveAuto/HeadingToleranceDeg", 2.0);
     }
 
 //endregion

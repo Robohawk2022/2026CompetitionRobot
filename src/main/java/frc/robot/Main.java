@@ -25,8 +25,8 @@ public final class Main {
         // RobotBase.startRobot(IntakeFrontTestbot::new);
         // RobotBase.startRobot(SysIdTestbot::new);
         // RobotBase.startRobot(ShooterTestbot::new);
-        // RobotBase.startRobot(SwerveTestbot::new);
-        RobotBase.startRobot(VisionSimTestbot::new);
+         RobotBase.startRobot(SwerveTestbot::new);
+//        RobotBase.startRobot(VisionSimTestbot::new);
     }
 }
 

@@ -35,7 +35,6 @@ Created a new `Field` utility class to centralize field-related operations inclu
 
 - `CLAUDE.md`
   - Updated Common Utilities section to document Field class
-  - Removed AprilTag methods from Util documentation
 
 ## Field Class API
 

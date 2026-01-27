@@ -1146,6 +1146,8 @@ The `claude-docs/` folder contains session logs with implementation details. Key
 - [Add Swerve Drive CTRE](claude-docs/2025-01-17-add-swerve-drive-ctre.md) - CTRE Phoenix 6 swerve implementation
 - [Fix Swerve Wheel Drift](claude-docs/2026-01-24-fix-swerve-wheel-drift.md) - Wheel drift fix
 - [Refactor Swerve Commands](claude-docs/2026-01-27-refactor-swerve-commands.md) - Extract teleop/orbit to standalone command classes
+- [Add SwerveToHeadingCommand](claude-docs/2026-01-27-add-swerve-to-heading-command.md) - Autonomous heading control with trapezoid profiling
+- [Add SwerveToPoseCommand](claude-docs/2026-01-27-add-swerve-to-pose-command.md) - Autonomous pose control with dual trapezoid profiles
 
 ### Vision / Pose Estimation
 - [Improve Limelight Pose Estimation](claude-docs/2026-01-17-improve-limelight-pose-estimation.md) - MegaTag2 integration, dynamic std devs, pose filtering
@@ -1168,6 +1170,7 @@ The `claude-docs/` folder contains session logs with implementation details. Key
 ### Utilities
 - [Add Command Logger](claude-docs/2026-01-17-add-command-logger.md) - Command debugging utility
 - [Add Button Logging](claude-docs/2026-01-17-add-button-logging.md) - Controller input logging
+- [Extract Field Utility Class](claude-docs/2026-01-27-extract-field-utility-class.md) - Field/AprilTag utilities
 
 ### Documentation
 - [Add Command Documentation](claude-docs/2026-01-17-add-command-documentation.md) - Command patterns documentation

@@ -141,8 +141,7 @@ public class GameController {
         return switch (getType()) {
             case XBOX -> controller.getRawAxis(XBOX_LEFT_X_AXIS);
             case BITDO -> controller.getRawAxis(BITDO_LEFT_X_AXIS);
-            // logitech maps the value of its joysticks backwards
-            case LOGITECH -> -controller.getRawAxis(LOGITECH_LEFT_X_AXIS);
+            case LOGITECH -> controller.getRawAxis(LOGITECH_LEFT_X_AXIS);
         };
     }
 
@@ -151,8 +150,7 @@ public class GameController {
         return switch (getType()) {
             case XBOX -> controller.getRawAxis(XBOX_LEFT_Y_AXIS);
             case BITDO -> controller.getRawAxis(BITDO_LEFT_Y_AXIS);
-            // logitech maps the value of its joysticks backwards
-            case LOGITECH -> -controller.getRawAxis(LOGITECH_LEFT_Y_AXIS);
+            case LOGITECH -> controller.getRawAxis(LOGITECH_LEFT_Y_AXIS);
         };
     }
 
