@@ -3,8 +3,11 @@ package frc.robot;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 
 import static frc.robot.util.Util.pref;
@@ -158,96 +161,22 @@ public interface Config {
         /** Name of the Limelight in NetworkTables */
         String limelightName = "limelight";
 
-        //=======================================================================
-        // Vision enable/strategy
-        //=======================================================================
+        /** Master enable/disable for Limelight */
+        BooleanSupplier enabled = pref("Limelight/Enabled?", true);
 
-        /** Master enable/disable for vision pose estimation */
-        BooleanSupplier visionEnabled = pref("Vision/Enabled?", true);
-
-        /** Strategy: 0=Classic only, 1=MegaTag2 only, 2=Both (use best) */
-        DoubleSupplier strategy = pref("Vision/Strategy", 1.0);
-
-        //=======================================================================
-        // Standard deviation tuning (trust levels)
-        //=======================================================================
-
-        /** Base XY standard deviation for single-tag estimates (meters) */
-        DoubleSupplier baseStdDevXY_1Tag = pref("Vision/BaseStdDev/XY_1Tag", 0.9);
-
-        /** Base XY standard deviation for multi-tag estimates (meters) */
-        DoubleSupplier baseStdDevXY_MultiTag = pref("Vision/BaseStdDev/XY_MultiTag", 0.5);
-
-        /** Distance (meters) at which standard deviation doubles */
-        DoubleSupplier distScaleFactor = pref("Vision/DistScaleFactor", 3.0);
-
-        //=======================================================================
-        // Filtering thresholds
-        //=======================================================================
-
-        /** Maximum ambiguity allowed for single-tag estimates (0-1) */
-        DoubleSupplier maxAmbiguity = pref("Vision/MaxAmbiguity", 0.7);
-
-        /** Maximum distance to camera for trusted estimates (meters) */
-        DoubleSupplier maxDistToCamera = pref("Vision/MaxDistToCamera", 4.0);
+        /** "Close" range for pose confidence (in feet) */
+        DoubleSupplier closeRange = pref("Limelight/CloseRange", 10.0);
 
         /** Maximum yaw rate for MegaTag2 estimates (degrees per second) */
-        DoubleSupplier maxYawRateDps = pref("Vision/MaxYawRateDPS", 720.0);
+        DoubleSupplier maxYawRateDps = pref("Limelight/MaxYawRateDPS", 720.0);
 
-        /** Minimum tag area for MegaTag2 estimates (0-100% of image) */
-        DoubleSupplier minTagArea = pref("Vision/MinTagArea", 0.1);
+        /** Maximum pose jump */
+        DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 1.0);
 
-        /** Maximum allowed pose jump (meters) - rejects sudden large changes */
-        DoubleSupplier maxPoseJump = pref("Vision/MaxPoseJump", 2.0);
-
-        //=======================================================================
-        // Field boundary (2024 Crescendo field dimensions)
-        //=======================================================================
-
-        /** Field length in meters (x-axis) */
-        double FIELD_LENGTH_METERS = 16.54;
-
-        /** Field width in meters (y-axis) */
-        double FIELD_WIDTH_METERS = 8.21;
-
-        /** Margin outside field boundaries to allow (meters) */
-        double FIELD_BOUNDARY_MARGIN = 0.5;
-
-        //=======================================================================
-        // 2026 REBUILT AprilTag IDs by field element
-        //=======================================================================
-
-        /** Tower AprilTag IDs (central scoring/climbing structures) */
-        int[] TOWER_TAG_IDS = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28};
-
-        /** Outpost AprilTag IDs (Tags 13-14 on one outpost, 29-30 on the other) */
-        int[] OUTPOST_TAG_IDS = {13, 14, 29, 30};
-
-        /** Hub/Alliance Wall AprilTag IDs */
-        int[] HUB_TAG_IDS = {15, 16, 31, 32};
-
-        //=======================================================================
-        // 2026 REBUILT AprilTag IDs by field position
-        //=======================================================================
-
-        /** Left side of field (Blue alliance perspective) */
-        int[] LEFT_SIDE_TAG_IDS = {17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
-
-        /** Right side of field (Blue alliance perspective) */
-        int[] RIGHT_SIDE_TAG_IDS = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
-
-        /** Center field elements (both tower clusters) */
-        int[] CENTER_TAG_IDS = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28};
-
-        /** Alliance wall tags (field edges) */
-        int[] ALLIANCE_WALL_TAG_IDS = {13, 14, 15, 16, 29, 30, 31, 32};
-
-        //=======================================================================
-        // ProjectBucephalus-style standard deviation
-        //=======================================================================
-
-        /** Baseline linear stdDev (meters) at 1m distance with 1 tag */
-        DoubleSupplier linearStdDevBaseline = pref("Vision/LinearStdDevBaseline", 0.08);
+        /** Confidence levels (lower numbers mean higher confidence) */
+        Vector<N3> lowConfidence = VecBuilder.fill(2.0, 2.0, 9999999);
+        Vector<N3> mediumConfidence = VecBuilder.fill(0.9, 0.9, 9999999);
+        Vector<N3> highConfidence = VecBuilder.fill(0.5, 0.5, 9999999);
     }
 
     /**

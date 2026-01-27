@@ -300,6 +300,19 @@ public class Util {
         return closestTag;
     }
 
+    /**
+     * @param pose a pose
+     * @return does this pose lie outside the field boundaries
+     */
+    public static boolean isOutsideField(Pose2d pose) {
+        double x = pose.getX();
+        double y = pose.getY();
+        if (x < 0.0 || x > getFieldLayout().getFieldLength()) {
+            return true;
+        }
+        return (y < 0 || y > getFieldLayout().getFieldWidth());
+    }
+
 //endregion
 
 //region Match information -----------------------------------------------------

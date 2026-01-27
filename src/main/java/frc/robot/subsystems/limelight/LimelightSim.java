@@ -1,4 +1,4 @@
-package frc.robot.subsystems.vision;
+package frc.robot.subsystems.limelight;
 
 import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
@@ -23,8 +23,22 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
-import static frc.robot.Config.LimelightSim.*;
 import static frc.robot.Config.Limelight.limelightName;
+import static frc.robot.Config.LimelightSim.TAG_SIZE_METERS;
+import static frc.robot.Config.LimelightSim.cameraForwardOffset;
+import static frc.robot.Config.LimelightSim.cameraHeight;
+import static frc.robot.Config.LimelightSim.cameraPitch;
+import static frc.robot.Config.LimelightSim.cameraSideOffset;
+import static frc.robot.Config.LimelightSim.enabled;
+import static frc.robot.Config.LimelightSim.frameDropProbability;
+import static frc.robot.Config.LimelightSim.horizontalFov;
+import static frc.robot.Config.LimelightSim.maxDetectionDistance;
+import static frc.robot.Config.LimelightSim.maxTagAngle;
+import static frc.robot.Config.LimelightSim.minDetectionDistance;
+import static frc.robot.Config.LimelightSim.pipelineLatency;
+import static frc.robot.Config.LimelightSim.positionNoiseStdDev;
+import static frc.robot.Config.LimelightSim.rotationNoiseStdDev;
+import static frc.robot.Config.LimelightSim.verticalFov;
 
 /**
  * Simulates a Limelight camera for AprilTag detection.
@@ -38,7 +52,7 @@ import static frc.robot.Config.Limelight.limelightName;
  *   <li>Publishing to NetworkTables in the exact format LimelightHelpers expects</li>
  * </ul>
  */
-public class LimelightHardwareSim {
+public class LimelightSim {
 
     /** Enable verbose logging */
     private static final boolean verboseLogging = false;
@@ -91,13 +105,12 @@ public class LimelightHardwareSim {
     /**
      * Creates a new LimelightHardwareSim.
      */
-    public LimelightHardwareSim() {
+    public LimelightSim() {
         this.fieldLayout = Util.getFieldLayout();
 
         // get NetworkTables table for the limelight
         NetworkTable table = NetworkTableInstance.getDefault().getTable(limelightName);
      
-
         // create publishers
         botposePublisher = table.getDoubleArrayTopic("botpose_wpiblue").publish();
         botposeOrbPublisher = table.getDoubleArrayTopic("botpose_orb_wpiblue").publish();
