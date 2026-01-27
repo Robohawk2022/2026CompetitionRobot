@@ -4,7 +4,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.GameController;
 import frc.robot.subsystems.swerve.SwerveHardwareCTRE;
 import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
@@ -18,7 +18,7 @@ import frc.robot.subsystems.swerve.SwerveTeleopSpeedSupplier;
 public class SwerveTestbot extends TimedRobot {
 
     private SwerveSubsystem swerve;
-    private CommandXboxController controller;
+    private GameController controller;
 
     // track last 2 buttons pressed
     private String lastButton = "(none)";
@@ -31,7 +31,7 @@ public class SwerveTestbot extends TimedRobot {
         // use appropriate hardware based on environment
         swerve = new SwerveSubsystem(
                 isSimulation() ? new SwerveHardwareSim() : new SwerveHardwareCTRE());
-        controller = new CommandXboxController(0);
+        controller = new GameController(0);
 
         // reset wheels to forward facing on startup
         swerve.resetWheelsCommand().schedule();
@@ -79,13 +79,13 @@ public class SwerveTestbot extends TimedRobot {
 
         // debug controller inputs
         SmartDashboard.putData("Controller", builder -> {
-            builder.addBooleanProperty("LeftBumper", () -> controller.getHID().getLeftBumper(), null);
-            builder.addBooleanProperty("RightBumper", () -> controller.getHID().getRightBumper(), null);
-            builder.addDoubleProperty("LeftX", () -> controller.getHID().getLeftX(), null);
-            builder.addDoubleProperty("LeftY", () -> controller.getHID().getLeftY(), null);
-            builder.addDoubleProperty("RightX", () -> controller.getHID().getRightX(), null);
-            builder.addDoubleProperty("LeftTrigger", () -> controller.getHID().getLeftTriggerAxis(), null);
-            builder.addDoubleProperty("RightTrigger", () -> controller.getHID().getRightTriggerAxis(), null);
+            builder.addBooleanProperty("LeftBumper", () -> controller.getHID().getRawButton(5), null);
+            builder.addBooleanProperty("RightBumper", () -> controller.getHID().getRawButton(6), null);
+            builder.addDoubleProperty("LeftX", controller::getLeftX, null);
+            builder.addDoubleProperty("LeftY", controller::getLeftY, null);
+            builder.addDoubleProperty("RightX", controller::getRightX, null);
+            builder.addDoubleProperty("LeftTrigger", controller::getLeftTriggerAxis, null);
+            builder.addDoubleProperty("RightTrigger", controller::getRightTriggerAxis, null);
         });
     }
 

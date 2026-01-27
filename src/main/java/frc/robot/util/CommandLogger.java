@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Config;
+import frc.robot.GameController;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -126,6 +127,17 @@ public class CommandLogger {
         setupTelemetry();
 
         Util.log("%sCommand logging enabled", LOG_PREFIX);
+    }
+
+    /**
+     * Register a GameController for button logging.
+     * Call after enable() in RobotContainer.
+     *
+     * @param name display name for this controller (e.g., "Driver", "Operator")
+     * @param controller the GameController to track
+     */
+    public static void addController(String name, GameController controller) {
+        addController(name, controller.getHID());
     }
 
     /**

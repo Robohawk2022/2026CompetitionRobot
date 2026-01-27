@@ -17,9 +17,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Config;
+import frc.robot.GameController;
 import frc.robot.subsystems.swerve.SwerveHardwareCTRE;
 import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveHardware;
@@ -81,7 +81,7 @@ public class SysIdTestbot extends TimedRobot {
 
     private SwerveHardware hardware;
     private SysIdRoutine sysIdRoutine;
-    private CommandXboxController controller;
+    private GameController controller;
     private double appliedVoltage = 0;
     private String currentTest = "Idle";
 
@@ -112,7 +112,7 @@ public class SysIdTestbot extends TimedRobot {
 
         // use appropriate hardware based on environment
         hardware = isSimulation() ? new SwerveHardwareSim() : new SwerveHardwareCTRE();
-        controller = new CommandXboxController(0);
+        controller = new GameController(0);
 
         // initialize odometry
         hardware.refreshSignals();
@@ -212,18 +212,18 @@ public class SysIdTestbot extends TimedRobot {
 
         // dashboard telemetry - controller inputs
         SmartDashboard.putData("Controller", builder -> {
-            builder.addBooleanProperty("A", () -> controller.getHID().getAButton(), null);
-            builder.addBooleanProperty("B", () -> controller.getHID().getBButton(), null);
-            builder.addBooleanProperty("X", () -> controller.getHID().getXButton(), null);
-            builder.addBooleanProperty("Y", () -> controller.getHID().getYButton(), null);
-            builder.addBooleanProperty("Start", () -> controller.getHID().getStartButton(), null);
-            builder.addBooleanProperty("Back", () -> controller.getHID().getBackButton(), null);
+            builder.addBooleanProperty("A", () -> controller.a().getAsBoolean(), null);
+            builder.addBooleanProperty("B", () -> controller.b().getAsBoolean(), null);
+            builder.addBooleanProperty("X", () -> controller.x().getAsBoolean(), null);
+            builder.addBooleanProperty("Y", () -> controller.y().getAsBoolean(), null);
+            builder.addBooleanProperty("Start", () -> controller.start().getAsBoolean(), null);
+            builder.addBooleanProperty("Back", () -> controller.back().getAsBoolean(), null);
             builder.addBooleanProperty("LeftBumper", () -> controller.leftBumper().getAsBoolean(), null);
             builder.addBooleanProperty("RightBumper", () -> controller.rightBumper().getAsBoolean(), null);
-            builder.addDoubleProperty("LeftX", () -> controller.getHID().getLeftX(), null);
-            builder.addDoubleProperty("LeftY", () -> controller.getHID().getLeftY(), null);
-            builder.addDoubleProperty("RightX", () -> controller.getHID().getRightX(), null);
-            builder.addDoubleProperty("RightY", () -> controller.getHID().getRightY(), null);
+            builder.addDoubleProperty("LeftX", controller::getLeftX, null);
+            builder.addDoubleProperty("LeftY", controller::getLeftY, null);
+            builder.addDoubleProperty("RightX", controller::getRightX, null);
+            builder.addDoubleProperty("RightY", controller::getRightY, null);
         });
 
         // dashboard telemetry - odometry/pose (in feet and degrees for readability)

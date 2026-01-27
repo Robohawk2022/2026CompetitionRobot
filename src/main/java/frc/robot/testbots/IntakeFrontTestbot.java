@@ -2,7 +2,7 @@ package frc.robot.testbots;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.GameController;
 import frc.robot.subsystems.intakefront.IntakeFrontHardwareSim;
 import frc.robot.subsystems.intakefront.IntakeFrontHardwareSparkMax;
 import frc.robot.subsystems.intakefront.IntakeFrontSubsystem;
@@ -40,7 +40,7 @@ import frc.robot.subsystems.intakefront.IntakeFrontSubsystem;
 public class IntakeFrontTestbot extends TimedRobot {
 
     private IntakeFrontSubsystem intake;
-    private CommandXboxController controller;
+    private GameController controller;
 
     @Override
     public void robotInit() {
@@ -49,7 +49,7 @@ public class IntakeFrontTestbot extends TimedRobot {
         // Use appropriate hardware based on environment
         intake = new IntakeFrontSubsystem(
                 isSimulation() ? new IntakeFrontHardwareSim() : new IntakeFrontHardwareSparkMax());
-        controller = new CommandXboxController(0);
+        controller = new GameController(0);
 
         // Set up stall callback (would wire to LED in production)
         intake.setStallCallback(stalled -> {
