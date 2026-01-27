@@ -5,6 +5,7 @@ import java.util.Objects;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
@@ -17,7 +18,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.GameController;
-import frc.robot.commands.swerve.SwerveOrbitCommand;
+import frc.robot.commands.swerve.SwerveOrbitHubCommand;
 import frc.robot.commands.swerve.SwerveTeleopCommand;
 import frc.robot.subsystems.vision.LimelightEstimator;
 import frc.robot.subsystems.vision.VisionEstimateResult;
@@ -242,35 +243,36 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Drives the robot using robot-relative speeds.
+     * Drives the robot using robot-relative speeds
      * @param mode the mode to display for debugging
      * @param speeds robot-relative chassis speeds (vx, vy in m/s, omega in rad/s)
      */
     public void driveRobotRelative(String mode, ChassisSpeeds speeds) {
+        driveRobotRelative(mode, speeds, null);
+    }
+
+    /**
+     * Drives the robot using robot-relative speeds and a custom center of
+     * rotation
+     *
+     * @param mode the mode to display for debugging
+     * @param speeds robot-relative chassis speeds (vx, vy in m/s, omega in rad/s)
+     * @param center the center of rotation (null means robot center)
+     */
+    public void driveRobotRelative(String mode, ChassisSpeeds speeds, Translation2d center) {
         currentMode = mode;
+
+        if (center == null) {
+            center = Translation2d.kZero;
+        }
 
         // Compensate for translational skew during rotation (20ms timestep)
         ChassisSpeeds discretizedSpeeds = ChassisSpeeds.discretize(speeds, Util.DT);
 
-        SwerveModuleState[] states = KINEMATICS.toSwerveModuleStates(discretizedSpeeds);
+        SwerveModuleState[] states = KINEMATICS.toSwerveModuleStates(discretizedSpeeds, center);
         SwerveDriveKinematics.desaturateWheelSpeeds(states, MAX_WHEEL_SPEED_MPS);
         hardware.setModuleStates(states);
         latestSpeed = discretizedSpeeds;
-    }
-
-    /**
-     * Drives using pre-computed module states.
-     * <p>
-     * Used by commands that need custom desaturation logic (e.g., rotation-priority).
-     *
-     * @param mode the mode to display for debugging
-     * @param states the module states to apply
-     * @param speeds the chassis speeds for telemetry
-     */
-    public void driveStates(String mode, SwerveModuleState [] states, ChassisSpeeds speeds) {
-        currentMode = mode;
-        hardware.setModuleStates(states);
-        latestSpeed = speeds;
     }
 
 //endregion
@@ -328,8 +330,7 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Creates a teleop drive command from controller inputs.
-     *
+     * Creates a teleop drive command from controller inputs
      * @param controller the game controller for driver input
      * @return the drive command (field-relative)
      * @see SwerveTeleopCommand
@@ -378,14 +379,13 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Creates an orbit drive command that orbits around the target (Tower) while facing it.
-     *
+     * Creates an orbit drive command that orbits around the target (Tower)
      * @param controller the game controller for driver input
      * @return the orbit command
-     * @see SwerveOrbitCommand
+     * @see SwerveOrbitHubCommand
      */
     public Command orbitCommand(GameController controller) {
-        return new SwerveOrbitCommand(this, controller);
+        return new SwerveOrbitHubCommand(this, controller);
     }
 
 //endregion

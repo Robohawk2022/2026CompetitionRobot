@@ -165,9 +165,9 @@ public class SwerveTeleopCommand extends Command {
      * Applies deadband and exponent to input
      */
     private double conditionInput(double input) {
-        input = MathUtil.clamp(input, -1.0, 1.0);
-        input = MathUtil.applyDeadband(input, deadband.getAsDouble());
-        input = Math.copySign(Math.pow(input, exponent.getAsDouble()), input);
-        return input;
+        double d1 = MathUtil.clamp(input, -1.0, 1.0);
+        double d2 = MathUtil.applyDeadband(d1, deadband.getAsDouble());
+        double d3 = Math.copySign(Math.pow(d2, exponent.getAsDouble()), input);
+        return d3;
     }
 }

@@ -20,11 +20,11 @@ public final class Main {
     private Main() {}
 
     public static void main(String... args) {
-        RobotBase.startRobot(LEDTestbot::new);
+        // RobotBase.startRobot(LEDTestbot::new);
         // RobotBase.startRobot(IntakeFrontTestbot::new);
         // RobotBase.startRobot(SysIdTestbot::new);
         // RobotBase.startRobot(ShooterTestbot::new);
-        // RobotBase.startRobot(SwerveTestbot::new);
+        RobotBase.startRobot(SwerveTestbot::new);
     }
 }
 

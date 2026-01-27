@@ -53,6 +53,9 @@ public class Util {
     /** State with no values */
     public static final State NAN_STATE = new State(Double.NaN, Double.NaN);
 
+    /** Translation with no values */
+    public static final Translation2d NAN_TRANSLATION = new Translation2d(Double.NaN, Double.NaN);
+
 //endregion
 
 //region Miscellaneous math ----------------------------------------------------
