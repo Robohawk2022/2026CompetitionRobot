@@ -1,0 +1,300 @@
+package frc.robot.subsystems.limelight;
+
+import edu.wpi.first.math.Vector;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Config.Limelight;
+import frc.robot.subsystems.limelight.LimelightHelpers.PoseEstimate;
+import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.util.Util;
+
+import java.util.Objects;
+
+import static frc.robot.Config.Limelight.closeRange;
+import static frc.robot.Config.Limelight.enabled;
+import static frc.robot.Config.Limelight.limelightName;
+import static frc.robot.Config.Swerve.maxPoseJumpFeet;
+import static frc.robot.Config.Limelight.maxYawRate;
+
+/**
+ * Subsystem that uses the Limelight to:
+ * <ul>
+ *
+ *     <li>Generate pose estimates during <code>periodic</code> and, if
+ *     they pass relevant quality checks, feed them to a consumer (e.g. the
+ *     swerve drive)</li>
+ *
+ *     <li>Use Limelight's targeting pipeline to report on the physical
+ *     position of a single target as a {@link LimelightTarget} (with the
+ *     option to restrict to a single AprilTag of interest)</li>
+ *
+ * </ul>
+ */
+public class LimelightSubsystem extends SubsystemBase {
+
+    /** Enable verbose logging for debugging */
+    static final boolean verboseLogging = true;
+
+    final SwerveSubsystem swerve;
+    final LimelightTarget latestTarget;
+    double lastTime;
+    double lastYaw;
+    double lastYawRate;
+    boolean spinningTooFast;
+    Pose2d latestEstimate;
+    Pose2d latestTagPose;
+    Pose2d latestTargetPose;
+    long restrictedTag;
+    long noEstimate;
+    long noTags;
+    long poseOutsideField;
+    long poseJumpTooBig;
+    long lowConfidenceCount;
+    long highConfidenceCount;
+    long mediumConfidenceCount;
+
+    /**
+     * Creates a {@link LimelightSubsystem}
+     * @param swerve the swerve drive
+     * @throws IllegalArgumentException if required parameters are null
+     */
+    public LimelightSubsystem(SwerveSubsystem swerve) {
+
+        this.swerve = Objects.requireNonNull(swerve);
+        this.latestTarget = new LimelightTarget();
+        this.noEstimate = 0L;
+        this.noTags = 0L;
+        this.poseOutsideField = 0L;
+        this.poseJumpTooBig = 0L;
+        this.lowConfidenceCount = 0L;
+        this.highConfidenceCount = 0L;
+        this.mediumConfidenceCount = 0L;
+        this.latestEstimate = null;
+        this.latestTagPose = null;
+
+        SmartDashboard.putData("LimelightSubsystem", builder -> {
+            builder.addIntegerProperty("RestrictedTag", () -> restrictedTag, null);
+            builder.addBooleanProperty("TooFast?", () -> spinningTooFast, null);
+            builder.addBooleanProperty("HasEstimate?", () -> latestEstimate != null, null);
+            builder.addBooleanProperty("HasTarget?", latestTarget::isValid, null);
+            if (verboseLogging) {
+                builder.addDoubleProperty("Targeting/Area", latestTarget::getArea, null);
+                builder.addDoubleProperty("Targeting/HorizontalOffset", latestTarget::getHorizontalOffset, null);
+                builder.addDoubleProperty("Targeting/VerticalOffset", latestTarget::getVerticalOffset, null);
+                builder.addIntegerProperty("Targeting/DetectedTagId", latestTarget::getTagId, null);
+                builder.addIntegerProperty("Results/ErrNoEstimate", () -> noEstimate, null);
+                builder.addIntegerProperty("Results/ErrNoTags", () -> noEstimate, null);
+                builder.addIntegerProperty("Results/ErrOutsideField", () -> poseOutsideField, null);
+                builder.addIntegerProperty("Results/ErrTooFar", () -> poseJumpTooBig, null);
+                builder.addIntegerProperty("Results/ConfLow", () -> lowConfidenceCount, null);
+                builder.addIntegerProperty("Results/ConfMed", () -> mediumConfidenceCount, null);
+                builder.addIntegerProperty("Results/ConfHigh", () -> highConfidenceCount, null);
+            }
+        });
+    }
+
+    /**
+     * Indicates that only one specific AprilTag should be used for the
+     * {@link LimelightTarget}; all other tags should be ignored
+     * @param id the tag of interest
+     */
+    public void setRestrictedTag(int id) {
+        restrictedTag = id;
+        LimelightHelpers.setPriorityTagID(limelightName, id);
+    }
+
+    /**
+     * Clears the "target tag" designation
+     * TODO is this the right way to do this?
+     */
+    public void clearRestrictedTag() {
+        restrictedTag = -1L;
+        LimelightHelpers.setPriorityTagID(limelightName, -1);
+    }
+
+//region Periodic --------------------------------------------------------------
+
+    @Override
+    public void periodic() {
+
+        // if we're enabled, update all of our information
+        if (enabled.getAsBoolean()) {
+            Pose2d currentPose = swerve.getPose();
+            updateTargeting();
+            updateYawRate(currentPose);
+            updatePoseEstimate(currentPose);
+        } else {
+            latestEstimate = null;
+            latestTarget.invalidate();
+        }
+
+        // publish poses as appropriate
+        Util.publishPose("LimelightTargetPose", latestTarget.getTagPose());
+        if (latestEstimate != null) {
+            Util.publishPose("limelightPoseEstimate", latestEstimate);
+            Util.publishPose("LimelightPoseTag", latestTagPose);
+        } else {
+            Util.publishPose("limelightPoseEstimate", Util.NAN_POSE);
+            Util.publishPose("LimelightPoseTag", Util.NAN_POSE);
+        }
+    }
+
+//endregion
+
+//region Targeting -------------------------------------------------------------
+
+    /**
+     * Updates targeting information if it's available
+     */
+    private void updateTargeting() {
+
+        // check if we even have a target acquired
+        if (!LimelightHelpers.getTV(limelightName)) {
+            latestTarget.invalidate();
+            return;
+        }
+
+        // we want the horizontal offset to be negative when the tag is to the
+        // left (so positive motion will decrease it). this is the opposite of
+        // how the camera reports it, so we will negate it before returning
+        double ho = -LimelightHelpers.getTX(limelightName);
+
+        // other data can be consumed as provided
+        double vo = LimelightHelpers.getTY(limelightName);
+        double ta = LimelightHelpers.getTA(limelightName);
+        int tid = (int) LimelightHelpers.getFiducialID(limelightName);
+
+        latestTarget.set(ta, ho, vo, tid);
+    }
+
+//endregion
+
+//region Yaw rate --------------------------------------------------------------
+
+    /**
+     * Grabs the current yaw of the robot and compares it to the yaw the
+     * last time the method was called to compute a yaw rate. If we can
+     * calculate one, we'll update the Limelight since it wants to know
+     * how fast we're spinning.
+     */
+    private void updateYawRate(Pose2d currentPose) {
+
+        double currentYaw = currentPose.getRotation().getDegrees();
+        double currentTime = Timer.getFPGATimestamp();
+
+        // the first time through we won't have a "last" yaw, so we can't
+        // really perform the calculation; this will only trigger the
+        // second and subsequent times through
+        if (Double.isFinite(lastYaw)) {
+            lastYawRate = (currentYaw - lastYaw) / (currentTime - lastTime);
+            LimelightHelpers.SetRobotOrientation(
+                    limelightName,
+                    lastYaw,
+                    lastYawRate, 0.0, 0.0, 0.0, 0.0);
+        }
+
+        // if we couldn't calculate a rate, or we did and it's too big,
+        // we are spinning too fast for estimates to work
+        spinningTooFast = Double.isNaN(lastYawRate)
+                || lastYawRate > maxYawRate.getAsDouble();
+
+        lastYaw = currentYaw;
+        lastTime = currentTime;
+    }
+
+//endregion
+
+//region Pose estimate ---------------------------------------------------------
+
+    /**
+     * Calculates a pose estimate using the LL MegaTag2 algorithm, passes it
+     * through some quality gates, and possibly supplies it to the drive.
+     */
+    private void updatePoseEstimate(Pose2d currentPose) {
+
+        latestEstimate = null;
+        latestTagPose = null;
+
+        // if we're spinning too fast, there's nothing to do
+        if (spinningTooFast) {
+            return;
+        }
+
+        // grab the estimate; if there isn't one, we're done
+        PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightName);
+        if (estimate == null || estimate.pose == null) {
+            noEstimate++;
+            return;
+        }
+
+        // if the estimate somehow isn't based on fiducials, we won't use it
+        // (this would be really weird and is more of a sanity check)
+        if (estimate.rawFiducials == null || estimate.rawFiducials.length < 1) {
+            noTags++;
+            return;
+        }
+
+        // if the pose is outside the field, there's no use dealing with it
+        if (Util.isOutsideField(estimate.pose)) {
+            poseOutsideField++;
+            return;
+        }
+
+        // if the pose is too far from the current pose, we don't submit it
+        if (Util.feetBetween(currentPose, estimate.pose) > maxPoseJumpFeet.getAsDouble()) {
+            poseJumpTooBig++;
+            return;
+        }
+
+        // let's figure out our confidence level
+        boolean multiTag = estimate.rawFiducials.length > 1;
+        boolean nearDistance = Units.metersToFeet(estimate.avgTagDist) < closeRange.getAsDouble();
+        Vector<N3> confidence;
+
+        // close-up multi-tag estimates are the bomb!
+        if (multiTag && nearDistance) {
+            highConfidenceCount++;
+            confidence = Limelight.highConfidence;
+        }
+
+        // multi-tag and far off, or close by, are ok
+        else if (multiTag || nearDistance) {
+            mediumConfidenceCount++;
+            confidence = Limelight.mediumConfidence;
+        }
+
+        // all others are low-confidence
+        else {
+            lowConfidenceCount++;
+            confidence = Limelight.lowConfidence;
+        }
+
+        // we're good to go!
+        swerve.submitVisionEstimate(estimate.pose, estimate.timestampSeconds, confidence);
+        latestEstimate = estimate.pose;
+        latestTagPose = Util.getTagPose(estimate.rawFiducials[0].id);
+    }
+
+//endregion
+
+//region Pose estimate ---------------------------------------------------------
+
+    public Command resetPoseFromVisionCommand() {
+        return runOnce(() -> {
+            if (latestEstimate != null) {
+                Util.log("[limelight] resetting to vision pose");
+                swerve.resetPose(latestEstimate);
+            } else {
+                Util.log("[limelight] no vision pose for reset!!!");
+            }
+        });
+    }
+
+//endregion
+
+}

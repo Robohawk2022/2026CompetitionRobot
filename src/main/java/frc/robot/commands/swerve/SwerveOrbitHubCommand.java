@@ -61,6 +61,9 @@ public class SwerveOrbitHubCommand extends Command {
     public void initialize() {
         hubCenter = getHubLocation();
         distance = Util.feetBetween(swerve.getPose(), hubCenter);
+        Util.log("[swerve] orbiting hub at %s w/ distance %.2f",
+                hubCenter,
+                distance);
     }
 
     @Override

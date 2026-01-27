@@ -3,43 +3,67 @@ package frc.robot.testbots;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.GameController;
+import frc.robot.subsystems.limelight.LimelightSim;
+import frc.robot.subsystems.limelight.LimelightSubsystem;
 import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
-import frc.robot.subsystems.vision.LimelightHardwareSim;
 
 /**
- * Standalone test program for the vision simulation.
- * <p>
- * Tests the LimelightHardwareSim by driving around and observing:
+ * Standalone test program for the vision simulation. Tests the LimelightSim
+ * by driving around and observing:
  * <ul>
  *   <li>Tag detection based on position and orientation</li>
  *   <li>tx/ty angles changing as robot moves</li>
  *   <li>Vision pose estimates being accepted/rejected</li>
  * </ul>
- * <p>
  * Run with: {@code ./gradlew simulateJava -Probot=VisionSimTestbot}
  */
 public class VisionSimTestbot extends TimedRobot {
 
-    private SwerveSubsystem swerve;
-    private LimelightHardwareSim limelightSim;
-    private GameController controller;
+    final SwerveSubsystem swerve;
+    final LimelightSim limelightSim;
+    final LimelightSubsystem limelightSubsystem;
+    final GameController controller;
+
+    public VisionSimTestbot() {
+
+        swerve = new SwerveSubsystem(new SwerveHardwareSim());
+        limelightSim = new LimelightSim();
+        limelightSubsystem = new LimelightSubsystem(swerve);
+        controller = new GameController(0);
+
+        // default to field-relative driving
+        swerve.setDefaultCommand(swerve.driveCommand(controller));
+
+        // start zeroes heading but keeps the robot where it is
+        controller.start().onTrue(swerve.zeroHeadingCommand());
+
+        // back zeroes pose entirely
+        controller.back().onTrue(swerve.zeroPoseCommand());
+
+        // teleport buttons for testing different field positions
+        controller.a().onTrue(swerve.resetPoseCommand(oldPose -> new Pose2d(
+                2.0,
+                2.0,
+                Rotation2d.kZero)));
+        controller.b().onTrue(swerve.resetPoseCommand(oldPose -> new Pose2d(
+                8.0,
+                4.0,
+                Rotation2d.kZero)));
+        controller.x().onTrue(swerve.resetPoseCommand(oldPose -> new Pose2d(
+                14.0,
+                6.0,
+                Rotation2d.k180deg)));
+
+        // Y to lock wheels
+        controller.y().whileTrue(swerve.lockWheelsCommand());
+    }
 
     @Override
     public void robotInit() {
         System.out.println(">>> VisionSimTestbot starting...");
-
-        // create swerve with simulation hardware
-        swerve = new SwerveSubsystem(new SwerveHardwareSim());
-        controller = new GameController(0);
-
-        // create limelight simulation
-        limelightSim = new LimelightHardwareSim();
-
         System.out.println(">>> Vision simulation initialized");
         System.out.println(">>> Drive around to test tag detection");
         System.out.println(">>> Press START to zero heading");
@@ -47,50 +71,6 @@ public class VisionSimTestbot extends TimedRobot {
         System.out.println(">>> Press A to teleport to (2, 2)");
         System.out.println(">>> Press B to teleport to (8, 4) - field center");
         System.out.println(">>> Press Y to teleport to (14, 6)");
-
-        // default to field-relative driving
-        swerve.setDefaultCommand(swerve.driveCommand(controller));
-
-        // button bindings
-        controller.start().onTrue(Commands.runOnce(() -> {
-            swerve.zeroHeading();
-            System.out.println(">>> Gyro zeroed");
-        }));
-
-        controller.back().onTrue(Commands.runOnce(() -> {
-            swerve.zeroHeading();
-            swerve.resetPose(new Pose2d());
-            System.out.println(">>> Pose reset to origin");
-        }));
-
-        // teleport buttons for testing different field positions
-        controller.a().onTrue(Commands.runOnce(() -> {
-            teleportTo(2.0, 2.0, 0);
-            System.out.println(">>> Teleported to (2, 2)");
-        }));
-
-        controller.b().onTrue(Commands.runOnce(() -> {
-            teleportTo(8.0, 4.0, 0);
-            System.out.println(">>> Teleported to field center (8, 4)");
-        }));
-
-        controller.y().onTrue(Commands.runOnce(() -> {
-            teleportTo(14.0, 6.0, 180);
-            System.out.println(">>> Teleported to (14, 6) facing left");
-        }));
-
-        // X to lock wheels
-        controller.x().whileTrue(swerve.idleCommand());
-
-        // dashboard telemetry for vision testing
-        SmartDashboard.putData("VisionTest", builder -> {
-            builder.addDoubleProperty("PoseX", () -> swerve.getPose().getX(), null);
-            builder.addDoubleProperty("PoseY", () -> swerve.getPose().getY(), null);
-            builder.addDoubleProperty("HeadingDeg", () -> swerve.getHeading().getDegrees(), null);
-            builder.addBooleanProperty("VisionValid", swerve::isVisionValid, null);
-        });
-
-        System.out.println(">>> VisionSimTestbot ready!");
     }
 
     /**

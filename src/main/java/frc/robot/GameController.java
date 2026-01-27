@@ -23,6 +23,12 @@ import static frc.robot.Config.SwerveTeleop.useXboxMapping;
  */
 public class GameController {
 
+    public enum Type {
+        XBOX,
+        BITDO,
+        LOGITECH
+    }
+
 //region 8BitDo mapping --------------------------------------------------------
 
     private static final int BITDO_LEFT_X_AXIS = 0;
@@ -67,6 +73,30 @@ public class GameController {
 
 //endregion
 
+//region Logitech mapping ------------------------------------------------------
+
+    private static final int LOGITECH_LEFT_X_AXIS = 0;
+    private static final int LOGITECH_LEFT_Y_AXIS = 1;
+    private static final int LOGITECH_RIGHT_X_AXIS = 2;
+    private static final int LOGITECH_RIGHT_Y_AXIS = 3;
+
+    // logitech reports the triggers as buttons
+    private static final int LOGITECH_LEFT_TRIGGER_BUTTON = 7;
+    private static final int LOGITECH_RIGHT_TRIGGER_BUTTON = 8;
+
+    private static final int LOGITECH_A_BUTTON = 2;
+    private static final int LOGITECH_B_BUTTON = 3;
+    private static final int LOGITECH_X_BUTTON = 1;
+    private static final int LOGITECH_Y_BUTTON = 4;
+    private static final int LOGITECH_LEFT_BUMPER = 5;
+    private static final int LOGITECH_RIGHT_BUMPER = 6;
+    private static final int LOGITECH_BACK_BUTTON = 9;
+    private static final int LOGITECH_START_BUTTON = 10;
+    private static final int LOGITECH_LEFT_STICK_BUTTON = 11;
+    private static final int LOGITECH_RIGHT_STICK_BUTTON = 12;
+
+//endregion
+
 //region Implementation --------------------------------------------------------
 
     private final CommandXboxController controller;
@@ -94,58 +124,90 @@ public class GameController {
         return controller.getHID().getPort();
     }
 
+    public Type getType() {
+        String name = controller.getHID().getName();
+        if (name != null && name.contains("Logitech")) {
+            return Type.LOGITECH;
+        }
+        return useXboxMapping.getAsBoolean() ? Type.XBOX : Type.BITDO;
+    }
+
     //endregion
 
     //region Axis suppliers ----------------------------------------------------
 
     /** @return the left stick X axis value (-1 to 1) */
     public double getLeftX() {
-        int axis = useXboxMapping.getAsBoolean() ? XBOX_LEFT_X_AXIS : BITDO_LEFT_X_AXIS;
-        return controller.getHID().getRawAxis(axis);
+        return switch (getType()) {
+            case XBOX -> controller.getRawAxis(XBOX_LEFT_X_AXIS);
+            case BITDO -> controller.getRawAxis(BITDO_LEFT_X_AXIS);
+            // logitech maps the value of its joysticks backwards
+            case LOGITECH -> -controller.getRawAxis(LOGITECH_LEFT_X_AXIS);
+        };
     }
 
     /** @return the left stick Y axis value (-1 to 1) */
     public double getLeftY() {
-        int axis = useXboxMapping.getAsBoolean() ? XBOX_LEFT_Y_AXIS : BITDO_LEFT_Y_AXIS;
-        return controller.getHID().getRawAxis(axis);
+        return switch (getType()) {
+            case XBOX -> controller.getRawAxis(XBOX_LEFT_Y_AXIS);
+            case BITDO -> controller.getRawAxis(BITDO_LEFT_Y_AXIS);
+            // logitech maps the value of its joysticks backwards
+            case LOGITECH -> -controller.getRawAxis(LOGITECH_LEFT_Y_AXIS);
+        };
     }
 
     /** @return the right stick X axis value (-1 to 1) */
     public double getRightX() {
-        int axis = useXboxMapping.getAsBoolean() ? XBOX_RIGHT_X_AXIS : BITDO_RIGHT_X_AXIS;
-        return controller.getHID().getRawAxis(axis);
+        return switch (getType()) {
+            case XBOX -> controller.getRawAxis(XBOX_RIGHT_X_AXIS);
+            case BITDO -> controller.getRawAxis(BITDO_RIGHT_X_AXIS);
+            case LOGITECH -> controller.getRawAxis(LOGITECH_RIGHT_X_AXIS);
+        };
     }
 
     /** @return the right stick Y axis value (-1 to 1) */
     public double getRightY() {
-        int axis = useXboxMapping.getAsBoolean() ? XBOX_RIGHT_Y_AXIS : BITDO_RIGHT_Y_AXIS;
-        return controller.getHID().getRawAxis(axis);
+        return switch (getType()) {
+            case XBOX -> controller.getRawAxis(XBOX_RIGHT_Y_AXIS);
+            case BITDO -> controller.getRawAxis(BITDO_RIGHT_Y_AXIS);
+            case LOGITECH -> controller.getRawAxis(LOGITECH_RIGHT_Y_AXIS);
+        };
     }
 
     /**
      * @return the left trigger axis value (0 to 1, normalized from controller-specific range)
      */
     public double getLeftTriggerAxis() {
-        if (useXboxMapping.getAsBoolean()) {
-            // Xbox triggers: 0 (not pressed) to 1 (fully pressed)
-            return controller.getHID().getRawAxis(XBOX_LEFT_TRIGGER_AXIS);
-        } else {
+        return switch (getType()) {
+
+            case XBOX -> controller.getRawAxis(XBOX_LEFT_TRIGGER_AXIS);
+
             // 8BitDo triggers: -1 (not pressed) to 1 (fully pressed), normalize to 0-1
-            return (controller.getHID().getRawAxis(BITDO_LEFT_TRIGGER_AXIS) + 1) / 2;
-        }
+            case BITDO -> (controller.getHID().getRawAxis(BITDO_LEFT_TRIGGER_AXIS) + 1) / 2;
+
+            // logitech treats triggers as buttons; report as either 0 or 1
+            case LOGITECH -> controller.getHID().getRawButton(LOGITECH_LEFT_TRIGGER_BUTTON)
+                        ? 1.0
+                        : 0.0;
+        };
     }
 
     /**
      * @return the right trigger axis value (0 to 1, normalized from controller-specific range)
      */
     public double getRightTriggerAxis() {
-        if (useXboxMapping.getAsBoolean()) {
-            // Xbox triggers: 0 (not pressed) to 1 (fully pressed)
-            return controller.getHID().getRawAxis(XBOX_RIGHT_TRIGGER_AXIS);
-        } else {
+        return switch (getType()) {
+
+            case XBOX -> controller.getRawAxis(XBOX_RIGHT_TRIGGER_AXIS);
+
             // 8BitDo triggers: -1 (not pressed) to 1 (fully pressed), normalize to 0-1
-            return (controller.getHID().getRawAxis(BITDO_RIGHT_TRIGGER_AXIS) + 1) / 2;
-        }
+            case BITDO -> (controller.getHID().getRawAxis(BITDO_RIGHT_TRIGGER_AXIS) + 1) / 2;
+
+            // logitech treats triggers as buttons; report as either 0 or 1
+            case LOGITECH -> controller.getHID().getRawButton(LOGITECH_RIGHT_TRIGGER_BUTTON)
+                    ? 1.0
+                    : 0.0;
+        };
     }
 
     /** @return supplier for left stick X axis */
@@ -184,62 +246,122 @@ public class GameController {
 
     /** @return trigger for A button (mapped for controller type) */
     public Trigger a() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_A_BUTTON : BITDO_A_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return new Trigger(() -> {
+            int button = switch (getType()) {
+                case XBOX -> XBOX_A_BUTTON;
+                case BITDO -> BITDO_A_BUTTON;
+                case LOGITECH -> LOGITECH_A_BUTTON;
+            };
+            return controller.getHID().getRawButton(button);
+        });
     }
 
     /** @return trigger for B button (mapped for controller type) */
     public Trigger b() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_B_BUTTON : BITDO_B_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return new Trigger(() -> {
+            int button = switch (getType()) {
+                case XBOX -> XBOX_B_BUTTON;
+                case BITDO -> BITDO_B_BUTTON;
+                case LOGITECH -> LOGITECH_B_BUTTON;
+            };
+            return controller.getHID().getRawButton(button);
+        });
     }
 
     /** @return trigger for X button (mapped for controller type) */
     public Trigger x() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_X_BUTTON : BITDO_X_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return new Trigger(() -> {
+            int button = switch (getType()) {
+                case XBOX -> XBOX_X_BUTTON;
+                case BITDO -> BITDO_X_BUTTON;
+                case LOGITECH -> LOGITECH_X_BUTTON;
+            };
+            return controller.getHID().getRawButton(button);
+        });
     }
 
     /** @return trigger for Y button (mapped for controller type) */
     public Trigger y() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_Y_BUTTON : BITDO_Y_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return new Trigger(() -> {
+            int button = switch (getType()) {
+                case XBOX -> XBOX_Y_BUTTON;
+                case BITDO -> BITDO_Y_BUTTON;
+                case LOGITECH -> LOGITECH_Y_BUTTON;
+            };
+            return controller.getHID().getRawButton(button);
+        });
     }
 
     /** @return trigger for left bumper (mapped for controller type) */
     public Trigger leftBumper() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_LEFT_BUMPER : BITDO_LEFT_BUMPER;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return new Trigger(() -> {
+            int button = switch (getType()) {
+                case XBOX -> XBOX_LEFT_BUMPER;
+                case BITDO -> BITDO_LEFT_BUMPER;
+                case LOGITECH -> LOGITECH_LEFT_BUMPER;
+            };
+            return controller.getHID().getRawButton(button);
+        });
     }
 
     /** @return trigger for right bumper (mapped for controller type) */
     public Trigger rightBumper() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_RIGHT_BUMPER : BITDO_RIGHT_BUMPER;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return new Trigger(() -> {
+            int button = switch (getType()) {
+                case XBOX -> XBOX_RIGHT_BUMPER;
+                case BITDO -> BITDO_RIGHT_BUMPER;
+                case LOGITECH -> LOGITECH_RIGHT_BUMPER;
+            };
+            return controller.getHID().getRawButton(button);
+        });
     }
 
     /** @return trigger for back/select button (mapped for controller type) */
     public Trigger back() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_BACK_BUTTON : BITDO_BACK_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return new Trigger(() -> {
+            int button = switch (getType()) {
+                case XBOX -> XBOX_BACK_BUTTON;
+                case BITDO -> BITDO_BACK_BUTTON;
+                case LOGITECH -> LOGITECH_BACK_BUTTON;
+            };
+            return controller.getHID().getRawButton(button);
+        });
     }
 
     /** @return trigger for start button (mapped for controller type) */
     public Trigger start() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_START_BUTTON : BITDO_START_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return new Trigger(() -> {
+            int button = switch (getType()) {
+                case XBOX -> XBOX_START_BUTTON;
+                case BITDO -> BITDO_START_BUTTON;
+                case LOGITECH -> LOGITECH_START_BUTTON;
+            };
+            return controller.getHID().getRawButton(button);
+        });
     }
 
     /** @return trigger for left stick click (mapped for controller type) */
     public Trigger leftStick() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_LEFT_STICK_BUTTON : BITDO_LEFT_STICK_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return new Trigger(() -> {
+            int button = switch (getType()) {
+                case XBOX -> XBOX_LEFT_STICK_BUTTON;
+                case BITDO -> BITDO_LEFT_STICK_BUTTON;
+                case LOGITECH -> LOGITECH_LEFT_STICK_BUTTON;
+            };
+            return controller.getHID().getRawButton(button);
+        });
     }
 
     /** @return trigger for right stick click (mapped for controller type) */
     public Trigger rightStick() {
-        int button = useXboxMapping.getAsBoolean() ? XBOX_RIGHT_STICK_BUTTON : BITDO_RIGHT_STICK_BUTTON;
-        return new Trigger(() -> controller.getHID().getRawButton(button));
+        return new Trigger(() -> {
+            int button = switch (getType()) {
+                case XBOX -> XBOX_RIGHT_STICK_BUTTON;
+                case BITDO -> BITDO_RIGHT_STICK_BUTTON;
+                case LOGITECH -> LOGITECH_RIGHT_STICK_BUTTON;
+            };
+            return controller.getHID().getRawButton(button);
+        });
     }
 
     /** @return trigger for left trigger as button (threshold 0.5) */

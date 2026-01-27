@@ -16,8 +16,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.subsystems.swerve.SwerveHardware;
+import frc.robot.subsystems.limelight.LimelightSubsystem;
 import frc.robot.subsystems.swerve.SwerveHardwareCTRE;
 import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
@@ -33,19 +32,21 @@ public class RobotContainer {
   final GameController operator = new GameController(1);
 
   final SwerveSubsystem swerve;
+  final LimelightSubsystem limelight;
 
   private final SendableChooser<Command> autoChooser;
 
   public RobotContainer() {
+
     CommandLogger.enable();
     CommandLogger.addController("Driver", driver);
     CommandLogger.addController("Operator", operator);
 
-    // create hardware and subsystem
-    SwerveHardware swerveHardware = Robot.isSimulation()
-        ? new SwerveHardwareSim()
-        : new SwerveHardwareCTRE();
-    swerve = new SwerveSubsystem(swerveHardware);
+    swerve = new SwerveSubsystem(Robot.isSimulation()
+            ? new SwerveHardwareSim()
+            : new SwerveHardwareCTRE());
+
+    limelight = new LimelightSubsystem(swerve);
 
     // configure PathPlanner AutoBuilder
     configurePathPlanner();
@@ -120,6 +121,7 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
+
     // default command: normal teleop drive
     swerve.setDefaultCommand(swerve.driveCommand(driver));
 
@@ -127,10 +129,9 @@ public class RobotContainer {
     driver.leftBumper()
         .whileTrue(swerve.orbitCommand(driver));
 
-    // reset heading when both sticks clicked
-    driver.leftStick()
-        .and(driver.rightStick())
-        .onTrue(swerve.resetPoseCommand());
+    // zero pose on left click, accept vision pose on right click
+    driver.leftStick().onTrue(swerve.zeroPoseCommand());
+    driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
   }
 
   public Command getAutonomousCommand() {
