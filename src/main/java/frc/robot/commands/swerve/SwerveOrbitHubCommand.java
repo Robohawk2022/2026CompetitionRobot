@@ -4,7 +4,6 @@ import java.util.Objects;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
@@ -12,6 +11,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.GameController;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.util.Field;
 import frc.robot.util.Util;
 
 import static frc.robot.Config.SwerveTeleop.*;
@@ -59,7 +59,7 @@ public class SwerveOrbitHubCommand extends Command {
 
     @Override
     public void initialize() {
-        hubCenter = getHubLocation();
+        hubCenter = Field.getHubCenter();
         distance = Util.feetBetween(swerve.getPose(), hubCenter);
         Util.log("[swerve] orbiting hub at %s w/ distance %.2f",
                 hubCenter,
@@ -91,29 +91,6 @@ public class SwerveOrbitHubCommand extends Command {
                 center);
 
         Util.publishPose("HubCenter", hubCenter);
-    }
-
-    /*
-     * Calculates the target point (center of hub position for 2026) for the
-     * current alliance
-     */
-    private Pose2d getHubLocation() {
-
-        Pose2d tag1;
-        Pose2d tag2;
-
-        if (Util.isRedAlliance()) {
-            tag1 = Util.getTagPose(2);
-            tag2 = Util.getTagPose(5);
-        } else {
-            tag1 = Util.getTagPose(18);
-            tag2 = Util.getTagPose(21);
-        }
-
-        return new Pose2d(
-                (tag1.getX() + tag2.getX()) / 2.0,
-                (tag1.getY() + tag2.getY()) / 2.0,
-                Rotation2d.kZero);
     }
 
     @Override

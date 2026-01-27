@@ -16,6 +16,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.util.Field;
 import frc.robot.util.Util;
 
 import java.util.ArrayList;
@@ -105,7 +106,7 @@ public class LimelightSim {
      * Creates a new LimelightHardwareSim.
      */
     public LimelightSim() {
-        this.fieldLayout = Util.getFieldLayout();
+        this.fieldLayout = Field.getFieldLayout();
 
         // get NetworkTables table for the limelight
         NetworkTable table = NetworkTableInstance.getDefault().getTable(limelightName);

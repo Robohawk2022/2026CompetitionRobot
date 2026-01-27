@@ -66,11 +66,16 @@ This is an **FRC robot codebase** - software for controlling a competition robot
 │   ├── Config.java           # ALL tunable parameters (use Preferences)
 │   ├── Robot.java            # Minimal lifecycle hooks
 │   ├── RobotContainer.java   # Wiring: creates subsystems, binds commands
-│   ├── subsystems/xxx/       # One package per mechanism
-│   │   ├── XxxSubsystem.java # Business logic + command factories
-│   │   ├── XxxHardware.java  # Hardware interface
-│   │   └── XxxHardwareSim.java # Simulation implementation
-│   ├── commands/             # Multi-subsystem commands only
+│   ├── GameController.java   # Controller abstraction (Xbox/8BitDo/Logitech)
+│   ├── subsystems/
+│   │   ├── swerve/           # Swerve drive (CTRE TalonFX)
+│   │   ├── limelight/        # Limelight vision (AprilTag pose estimation)
+│   │   ├── questnav/         # QuestNav headset (dead-reckoning pose estimation)
+│   │   ├── shooter/          # Shooter mechanism
+│   │   ├── intakefront/      # Front intake with velocity control
+│   │   └── led/              # LED signaling via REV Blinkin
+│   ├── commands/
+│   │   └── swerve/           # Standalone swerve commands (teleop, orbit)
 │   ├── util/                 # Reusable utilities (Util, PDController, Trapezoid)
 │   └── testbots/             # Standalone test programs
 ```
@@ -650,36 +655,34 @@ auto.withTimeout(14.5).finallyDo((i) -> { shooter.stop(); intake.stop(); });
 ```java
 public class RobotContainer {
 
-    // Subsystems
-    final ArmSubsystem arm;
-    final IntakeSubsystem intake;
+    // Controllers (GameController handles Xbox/8BitDo/Logitech)
+    final GameController driver = new GameController(0);
+    final GameController operator = new GameController(1);
 
-    // Controllers
-    final CommandXboxController driver = new CommandXboxController(0);
-    final CommandXboxController operator = new CommandXboxController(1);
+    // Subsystems
+    final SwerveSubsystem swerve;
+    final LimelightSubsystem limelight;
 
     public RobotContainer() {
         // Create hardware and subsystems
-        if (Robot.isSimulation()) {
-            arm = new ArmSubsystem(new ArmHardwareSim());
-            intake = new IntakeSubsystem(new IntakeHardwareSim());
-        } else {
-            arm = new ArmSubsystem(new ArmSparkMax());
-            intake = new IntakeSubsystem(new IntakeTalonFX());
-        }
+        swerve = new SwerveSubsystem(Robot.isSimulation()
+                ? new SwerveHardwareSim()
+                : new SwerveHardwareCTRE());
+
+        limelight = new LimelightSubsystem(swerve);
 
         // Set default commands
-        arm.setDefaultCommand(arm.idleCommand());
+        swerve.setDefaultCommand(swerve.driveCommand(driver));
 
         // Bind controls
         configureBindings();
     }
 
     private void configureBindings() {
-        // Operator controls
-        operator.a().whileTrue(arm.presetCommand(ArmPreset.LOW));
-        operator.b().whileTrue(arm.presetCommand(ArmPreset.HIGH));
-        operator.rightTrigger().whileTrue(intake.intakeCommand());
+        // Driver controls
+        driver.leftBumper().whileTrue(swerve.orbitCommand(driver));
+        driver.leftStick().onTrue(swerve.zeroPoseCommand());
+        driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
     }
 }
 ```
@@ -766,8 +769,6 @@ BooleanSupplier flag = Util.pref("Category/Flag?", false);
 
 // Pose utilities
 double distance = Util.feetBetween(pose1, pose2);
-Pose2d tagPose = Util.getTagPose(tagId);
-Pose2d facingTag = Util.getPoseFacingTag(tagId, offsetFeet);
 
 // Alliance handling
 boolean red = Util.isRedAlliance();
@@ -780,6 +781,25 @@ Util.log("Message with %s format", arg);
 
 // Pose publishing
 Util.publishPose("KeyName", pose);
+```
+
+### Field Class
+
+Field-related utilities including AprilTag lookups, field boundaries, and game-specific locations:
+
+```java
+// AprilTag lookups
+AprilTagFieldLayout layout = Field.getFieldLayout();
+AprilTag tag = Field.getTag(tagId);
+Pose2d tagPose = Field.getTagPose(tagId);
+Pose2d facingTag = Field.getPoseFacingTag(tagId, offsetFeet);
+AprilTag closest = Field.closestTagFilteredBy(pose, tag -> tag.ID < 10);
+
+// Field boundary checks
+boolean outside = Field.isOutsideField(pose);
+
+// Game-specific locations (2026)
+Pose2d hubCenter = Field.getHubCenter();  // Alliance-aware hub center
 ```
 
 ### Constants
@@ -1073,7 +1093,8 @@ Use descriptive names that sort chronologically:
 - **roboRIO**: Main controller (ARM Linux)
 - **CAN bus**: Motor controllers, sensors communicate via CAN
 - **NetworkTables**: Real-time data sharing with dashboard
-- **Limelight**: Vision for pose estimation and targeting
+- **Limelight**: AprilTag-based vision for pose estimation
+- **QuestNav**: Meta Quest headset for dead-reckoning pose estimation (optional)
 
 ### Motor Controllers
 
@@ -1121,16 +1142,28 @@ Use descriptive names that sort chronologically:
 
 The `claude-docs/` folder contains session logs with implementation details. Key sessions:
 
-### Vision / Limelight
-- [Improve Limelight Pose Estimation](claude-docs/2026-01-17-improve-limelight-pose-estimation.md) - MegaTag2 integration, dynamic std devs, pose filtering
-- [Add TagPOI Filtering](claude-docs/2026-01-17-add-tagpoi-filtering.md) - Point-of-interest based tag filtering
-
 ### Swerve Drive
 - [Add Swerve Drive CTRE](claude-docs/2025-01-17-add-swerve-drive-ctre.md) - CTRE Phoenix 6 swerve implementation
+- [Fix Swerve Wheel Drift](claude-docs/2026-01-24-fix-swerve-wheel-drift.md) - Wheel drift fix
 - [Refactor Swerve Commands](claude-docs/2026-01-27-refactor-swerve-commands.md) - Extract teleop/orbit to standalone command classes
 
-### Odometry
+### Vision / Pose Estimation
+- [Improve Limelight Pose Estimation](claude-docs/2026-01-17-improve-limelight-pose-estimation.md) - MegaTag2 integration, dynamic std devs, pose filtering
+- [Add TagPOI Filtering](claude-docs/2026-01-17-add-tagpoi-filtering.md) - Point-of-interest based tag filtering
 - [Odometry Improvements](claude-docs/2026-01-17-odometry-improvements.md) - Pose estimation enhancements
+
+### Controller / Input
+- [Extract GameController Class](claude-docs/2026-01-26-extract-gamecontroller-class.md) - Controller abstraction for 8BitDo, Xbox, and Logitech
+
+### Shooter
+- [Add Shooter Motors Testbot](claude-docs/2026-01-24-add-shooter-motors-testbot.md) - Testbot for shooter hardware
+
+### Intake
+- [Add IntakeFront Subsystem](claude-docs/2026-01-25-add-intake-front-subsystem.md) - Front intake with velocity control
+
+### LED
+- [Add LED Subsystem](claude-docs/2026-01-25-add-led-subsystem.md) - LED control subsystem
+- [Refactor LED for Blinkin](claude-docs/2026-01-25-refactor-led-for-blinkin.md) - REV Blinkin integration
 
 ### Utilities
 - [Add Command Logger](claude-docs/2026-01-17-add-command-logger.md) - Command debugging utility
