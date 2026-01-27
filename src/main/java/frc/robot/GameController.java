@@ -7,7 +7,7 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
-import static frc.robot.Config.Swerve.useXboxMapping;
+import static frc.robot.Config.SwerveTeleop.useXboxMapping;
 
 /**
  * A controller abstraction that handles mapping between 8BitDo and Xbox controllers.

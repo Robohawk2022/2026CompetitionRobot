@@ -141,8 +141,21 @@ public Command presetCommand(Preset preset) {
         () -> { /* execute logic */ }
     );
 }
+```
 
-// Only create separate Command classes for complex multi-subsystem coordination
+**Size guideline:** Command factory methods should be ~10 lines or less. If longer:
+1. Create a standalone command class in `frc.robot.commands.<subsystem>/`
+2. The factory method returns `new XxxCommand(this, ...)`
+3. The command class owns its state and reads config values directly
+
+```java
+// When factory would be too long, extract to a class:
+public Command driveCommand(GameController controller) {
+    return new SwerveTeleopCommand(this, controller);
+}
+
+// Add helper methods for commands to update subsystem state:
+public void setTelemetry(String mode, boolean sniper, boolean turbo) { ... }
 ```
 
 ### 4. Units Convention
@@ -434,11 +447,16 @@ public Command presetCommand(ArmPreset preset) {
 }
 ```
 
-### Standalone Command Class (Multi-Subsystem Only)
+### Standalone Command Class
+
+Use standalone command classes when:
+- Command logic exceeds ~10 lines (too complex for inline factory)
+- Command needs its own state fields (timers, PID state, etc.)
+- Command coordinates multiple subsystems
 
 ```java
 /**
- * <p>Complex command coordinating multiple subsystems.</p>
+ * <p>Complex command with its own state.</p>
  */
 public class XxxCommand extends Command {
 
@@ -1109,6 +1127,7 @@ The `claude-docs/` folder contains session logs with implementation details. Key
 
 ### Swerve Drive
 - [Add Swerve Drive CTRE](claude-docs/2025-01-17-add-swerve-drive-ctre.md) - CTRE Phoenix 6 swerve implementation
+- [Refactor Swerve Commands](claude-docs/2026-01-27-refactor-swerve-commands.md) - Extract teleop/orbit to standalone command classes
 
 ### Odometry
 - [Odometry Improvements](claude-docs/2026-01-17-odometry-improvements.md) - Pose estimation enhancements
