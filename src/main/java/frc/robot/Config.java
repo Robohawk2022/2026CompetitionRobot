@@ -61,14 +61,14 @@ public interface Config {
         // Tunable values (adjustable via dashboard/preferences)
         //=======================================================================
 
-        DoubleSupplier maxSpeedFps = pref("Swerve/MaxSpeedFPS", 15.0);
-        DoubleSupplier maxRotationDps = pref("Swerve/MaxRotationDPS", 360.0);
-
-        // Module optimization settings
         /** Enable cosine compensation - scales drive output by cos(angle error) */
         BooleanSupplier cosineCompensation = pref("Swerve/CosineCompensation?", true);
+
         /** Minimum speed (m/s) to command the angle motor - prevents jitter when stationary */
         DoubleSupplier minSpeedForAngle = pref("Swerve/MinSpeedForAngle", 0.01);
+
+        /** Maximum pose jump */
+        DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 1.0);
 
         //=======================================================================
         // Physical constants (change only if hardware changes)
@@ -101,8 +101,6 @@ public interface Config {
                 new Translation2d(-WHEEL_BASE_METERS / 2, TRACK_WIDTH_METERS / 2),  // BL
                 new Translation2d(-WHEEL_BASE_METERS / 2, -TRACK_WIDTH_METERS / 2)  // BR
         );
-        /** Maximum pose jump */
-        DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 1.0);
     }
 
     /**
@@ -136,10 +134,6 @@ public interface Config {
      */
     interface SwerveAuto {
 
-        //=======================================================================
-        // Translation profile
-        //=======================================================================
-
         /** Maximum translation velocity in feet per second */
         DoubleSupplier maxTranslationVelocity = pref("SwerveAuto/MaxTranslationFPS", 12.0);
 
@@ -149,10 +143,6 @@ public interface Config {
         /** Tolerance for position commands in feet */
         DoubleSupplier positionTolerance = pref("SwerveAuto/PositionToleranceFeet", 0.1);
 
-        //=======================================================================
-        // Rotation profile
-        //=======================================================================
-
         /** Maximum rotation velocity in degrees per second */
         DoubleSupplier maxRotationVelocity = pref("SwerveAuto/MaxRotationDPS", 360.0);
 
@@ -161,6 +151,7 @@ public interface Config {
 
         /** Tolerance for heading commands in degrees */
         DoubleSupplier headingTolerance = pref("SwerveAuto/HeadingToleranceDeg", 2.0);
+
     }
 
 //endregion
