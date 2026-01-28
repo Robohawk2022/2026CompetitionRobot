@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Config;
 import frc.robot.Config.Swerve;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.util.Field;
 import frc.robot.util.Util;
 import gg.questnav.questnav.PoseFrame;
 import gg.questnav.questnav.QuestNav;
@@ -128,7 +129,7 @@ public class QuestNavSubsystem extends SubsystemBase {
                 .toPose2d();
 
         // if the pose is outside the field, there's no use dealing with it
-        if (Util.isOutsideField(estimatedPose)) {
+        if (Field.isOutsideField(estimatedPose)) {
             poseOutsideField++;
             return null;
         }

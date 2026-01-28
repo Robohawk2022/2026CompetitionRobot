@@ -32,6 +32,14 @@
     }
   },
   {
+    "name": "/Preferences/Limelight/MaxPoseJumpFeet",
+    "type": "double",
+    "value": 1.0,
+    "properties": {
+      "persistent": true
+    }
+  },
+  {
     "name": "/Preferences/SwerveTeleop/MaxTranslateFPS",
     "type": "double",
     "value": 10.0,
@@ -107,110 +115,6 @@
     "name": "/Preferences/SwerveTeleop/UseXboxMapping?",
     "type": "boolean",
     "value": true,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Vision/Enabled?",
-    "type": "boolean",
-    "value": true,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Vision/Strategy",
-    "type": "double",
-    "value": 1.0,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Vision/BaseStdDev/XY_1Tag",
-    "type": "double",
-    "value": 0.9,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Vision/BaseStdDev/XY_MultiTag",
-    "type": "double",
-    "value": 0.5,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Vision/DistScaleFactor",
-    "type": "double",
-    "value": 3.0,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Vision/MaxAmbiguity",
-    "type": "double",
-    "value": 0.7,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Vision/MaxDistToCamera",
-    "type": "double",
-    "value": 4.0,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Vision/MaxYawRateDPS",
-    "type": "double",
-    "value": 720.0,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Vision/MinTagArea",
-    "type": "double",
-    "value": 0.1,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Vision/MaxPoseJump",
-    "type": "double",
-    "value": 2.0,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Vision/LinearStdDevBaseline",
-    "type": "double",
-    "value": 0.08,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Odometry/Diagnostics?",
-    "type": "boolean",
-    "value": true,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Odometry/DriftWarning_m",
-    "type": "double",
-    "value": 0.5,
     "properties": {
       "persistent": true
     }

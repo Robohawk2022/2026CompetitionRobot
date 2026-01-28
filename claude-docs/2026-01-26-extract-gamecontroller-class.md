@@ -4,12 +4,12 @@
 
 ## Summary
 
-Extracted controller type mapping logic from `SwerveTeleopSpeedSupplier` into a new `GameController` class to centralize 8BitDo/Xbox controller abstraction. Replaced all `CommandXboxController` usage with `GameController`.
+Extracted controller type mapping logic from `SwerveTeleopSpeedSupplier` into a new `GameController` class to centralize controller abstraction. Supports three controller types: 8BitDo (DirectInput), Xbox (XInput), and Logitech. Replaced all `CommandXboxController` usage with `GameController`.
 
 ## Changes Made
 
 ### Files Created
-- `src/main/java/frc/robot/GameController.java` - New controller abstraction that handles mapping between 8BitDo (DirectInput) and Xbox (XInput) controllers based on `Config.Swerve.useXboxMapping`
+- `src/main/java/frc/robot/GameController.java` - New controller abstraction that handles mapping between 8BitDo (DirectInput), Xbox (XInput), and Logitech controllers. Auto-detects Logitech by name; uses `Config.SwerveTeleop.useXboxMapping` for 8BitDo vs Xbox
 
 ### Files Modified
 - `src/main/java/frc/robot/subsystems/swerve/SwerveTeleopSpeedSupplier.java` - Simplified to use `GameController`, removed all axis/button mapping constants and logic (delegated to GameController)
@@ -27,10 +27,24 @@ Extracted controller type mapping logic from `SwerveTeleopSpeedSupplier` into a 
 
 The new `GameController` class provides:
 
+### Controller Types
+```java
+public enum Type {
+    XBOX,     // Standard Xbox/XInput mapping
+    BITDO,    // 8BitDo DirectInput mode
+    LOGITECH  // Logitech gamepad (auto-detected by name)
+}
+```
+
 ### Construction
 ```java
 GameController controller = new GameController(0); // port number
 ```
+
+### Type Detection
+- `getType()` - Returns `Type` enum based on controller detection
+- Logitech is auto-detected by checking if HID name contains "Logitech"
+- Xbox vs 8BitDo determined by `Config.SwerveTeleop.useXboxMapping`
 
 ### Axis Methods
 - `getLeftX()`, `getLeftY()` - Left stick axes (-1 to 1)
@@ -38,13 +52,16 @@ GameController controller = new GameController(0); // port number
 - `getLeftTriggerAxis()`, `getRightTriggerAxis()` - Trigger axes (0 to 1, normalized)
 - `leftXSupplier()`, `leftYSupplier()`, etc. - DoubleSupplier versions
 
+**Logitech-specific behavior:**
+- Joystick axes are inverted (multiplied by -1)
+- Triggers are buttons, not axes (reports 0.0 or 1.0)
+
 ### Button Triggers
 - `a()`, `b()`, `x()`, `y()` - Face buttons
 - `leftBumper()`, `rightBumper()` - Bumpers
 - `start()`, `back()` - Start/back buttons
 - `leftStick()`, `rightStick()` - Stick clicks
 - `leftTrigger()`, `rightTrigger()` - Triggers as buttons (threshold 0.5)
-- `leftTrigger(double threshold)` - Custom threshold
 - `povUp()`, `povDown()`, `povLeft()`, `povRight()`, `pov(int angle)` - D-pad
 
 ### Raw HID Access
@@ -69,16 +86,23 @@ Simplified trigger handling:
 
 - [ ] Test with real 8BitDo controller to verify DirectInput mappings still work
 - [ ] Test with Xbox controller in simulation
+- [ ] Test with Logitech controller to verify button/axis mappings
 
 ## Notes for Next Session
 
-The `SwerveTeleopSpeedSupplier` class still exists and adds swerve-specific functionality (deadband application, command factories). It now delegates to `GameController` for all raw controller input.
+The `SwerveTeleopSpeedSupplier` class has been removed (see 2026-01-27-refactor-swerve-commands.md). The `GameController` class handles all controller input abstraction.
 
-The controller type mapping is determined by `Config.Swerve.useXboxMapping` preference:
-- `false` = 8BitDo DirectInput mode (real robot)
-- `true` = Xbox XInput mode (simulation/testing)
+Controller type detection:
+1. If HID name contains "Logitech" → `Type.LOGITECH`
+2. Else if `Config.SwerveTeleop.useXboxMapping` is true → `Type.XBOX`
+3. Else → `Type.BITDO`
+
+Logitech-specific quirks:
+- Triggers are physical buttons, not analog axes (report 0 or 1)
+- Joystick axes report inverted values (corrected in GameController)
+- Button numbers differ from Xbox/8BitDo
 
 Trigger flow:
 - `GameController.leftTriggerSupplier()` → `BooleanSupplier` (true when >50%)
-- `SwerveSubsystem` uses boolean to decide *whether* to apply sniper/turbo
-- `Config.sniperFactor`/`turboFactor` (`DoubleSupplier`) provide *how much* to scale
+- Commands use boolean to decide *whether* to apply sniper/turbo
+- `Config.SwerveTeleop.sniperFactor`/`turboFactor` provide *how much* to scale

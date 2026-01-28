@@ -6,8 +6,6 @@ import java.util.function.DoubleSupplier;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 
@@ -15,15 +13,8 @@ import static frc.robot.util.Util.pref;
 
 public interface Config {
 
-    //===========================================================================
-    // GLOBAL LOGGING SETTINGS (at top for easy access)
-    //===========================================================================
+//region Logging ---------------------------------------------------------------
 
-    /**
-     * Global logging configuration.
-     * <p>
-     * Enable/disable verbose logging for various subsystems from one place.
-     */
     interface Logging {
 
         /** Master switch for all verbose logging (overrides individual settings when false) */
@@ -47,14 +38,33 @@ public interface Config {
         }
     }
 
-//region Swerve ----------------------------------------------------------------
+//endregion
+
+//region Swerve (General) ------------------------------------------------------
+
+    interface Swerve {
+
+        /** Enable cosine compensation - scales drive output by cos(angle error) */
+        BooleanSupplier cosineCompensation = pref("Swerve/CosineCompensation?", true);
+
+        /** Minimum speed (m/s) to command the angle motor - prevents jitter when stationary */
+        DoubleSupplier minSpeedForAngle = pref("Swerve/MinSpeedForAngle", 0.01);
+
+        /** Maximum pose jump */
+        DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 1.0);
+
+    }
+
+//endregion
+
+//region Swerve (Teleop) -------------------------------------------------------
 
     interface SwerveTeleop {
 
         /** Maximum speeds */
         DoubleSupplier maxTranslate = pref("SwerveTeleop/MaxTranslateFPS", 10.0);
         DoubleSupplier maxRotate = pref("SwerveTeleop/MaxRotateDPS", 180.0);
-        DoubleSupplier maxOrbit = pref("SwerveTeleop/MaxOrbitFPS", 8.0);
+        DoubleSupplier maxOrbit = pref("SwerveTeleop/MaxOrbitFPS", 15.0);
 
         /** Speed mode factors (turbo/sniper) */
         DoubleSupplier sniperFactor = pref("SwerveTeleop/SniperFactor", 0.25);
@@ -70,71 +80,74 @@ public interface Config {
 
         /** Use XBox mapping */
         BooleanSupplier useXboxMapping = pref("SwerveTeleop/UseXboxMapping?", true);
-    }
 
-    /**
-     * Configuration for the swerve drive subsystem.
-     * <p>
-     * Hardware-specific constants (CAN IDs, offsets, PID gains) are in
-     * {@link frc.robot.subsystems.swerve.SwerveHardwareConfig}.
-     */
-    interface Swerve {
-
-        //=======================================================================
-        // Tunable values (adjustable via dashboard/preferences)
-        //=======================================================================
-
-        DoubleSupplier maxSpeedFps = pref("Swerve/MaxSpeedFPS", 15.0);
-        DoubleSupplier maxRotationDps = pref("Swerve/MaxRotationDPS", 360.0);
-
-        // Module optimization settings
-        /** Enable cosine compensation - scales drive output by cos(angle error) */
-        BooleanSupplier cosineCompensation = pref("Swerve/CosineCompensation?", true);
-        /** Minimum speed (m/s) to command the angle motor - prevents jitter when stationary */
-        DoubleSupplier minSpeedForAngle = pref("Swerve/MinSpeedForAngle", 0.01);
-
-        //=======================================================================
-        // Physical constants (change only if hardware changes)
-        //=======================================================================
-
-        // Chassis dimensions (inches) - measure from wheel center to wheel center
-        double WHEEL_BASE_INCHES = 19.0 + 7.0 / 16.0;       // Front-to-back distance
-        double TRACK_WIDTH_INCHES = 25.0;       // Left-to-right distance
-
-        double WHEEL_DIAMETER_METERS = 0.1016;  // 4 inch wheels
-        double DRIVE_GEAR_RATIO = 6.12;         // L3 gearing for SDS MK4i
-        double TURN_GEAR_RATIO =  287.0 / 11.0;   // MK4i turn ratio
-
-        // Derived constants (do not modify)
-        double WHEEL_BASE_METERS = Units.inchesToMeters(WHEEL_BASE_INCHES);
-        double TRACK_WIDTH_METERS = Units.inchesToMeters(TRACK_WIDTH_INCHES);
-
-        double WHEEL_CIRCUMFERENCE_METERS = WHEEL_DIAMETER_METERS * Math.PI;
-        double DRIVE_POSITION_FACTOR = WHEEL_CIRCUMFERENCE_METERS / DRIVE_GEAR_RATIO;
-        double DRIVE_VELOCITY_FACTOR = DRIVE_POSITION_FACTOR / 60.0;
-
-        // Max wheel speed in meters per second (theoretical)
-        double MAX_MOTOR_RPM = 6380.0;  // Kraken X60 free speed
-        double MAX_WHEEL_SPEED_MPS = (MAX_MOTOR_RPM / 60.0) * WHEEL_CIRCUMFERENCE_METERS / DRIVE_GEAR_RATIO;
-
-        // Kinematics - module positions relative to robot center
-        SwerveDriveKinematics KINEMATICS = new SwerveDriveKinematics(
-                new Translation2d(WHEEL_BASE_METERS / 2, TRACK_WIDTH_METERS / 2),   // FL
-                new Translation2d(WHEEL_BASE_METERS / 2, -TRACK_WIDTH_METERS / 2),  // FR
-                new Translation2d(-WHEEL_BASE_METERS / 2, TRACK_WIDTH_METERS / 2),  // BL
-                new Translation2d(-WHEEL_BASE_METERS / 2, -TRACK_WIDTH_METERS / 2)  // BR
-        );
-        /** Maximum pose jump */
-        DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 1.0);
     }
 
 //endregion
 
-//region Vision ----------------------------------------------------------------
+//region Swerve (Auto) ---------------------------------------------------------
 
-    /**
-     * Configuration for the Limelight vision and pose estimation
-     */
+    interface SwerveAuto {
+
+        /** Maximum translation velocity in feet per second */
+        DoubleSupplier maxTranslationVelocity = pref("SwerveAuto/MaxTranslationFPS", 12.0);
+
+        /** Maximum translation acceleration in feet per second squared */
+        DoubleSupplier maxTranslationAcceleration = pref("SwerveAuto/MaxTranslationFPSS", 24.0);
+
+        /** Proportional gain for translation feedback (units: 1/sec) */
+        DoubleSupplier translationKp = pref("SwerveAuto/TranslationKp", 1.0);
+
+        /** Tolerance for position commands in feet */
+        DoubleSupplier positionTolerance = pref("SwerveAuto/PositionToleranceFeet", 0.1);
+
+        /** Maximum rotation velocity in degrees per second */
+        DoubleSupplier maxRotationVelocity = pref("SwerveAuto/MaxRotationDPS", 360.0);
+
+        /** Maximum rotation acceleration in degrees per second squared */
+        DoubleSupplier maxRotationAcceleration = pref("SwerveAuto/MaxRotationDPSS", 720.0);
+
+        /** Proportional gain for rotation feedback (units: 1/sec) */
+        DoubleSupplier rotationKp = pref("SwerveAuto/RotationKp", 2.0);
+
+        /** Tolerance for heading commands in degrees */
+        DoubleSupplier headingTolerance = pref("SwerveAuto/HeadingToleranceDeg", 2.0);
+
+    }
+
+//endregion
+
+//region Swerve (PathPlanner) --------------------------------------------------
+
+    interface PathPlanner {
+
+        /** Translation P gain for path following */
+        DoubleSupplier translationKP = pref("PathPlanner/Translation/kP", 0.0);
+
+        /** Translation I gain for path following */
+        DoubleSupplier translationKI = pref("PathPlanner/Translation/kI", 0.0);
+
+        /** Translation D gain for path following */
+        DoubleSupplier translationKD = pref("PathPlanner/Translation/kD", 0.0);
+
+        /** Rotation P gain for path following */
+        DoubleSupplier rotationKP = pref("PathPlanner/Rotation/kP", 0.0);
+
+        /** Rotation I gain for path following */
+        DoubleSupplier rotationKI = pref("PathPlanner/Rotation/kI", 0.0);
+
+        /** Rotation D gain for path following */
+        DoubleSupplier rotationKD = pref("PathPlanner/Rotation/kD", 0.0);
+
+        /** Enable PathPlanner logging to NetworkTables/AdvantageScope */
+        BooleanSupplier enableLogging = pref("PathPlanner/Logging?", true);
+
+    }
+
+//endregion
+
+//region Limelight & Sim -------------------------------------------------------
+
     interface Limelight {
 
         /** Name of the Limelight in NetworkTables */
@@ -156,9 +169,6 @@ public interface Config {
 
     }
 
-    /**
-     * Configuration for the Limelight simulation
-     */
     interface LimelightSim {
 
         /** Offsets from robot center to camera (meters) */
@@ -212,82 +222,13 @@ public interface Config {
 
         /** Confidence for position estimates */
         Vector<N3> confidence = VecBuilder.fill(0.02, 0.02, 0.035);
+
     }
 
 //endregion
 
-    /**
-     * Configuration for PathPlanner autonomous path following.
-     */
-    interface PathPlanner {
+//region LED -------------------------------------------------------------------
 
-        //=======================================================================
-        // Robot physical properties (for path following)
-        //=======================================================================
-
-        /** Robot mass including bumpers and battery (kg) */
-        double ROBOT_MASS_KG = 54.0;
-
-        /** Robot moment of inertia (kg*m^2) - estimate or calculate from CAD */
-        double ROBOT_MOI = 6.0;
-
-        /** Wheel coefficient of friction */
-        double WHEEL_COF = 1.0;
-
-        //=======================================================================
-        // Drive motor properties (Kraken X60)
-        //=======================================================================
-
-        /** Motor free speed (RPM) */
-        double MOTOR_FREE_SPEED_RPM = 6380.0;
-
-        /** Motor stall torque (N*m) */
-        double MOTOR_STALL_TORQUE_NM = 7.09;
-
-        /** Motor stall current (A) */
-        double MOTOR_STALL_CURRENT_AMPS = 366.0;
-
-        /** Current limit for drive motors (A) */
-        double DRIVE_CURRENT_LIMIT_AMPS = 60.0;
-
-        //=======================================================================
-        // Path following PID tuning
-        //=======================================================================
-
-        /** Translation P gain for path following */
-        DoubleSupplier translationKP = pref("PathPlanner/Translation/kP", 0.0);
-
-        /** Translation I gain for path following */
-        DoubleSupplier translationKI = pref("PathPlanner/Translation/kI", 0.0);
-
-        /** Translation D gain for path following */
-        DoubleSupplier translationKD = pref("PathPlanner/Translation/kD", 0.0);
-
-        /** Rotation P gain for path following */
-        DoubleSupplier rotationKP = pref("PathPlanner/Rotation/kP", 0.0);
-
-        /** Rotation I gain for path following */
-        DoubleSupplier rotationKI = pref("PathPlanner/Rotation/kI", 0.0);
-
-        /** Rotation D gain for path following */
-        DoubleSupplier rotationKD = pref("PathPlanner/Rotation/kD", 0.0);
-
-        //=======================================================================
-        // Path following settings
-        //=======================================================================
-
-        /** Enable PathPlanner logging to NetworkTables/AdvantageScope */
-        BooleanSupplier enableLogging = pref("PathPlanner/Logging?", true);
-    }
-
-    /**
-     * Configuration for the LED subsystem using REV Blinkin.
-     * <p>
-     * The Blinkin is controlled via PWM like a Spark motor controller.
-     * Different "speed" values (-1.0 to 1.0) select colors and patterns.
-     *
-     * @see frc.robot.subsystems.led.LEDSignal
-     */
     interface LED {
 
         /** PWM port for the REV Blinkin LED controller */
@@ -295,10 +236,10 @@ public interface Config {
 
     }
 
-    /**
-     * Configuration for the {@link frc.robot.subsystems.shooter.ShooterSubsystem}
-     * and related functionality
-     */
+//endregion
+
+//region Shooter ---------------------------------------------------------------
+
     interface Shooter {
 
         /** Physical properties of the mechanism */
@@ -319,11 +260,10 @@ public interface Config {
 
     }
 
-    /*
-     * Configuration for the front intake subsystem.
-     * <p>
-     * Uses closed-loop velocity control with separate intake/eject speeds.
-     */
+//endregion
+
+//region Intake ----------------------------------------------------------------
+
     interface IntakeFront {
 
         /** CAN ID for the intake motor */
@@ -372,6 +312,9 @@ public interface Config {
 
         /** Current limit for the intake motor in amps */
         DoubleSupplier currentLimit = pref("IntakeFront/CurrentLimit", 40.0);
+
     }
+
+//endregion
 
 }

@@ -21,13 +21,15 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.GameController;
-import frc.robot.commands.swerve.SwerveOrbitHubCommand;
+import frc.robot.commands.swerve.SwerveOrbitCommand;
 import frc.robot.commands.swerve.SwerveTeleopCommand;
+import frc.robot.commands.swerve.SwerveToHeadingCommand;
+import frc.robot.commands.swerve.SwerveToPoseCommand;
+import frc.robot.util.Field;
 import frc.robot.util.Util;
-
-import static frc.robot.Config.Swerve.*;
 
 /**
  * Swerve drive subsystem with odometry and pose estimation.
@@ -67,12 +69,12 @@ public class SwerveSubsystem extends SubsystemBase {
 
         // initialize odometry and pose estimates
         this.odometry = new SwerveDriveOdometry(
-                KINEMATICS,
+                SwerveHardwareConfig.KINEMATICS,
                 hardware.getHeading(),
                 hardware.getModulePositions(),
                 Pose2d.kZero);
         this.poseEstimator = new SwerveDrivePoseEstimator(
-                KINEMATICS,
+                SwerveHardwareConfig.KINEMATICS,
                 hardware.getHeading(),
                 hardware.getModulePositions(),
                 Pose2d.kZero);
@@ -214,7 +216,7 @@ public class SwerveSubsystem extends SubsystemBase {
      * @return the current chassis speeds
      */
     public ChassisSpeeds getCurrentSpeeds() {
-        return KINEMATICS.toChassisSpeeds(hardware.getModuleStates());
+        return SwerveHardwareConfig.KINEMATICS.toChassisSpeeds(hardware.getModuleStates());
     }
 
     /**
@@ -244,8 +246,8 @@ public class SwerveSubsystem extends SubsystemBase {
         // Compensate for translational skew during rotation (20ms timestep)
         ChassisSpeeds discretizedSpeeds = ChassisSpeeds.discretize(speeds, Util.DT);
 
-        SwerveModuleState[] states = KINEMATICS.toSwerveModuleStates(discretizedSpeeds, center);
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, MAX_WHEEL_SPEED_MPS);
+        SwerveModuleState[] states = SwerveHardwareConfig.KINEMATICS.toSwerveModuleStates(discretizedSpeeds, center);
+        SwerveDriveKinematics.desaturateWheelSpeeds(states, SwerveHardwareConfig.MAX_WHEEL_SPEED_MPS);
         hardware.setModuleStates(states);
         latestSpeed = discretizedSpeeds;
     }
@@ -346,13 +348,89 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Creates an orbit drive command that orbits around the target (Tower)
+     * Creates an orbit drive command that orbits around the hub.
+     * <p>
+     * This is a compound command that:
+     * <ol>
+     *   <li>Determines the location of the alliance hub</li>
+     *   <li>Rotates to face the hub using {@link SwerveToHeadingCommand}</li>
+     *   <li>Orbits the hub using {@link SwerveOrbitCommand}</li>
+     * </ol>
+     *
      * @param controller the game controller for driver input
-     * @return the orbit command
-     * @see SwerveOrbitHubCommand
+     * @return the orbit command sequence
+     * @see SwerveOrbitCommand
      */
     public Command orbitCommand(GameController controller) {
-        return new SwerveOrbitHubCommand(this, controller);
+        return defer(() -> {
+            
+            // determine the location of the hub
+            Pose2d hubCenter = Field.getHubCenter();
+
+            // calculate heading to face the hub from current position
+            Rotation2d headingToHub = hubCenter.getTranslation()
+                    .minus(getPose().getTranslation())
+                    .getAngle();
+
+            Util.log("[swerve] orbit: hub at %s, heading %.1f deg",
+                    hubCenter, headingToHub.getDegrees());
+
+            // sequence: rotate to face hub, then orbit
+            return Commands.sequence(
+                    new SwerveToHeadingCommand(this, headingToHub),
+                    new SwerveOrbitCommand(this, controller, hubCenter)
+            );
+        });
+    }
+
+    /**
+     * Creates a command that rotates to face the specified heading
+     * @param heading the target heading
+     * @return the heading command
+     * @see SwerveToHeadingCommand
+     */
+    public Command driveToHeadingCommand(Rotation2d heading) {
+        return new SwerveToHeadingCommand(this, heading);
+    }
+
+    /**
+     * Creates a command that rotates to face a heading dynamically
+     * re-calculated whenever the command executes
+     * @param headingFunction function to compute the target heading
+     * @return the heading command
+     * @see SwerveToHeadingCommand
+     */
+    public Command driveToHeadingCommand(Function<Pose2d,Rotation2d> headingFunction) {
+        return defer(() -> {
+            Pose2d currentPose = getPose();
+            Rotation2d newHeading = headingFunction.apply(currentPose);
+            return new SwerveToHeadingCommand(this, newHeading);
+        });
+    }
+
+    /**
+     * Creates a command that drives to the specified pose along a straight line
+     * @param pose the target pose
+     * @return the pose command
+     * @see SwerveToPoseCommand
+     */
+    public Command driveToPoseCommand(Pose2d pose) {
+        return new SwerveToPoseCommand(this, pose);
+    }
+
+    /**
+     * Creates a command that drives to a pose dynamically re-calculated
+     * whenever the command executes
+     * @param poseFunction function to compute the target pose
+     * @return the pose command
+     * @see SwerveToPoseCommand
+     */
+    public Command driveToPoseCommand(Function<Pose2d,Pose2d> poseFunction) {
+        return defer(() -> {
+            Pose2d oldPose = getPose();
+            Pose2d newPose = poseFunction.apply(oldPose);
+            return new SwerveToPoseCommand(this, newPose);
+        });
     }
 
 //endregion

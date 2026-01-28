@@ -1,7 +1,7 @@
 package frc.robot.subsystems.limelight;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import frc.robot.util.Util;
+import frc.robot.util.Field;
 
 /**
  * Represents information about the current in-view target for the Limelight
@@ -39,7 +39,7 @@ public class LimelightTarget {
         this.horizontalOffset = offsetX;
         this.verticalOffset = offsetY;
         this.tagId = tagId;
-        this.tagPose = Util.getTagPose(tagId);
+        this.tagPose = Field.getTagPose(tagId);
         this.valid = true;
     }
 

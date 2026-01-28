@@ -18,13 +18,13 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.limelight.LimelightSubsystem;
 import frc.robot.subsystems.swerve.SwerveHardwareCTRE;
+import frc.robot.subsystems.swerve.SwerveHardwareConfig;
 import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.util.CommandLogger;
 import frc.robot.util.Util;
 
 import static frc.robot.Config.PathPlanner.*;
-import static frc.robot.Config.Swerve.*;
 
 public class RobotContainer {
 
@@ -65,23 +65,23 @@ public class RobotContainer {
   private void configurePathPlanner() {
     // Create module config for a single swerve module
     ModuleConfig moduleConfig = new ModuleConfig(
-        WHEEL_DIAMETER_METERS / 2.0,  // wheel radius
-        MAX_WHEEL_SPEED_MPS,          // max module speed
-        WHEEL_COF,                    // wheel coefficient of friction
+        SwerveHardwareConfig.WHEEL_DIAMETER_METERS / 2.0,  // wheel radius
+        SwerveHardwareConfig.MAX_WHEEL_SPEED_MPS,          // max module speed
+        SwerveHardwareConfig.WHEEL_COF,                    // wheel coefficient of friction
         DCMotor.getKrakenX60(1),      // drive motor
-        DRIVE_CURRENT_LIMIT_AMPS,     // current limit
+        SwerveHardwareConfig.DRIVE_CURRENT_LIMIT_AMPS,     // current limit
         1                             // number of motors per module
     );
 
     // Create robot config with module positions (same order as kinematics: FL, FR, BL, BR)
     RobotConfig robotConfig = new RobotConfig(
-        ROBOT_MASS_KG,
-        ROBOT_MOI,
+        SwerveHardwareConfig.ROBOT_MASS_KG,
+        SwerveHardwareConfig.ROBOT_MOI,
         moduleConfig,
-        new Translation2d(WHEEL_BASE_METERS / 2, TRACK_WIDTH_METERS / 2),   // FL
-        new Translation2d(WHEEL_BASE_METERS / 2, -TRACK_WIDTH_METERS / 2),  // FR
-        new Translation2d(-WHEEL_BASE_METERS / 2, TRACK_WIDTH_METERS / 2),  // BL
-        new Translation2d(-WHEEL_BASE_METERS / 2, -TRACK_WIDTH_METERS / 2)  // BR
+        new Translation2d(SwerveHardwareConfig.WHEEL_BASE_METERS / 2, SwerveHardwareConfig.TRACK_WIDTH_METERS / 2),   // FL
+        new Translation2d(SwerveHardwareConfig.WHEEL_BASE_METERS / 2, -SwerveHardwareConfig.TRACK_WIDTH_METERS / 2),  // FR
+        new Translation2d(-SwerveHardwareConfig.WHEEL_BASE_METERS / 2, SwerveHardwareConfig.TRACK_WIDTH_METERS / 2),  // BL
+        new Translation2d(-SwerveHardwareConfig.WHEEL_BASE_METERS / 2, -SwerveHardwareConfig.TRACK_WIDTH_METERS / 2)  // BR
     );
 
     // Configure AutoBuilder

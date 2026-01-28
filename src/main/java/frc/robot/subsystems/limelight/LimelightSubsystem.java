@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Config.Limelight;
 import frc.robot.subsystems.limelight.LimelightHelpers.PoseEstimate;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.util.Field;
 import frc.robot.util.Util;
 
 import java.util.Objects;
@@ -240,7 +241,7 @@ public class LimelightSubsystem extends SubsystemBase {
         }
 
         // if the pose is outside the field, there's no use dealing with it
-        if (Util.isOutsideField(estimate.pose)) {
+        if (Field.isOutsideField(estimate.pose)) {
             poseOutsideField++;
             return;
         }
@@ -277,7 +278,7 @@ public class LimelightSubsystem extends SubsystemBase {
         // we're good to go!
         swerve.submitVisionEstimate(estimate.pose, estimate.timestampSeconds, confidence);
         latestEstimate = estimate.pose;
-        latestTagPose = Util.getTagPose(estimate.rawFiducials[0].id);
+        latestTagPose = Field.getTagPose(estimate.rawFiducials[0].id);
     }
 
 //endregion

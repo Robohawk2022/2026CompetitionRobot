@@ -1,5 +1,7 @@
 package frc.robot.testbots;
 
+import com.revrobotics.PersistMode;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
@@ -61,7 +63,6 @@ public class ShooterMotorsTestbot extends TimedRobot {
     double indexVoltsCmd = 0;
     double shootVoltsCmd = 0;
 
-    @SuppressWarnings("deprecation")
     public ShooterMotorsTestbot() {
         // create motors
         intakeMotor = new SparkMax(INTAKE_CAN_ID, MotorType.kBrushless);
@@ -71,9 +72,9 @@ public class ShooterMotorsTestbot extends TimedRobot {
         // configure motors with coast mode
         SparkMaxConfig config = new SparkMaxConfig();
         config.idleMode(IdleMode.kCoast);
-        intakeMotor.configure(config, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters);
-        indexMotor.configure(config, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters);
-        shootMotor.configure(config, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters);
+        intakeMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        indexMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        shootMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
         controller = new GameController(0);
 
