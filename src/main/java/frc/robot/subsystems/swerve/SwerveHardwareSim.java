@@ -6,8 +6,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import frc.robot.util.Util;
 
-import static frc.robot.Config.Swerve.*;
-
 /**
  * Implements {@link SwerveHardware} for simulation.
  * <p>
@@ -82,7 +80,7 @@ public class SwerveHardwareSim implements SwerveHardware {
         }
 
         // update heading based on chassis rotation
-        ChassisSpeeds speeds = KINEMATICS.toChassisSpeeds(states);
+        ChassisSpeeds speeds = SwerveHardwareConfig.KINEMATICS.toChassisSpeeds(states);
         yawRateDps = Math.toDegrees(speeds.omegaRadiansPerSecond);
         heading = heading.plus(Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * Util.DT));
     }

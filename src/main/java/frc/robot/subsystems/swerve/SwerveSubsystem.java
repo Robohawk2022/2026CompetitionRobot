@@ -31,8 +31,6 @@ import frc.robot.commands.swerve.SwerveToPoseCommand;
 import frc.robot.util.Field;
 import frc.robot.util.Util;
 
-import static frc.robot.Config.Swerve.*;
-
 /**
  * Swerve drive subsystem with odometry and pose estimation.
  * <p>
@@ -71,12 +69,12 @@ public class SwerveSubsystem extends SubsystemBase {
 
         // initialize odometry and pose estimates
         this.odometry = new SwerveDriveOdometry(
-                KINEMATICS,
+                SwerveHardwareConfig.KINEMATICS,
                 hardware.getHeading(),
                 hardware.getModulePositions(),
                 Pose2d.kZero);
         this.poseEstimator = new SwerveDrivePoseEstimator(
-                KINEMATICS,
+                SwerveHardwareConfig.KINEMATICS,
                 hardware.getHeading(),
                 hardware.getModulePositions(),
                 Pose2d.kZero);
@@ -218,7 +216,7 @@ public class SwerveSubsystem extends SubsystemBase {
      * @return the current chassis speeds
      */
     public ChassisSpeeds getCurrentSpeeds() {
-        return KINEMATICS.toChassisSpeeds(hardware.getModuleStates());
+        return SwerveHardwareConfig.KINEMATICS.toChassisSpeeds(hardware.getModuleStates());
     }
 
     /**
@@ -248,8 +246,8 @@ public class SwerveSubsystem extends SubsystemBase {
         // Compensate for translational skew during rotation (20ms timestep)
         ChassisSpeeds discretizedSpeeds = ChassisSpeeds.discretize(speeds, Util.DT);
 
-        SwerveModuleState[] states = KINEMATICS.toSwerveModuleStates(discretizedSpeeds, center);
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, MAX_WHEEL_SPEED_MPS);
+        SwerveModuleState[] states = SwerveHardwareConfig.KINEMATICS.toSwerveModuleStates(discretizedSpeeds, center);
+        SwerveDriveKinematics.desaturateWheelSpeeds(states, SwerveHardwareConfig.MAX_WHEEL_SPEED_MPS);
         hardware.setModuleStates(states);
         latestSpeed = discretizedSpeeds;
     }

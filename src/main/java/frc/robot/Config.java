@@ -6,8 +6,6 @@ import java.util.function.DoubleSupplier;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 
@@ -57,10 +55,6 @@ public interface Config {
      */
     interface Swerve {
 
-        //=======================================================================
-        // Tunable values (adjustable via dashboard/preferences)
-        //=======================================================================
-
         /** Enable cosine compensation - scales drive output by cos(angle error) */
         BooleanSupplier cosineCompensation = pref("Swerve/CosineCompensation?", true);
 
@@ -70,37 +64,6 @@ public interface Config {
         /** Maximum pose jump */
         DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 1.0);
 
-        //=======================================================================
-        // Physical constants (change only if hardware changes)
-        //=======================================================================
-
-        // Chassis dimensions (inches) - measure from wheel center to wheel center
-        double WHEEL_BASE_INCHES = 19.0 + 7.0 / 16.0;       // Front-to-back distance
-        double TRACK_WIDTH_INCHES = 25.0;       // Left-to-right distance
-
-        double WHEEL_DIAMETER_METERS = 0.1016;  // 4 inch wheels
-        double DRIVE_GEAR_RATIO = 6.12;         // L3 gearing for SDS MK4i
-        double TURN_GEAR_RATIO =  287.0 / 11.0;   // MK4i turn ratio
-
-        // Derived constants (do not modify)
-        double WHEEL_BASE_METERS = Units.inchesToMeters(WHEEL_BASE_INCHES);
-        double TRACK_WIDTH_METERS = Units.inchesToMeters(TRACK_WIDTH_INCHES);
-
-        double WHEEL_CIRCUMFERENCE_METERS = WHEEL_DIAMETER_METERS * Math.PI;
-        double DRIVE_POSITION_FACTOR = WHEEL_CIRCUMFERENCE_METERS / DRIVE_GEAR_RATIO;
-        double DRIVE_VELOCITY_FACTOR = DRIVE_POSITION_FACTOR / 60.0;
-
-        // Max wheel speed in meters per second (theoretical)
-        double MAX_MOTOR_RPM = 6380.0;  // Kraken X60 free speed
-        double MAX_WHEEL_SPEED_MPS = (MAX_MOTOR_RPM / 60.0) * WHEEL_CIRCUMFERENCE_METERS / DRIVE_GEAR_RATIO;
-
-        // Kinematics - module positions relative to robot center
-        SwerveDriveKinematics KINEMATICS = new SwerveDriveKinematics(
-                new Translation2d(WHEEL_BASE_METERS / 2, TRACK_WIDTH_METERS / 2),   // FL
-                new Translation2d(WHEEL_BASE_METERS / 2, -TRACK_WIDTH_METERS / 2),  // FR
-                new Translation2d(-WHEEL_BASE_METERS / 2, TRACK_WIDTH_METERS / 2),  // BL
-                new Translation2d(-WHEEL_BASE_METERS / 2, -TRACK_WIDTH_METERS / 2)  // BR
-        );
     }
 
     /**
@@ -247,39 +210,6 @@ public interface Config {
      */
     interface PathPlanner {
 
-        //=======================================================================
-        // Robot physical properties (for path following)
-        //=======================================================================
-
-        /** Robot mass including bumpers and battery (kg) */
-        double ROBOT_MASS_KG = 54.0;
-
-        /** Robot moment of inertia (kg*m^2) - estimate or calculate from CAD */
-        double ROBOT_MOI = 6.0;
-
-        /** Wheel coefficient of friction */
-        double WHEEL_COF = 1.0;
-
-        //=======================================================================
-        // Drive motor properties (Kraken X60)
-        //=======================================================================
-
-        /** Motor free speed (RPM) */
-        double MOTOR_FREE_SPEED_RPM = 6380.0;
-
-        /** Motor stall torque (N*m) */
-        double MOTOR_STALL_TORQUE_NM = 7.09;
-
-        /** Motor stall current (A) */
-        double MOTOR_STALL_CURRENT_AMPS = 366.0;
-
-        /** Current limit for drive motors (A) */
-        double DRIVE_CURRENT_LIMIT_AMPS = 60.0;
-
-        //=======================================================================
-        // Path following PID tuning
-        //=======================================================================
-
         /** Translation P gain for path following */
         DoubleSupplier translationKP = pref("PathPlanner/Translation/kP", 0.0);
 
@@ -297,10 +227,6 @@ public interface Config {
 
         /** Rotation D gain for path following */
         DoubleSupplier rotationKD = pref("PathPlanner/Rotation/kD", 0.0);
-
-        //=======================================================================
-        // Path following settings
-        //=======================================================================
 
         /** Enable PathPlanner logging to NetworkTables/AdvantageScope */
         BooleanSupplier enableLogging = pref("PathPlanner/Logging?", true);
