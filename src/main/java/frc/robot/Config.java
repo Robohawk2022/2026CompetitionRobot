@@ -121,26 +121,18 @@ public interface Config {
 
     interface PathPlanner {
 
-        /** Translation P gain for path following */
-        DoubleSupplier translationKP = pref("PathPlanner/Translation/kP", 0.0);
+        /** Translation gains for path following */
+        DoubleSupplier translationP = pref("PathPlanner/Translation/kP", 0.0);
+        DoubleSupplier translationI = pref("PathPlanner/Translation/kI", 0.0);
+        DoubleSupplier translationD = pref("PathPlanner/Translation/kD", 0.0);
 
-        /** Translation I gain for path following */
-        DoubleSupplier translationKI = pref("PathPlanner/Translation/kI", 0.0);
+        /** Rotation gains for path following */
+        DoubleSupplier rotationP = pref("PathPlanner/Rotation/kP", 0.0);
+        DoubleSupplier rotationI = pref("PathPlanner/Rotation/kI", 0.0);
+        DoubleSupplier rotationD = pref("PathPlanner/Rotation/kD", 0.0);
 
-        /** Translation D gain for path following */
-        DoubleSupplier translationKD = pref("PathPlanner/Translation/kD", 0.0);
-
-        /** Rotation P gain for path following */
-        DoubleSupplier rotationKP = pref("PathPlanner/Rotation/kP", 0.0);
-
-        /** Rotation I gain for path following */
-        DoubleSupplier rotationKI = pref("PathPlanner/Rotation/kI", 0.0);
-
-        /** Rotation D gain for path following */
-        DoubleSupplier rotationKD = pref("PathPlanner/Rotation/kD", 0.0);
-
-        /** Enable PathPlanner logging to NetworkTables/AdvantageScope */
-        BooleanSupplier enableLogging = pref("PathPlanner/Logging?", true);
+        /** Enable PathPlanner debug logging */
+        BooleanSupplier debugLogging = pref("PathPlanner/Debug?", true);
 
     }
 
