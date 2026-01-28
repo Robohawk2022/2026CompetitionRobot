@@ -112,7 +112,7 @@ public class DigitBoardProgramPicker implements Supplier<String> {
             which = (which + 1) % options.size();
         }
 
-        if (board.isButtonAPressed()) {
+        if (board.wasButtonAReleased()) {
             which = which - 1;
 
             // if they want to go "backwards" past the beginning of the

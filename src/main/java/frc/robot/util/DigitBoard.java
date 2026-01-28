@@ -150,7 +150,7 @@ public class DigitBoard {
      */
     public boolean wasButtonAReleased() {
         boolean isPressed = isButtonAPressed();
-        boolean wasReleased = isPressed && !aWasPressed;
+        boolean wasReleased = !isPressed && aWasPressed;
         aWasPressed = isPressed;
         return wasReleased;
     }
@@ -169,7 +169,7 @@ public class DigitBoard {
      */
     public boolean wasButtonBReleased() {
         boolean isPressed = isButtonBPressed();
-        boolean wasReleased = isPressed && !bWasPressed;
+        boolean wasReleased = !isPressed && bWasPressed;
         bWasPressed = isPressed;
         return wasReleased;
     }

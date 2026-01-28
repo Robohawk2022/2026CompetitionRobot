@@ -69,6 +69,8 @@ public class AutonomousSubsystem extends SubsystemBase {
             configureAutoBuilder();
             this.error = false;
         } catch (Exception e) {
+            Util.log("[auto] CONFIGURATION FAILED: %s", e.getMessage());
+            e.printStackTrace();
             this.error = true;
         }
 
@@ -167,6 +169,7 @@ public class AutonomousSubsystem extends SubsystemBase {
         // if initialization failed, we will use our emergency backup
         // command instead of trying to do a full routine
         if (error) {
+            swerve.resetPose(createEmergencyStartPose());
             command = createEmergencyCommand();
         }
 
@@ -251,9 +254,11 @@ public class AutonomousSubsystem extends SubsystemBase {
      * TODO create an emergency auto program
      *
      * If the autonomous routine gets buggered up, what do you want the
-     * robot to do? Sitting still might be one option, but you mightz also
+     * robot to do? Sitting still might be one option, but you might also
      * have some of that "mandatory" stuff to do. Or you might want to try
      * some minimal driving to score points.
+     *
+     * @see #createEmergencyStartPose()
      */
     private Command createEmergencyCommand() {
         return Commands.print("[auto] oh, dang, something went wrong!");
