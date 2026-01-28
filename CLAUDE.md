@@ -691,22 +691,48 @@ public class RobotContainer {
 
 ## Dashboard Integration
 
+### Key Naming for Alphabetical Grouping
+
+Dashboard tools like Elastic display values in **alphabetical order**. To keep related values together, put the category first, then the qualifier:
+
+| Pattern | Example Keys (sorted) | Why It Works |
+|---------|----------------------|--------------|
+| `CategoryQualifier` | `HeadingCurrent`, `HeadingDesired`, `HeadingError`, `HeadingGoal` | All heading values group together |
+| `QualifierCategory` | `CurrentHeading`, `DesiredHeading`, `ErrorHeading`, `GoalHeading` | Scattered across the list |
+
+**Standard qualifiers:**
+- `Current` - where the robot actually is now
+- `Desired` - where we want it to be now (moving setpoint from profile)
+- `Error` - difference between desired/goal and current
+- `Goal` - final destination / target
+
+**Example:** For a command tracking both distance and heading:
+```
+DistanceCurrent, DistanceDesired, DistanceError, DistanceGoal
+HeadingCurrent, HeadingDesired, HeadingError, HeadingGoal
+VelocityDesired, VelocityFeedback
+OmegaDesired, OmegaFeedback
+```
+
+### Dashboard Code Pattern
+
 ```java
 SmartDashboard.putData(getName(), builder -> {
     // Always include mode and key state
     builder.addStringProperty("Mode", () -> currentMode, null);
     builder.addBooleanProperty("AtGoal?", this::atGoal, null);
 
-    // Use consistent prefixes so values sort together
+    // Category prefix groups related values together alphabetically
     builder.addDoubleProperty("AngleCurrent", () -> currentAngle, null);
-    builder.addDoubleProperty("AngleTarget", () -> targetAngle, null);
+    builder.addDoubleProperty("AngleDesired", () -> desiredAngle, null);
     builder.addDoubleProperty("AngleError", () -> error, null);
+    builder.addDoubleProperty("AngleGoal", () -> targetAngle, null);
 
     // Gate verbose logging
     if (verboseLogging) {
         builder.addDoubleProperty("Amps", hardware::getMotorAmps, null);
-        builder.addDoubleProperty("VoltsFeedforward", () -> latestFeedforward, null);
         builder.addDoubleProperty("VoltsFeedback", () -> latestFeedback, null);
+        builder.addDoubleProperty("VoltsFeedforward", () -> latestFeedforward, null);
     }
 });
 ```

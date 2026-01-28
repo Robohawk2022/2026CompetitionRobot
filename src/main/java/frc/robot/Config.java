@@ -13,15 +13,8 @@ import static frc.robot.util.Util.pref;
 
 public interface Config {
 
-    //===========================================================================
-    // GLOBAL LOGGING SETTINGS (at top for easy access)
-    //===========================================================================
+//region Logging ---------------------------------------------------------------
 
-    /**
-     * Global logging configuration.
-     * <p>
-     * Enable/disable verbose logging for various subsystems from one place.
-     */
     interface Logging {
 
         /** Master switch for all verbose logging (overrides individual settings when false) */
@@ -45,14 +38,10 @@ public interface Config {
         }
     }
 
-//region Swerve ----------------------------------------------------------------
+//endregion
 
-    /**
-     * Configuration for the swerve drive subsystem.
-     * <p>
-     * Hardware-specific constants (CAN IDs, offsets, PID gains) are in
-     * {@link frc.robot.subsystems.swerve.SwerveHardwareConfig}.
-     */
+//region Swerve (General) ------------------------------------------------------
+
     interface Swerve {
 
         /** Enable cosine compensation - scales drive output by cos(angle error) */
@@ -66,9 +55,10 @@ public interface Config {
 
     }
 
-    /**
-     * Configuration for swerve teleop operation
-     */
+//endregion
+
+//region Swerve (Teleop) -------------------------------------------------------
+
     interface SwerveTeleop {
 
         /** Maximum speeds */
@@ -90,11 +80,13 @@ public interface Config {
 
         /** Use XBox mapping */
         BooleanSupplier useXboxMapping = pref("SwerveTeleop/UseXboxMapping?", true);
+
     }
 
-    /**
-     * Configuration for autonomous swerve commands (heading control, etc.)
-     */
+//endregion
+
+//region Swerve (Auto) ---------------------------------------------------------
+
     interface SwerveAuto {
 
         /** Maximum translation velocity in feet per second */
@@ -102,6 +94,9 @@ public interface Config {
 
         /** Maximum translation acceleration in feet per second squared */
         DoubleSupplier maxTranslationAcceleration = pref("SwerveAuto/MaxTranslationFPSS", 24.0);
+
+        /** Proportional gain for translation feedback (units: 1/sec) */
+        DoubleSupplier translationKp = pref("SwerveAuto/TranslationKp", 1.0);
 
         /** Tolerance for position commands in feet */
         DoubleSupplier positionTolerance = pref("SwerveAuto/PositionToleranceFeet", 0.1);
@@ -112,6 +107,9 @@ public interface Config {
         /** Maximum rotation acceleration in degrees per second squared */
         DoubleSupplier maxRotationAcceleration = pref("SwerveAuto/MaxRotationDPSS", 720.0);
 
+        /** Proportional gain for rotation feedback (units: 1/sec) */
+        DoubleSupplier rotationKp = pref("SwerveAuto/RotationKp", 2.0);
+
         /** Tolerance for heading commands in degrees */
         DoubleSupplier headingTolerance = pref("SwerveAuto/HeadingToleranceDeg", 2.0);
 
@@ -119,11 +117,37 @@ public interface Config {
 
 //endregion
 
-//region Vision ----------------------------------------------------------------
+//region Swerve (PathPlanner) --------------------------------------------------
 
-    /**
-     * Configuration for the Limelight vision and pose estimation
-     */
+    interface PathPlanner {
+
+        /** Translation P gain for path following */
+        DoubleSupplier translationKP = pref("PathPlanner/Translation/kP", 0.0);
+
+        /** Translation I gain for path following */
+        DoubleSupplier translationKI = pref("PathPlanner/Translation/kI", 0.0);
+
+        /** Translation D gain for path following */
+        DoubleSupplier translationKD = pref("PathPlanner/Translation/kD", 0.0);
+
+        /** Rotation P gain for path following */
+        DoubleSupplier rotationKP = pref("PathPlanner/Rotation/kP", 0.0);
+
+        /** Rotation I gain for path following */
+        DoubleSupplier rotationKI = pref("PathPlanner/Rotation/kI", 0.0);
+
+        /** Rotation D gain for path following */
+        DoubleSupplier rotationKD = pref("PathPlanner/Rotation/kD", 0.0);
+
+        /** Enable PathPlanner logging to NetworkTables/AdvantageScope */
+        BooleanSupplier enableLogging = pref("PathPlanner/Logging?", true);
+
+    }
+
+//endregion
+
+//region Limelight & Sim -------------------------------------------------------
+
     interface Limelight {
 
         /** Name of the Limelight in NetworkTables */
@@ -145,9 +169,6 @@ public interface Config {
 
     }
 
-    /**
-     * Configuration for the Limelight simulation
-     */
     interface LimelightSim {
 
         /** Offsets from robot center to camera (meters) */
@@ -201,45 +222,13 @@ public interface Config {
 
         /** Confidence for position estimates */
         Vector<N3> confidence = VecBuilder.fill(0.02, 0.02, 0.035);
+
     }
 
 //endregion
 
-    /**
-     * Configuration for PathPlanner autonomous path following.
-     */
-    interface PathPlanner {
+//region LED -------------------------------------------------------------------
 
-        /** Translation P gain for path following */
-        DoubleSupplier translationKP = pref("PathPlanner/Translation/kP", 0.0);
-
-        /** Translation I gain for path following */
-        DoubleSupplier translationKI = pref("PathPlanner/Translation/kI", 0.0);
-
-        /** Translation D gain for path following */
-        DoubleSupplier translationKD = pref("PathPlanner/Translation/kD", 0.0);
-
-        /** Rotation P gain for path following */
-        DoubleSupplier rotationKP = pref("PathPlanner/Rotation/kP", 0.0);
-
-        /** Rotation I gain for path following */
-        DoubleSupplier rotationKI = pref("PathPlanner/Rotation/kI", 0.0);
-
-        /** Rotation D gain for path following */
-        DoubleSupplier rotationKD = pref("PathPlanner/Rotation/kD", 0.0);
-
-        /** Enable PathPlanner logging to NetworkTables/AdvantageScope */
-        BooleanSupplier enableLogging = pref("PathPlanner/Logging?", true);
-    }
-
-    /**
-     * Configuration for the LED subsystem using REV Blinkin.
-     * <p>
-     * The Blinkin is controlled via PWM like a Spark motor controller.
-     * Different "speed" values (-1.0 to 1.0) select colors and patterns.
-     *
-     * @see frc.robot.subsystems.led.LEDSignal
-     */
     interface LED {
 
         /** PWM port for the REV Blinkin LED controller */
@@ -247,10 +236,10 @@ public interface Config {
 
     }
 
-    /**
-     * Configuration for the {@link frc.robot.subsystems.shooter.ShooterSubsystem}
-     * and related functionality
-     */
+//endregion
+
+//region Shooter ---------------------------------------------------------------
+
     interface Shooter {
 
         /** Physical properties of the mechanism */
@@ -271,11 +260,10 @@ public interface Config {
 
     }
 
-    /*
-     * Configuration for the front intake subsystem.
-     * <p>
-     * Uses closed-loop velocity control with separate intake/eject speeds.
-     */
+//endregion
+
+//region Intake ----------------------------------------------------------------
+
     interface IntakeFront {
 
         /** CAN ID for the intake motor */
@@ -324,6 +312,9 @@ public interface Config {
 
         /** Current limit for the intake motor in amps */
         DoubleSupplier currentLimit = pref("IntakeFront/CurrentLimit", 40.0);
+
     }
+
+//endregion
 
 }

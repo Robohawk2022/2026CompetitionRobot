@@ -17,10 +17,8 @@ import frc.robot.util.Util;
 import static frc.robot.Config.SwerveAuto.*;
 
 /**
- * Command that drives the swerve to a target pose along a straight line using
- * trapezoidal motion profiling for both translation and rotation.
- * <p>
- * Uses two independent {@link Trapezoid} profiles:
+ * Command that drives the swerve to a target pose along a straight line. Uses
+ * two independent {@link Trapezoid} profiles:
  * <ul>
  *   <li>Translation: controls speed along the straight-line path to target</li>
  *   <li>Rotation: controls angular velocity to target heading</li>
@@ -37,20 +35,31 @@ public class SwerveToPoseCommand extends Command {
     final Trapezoid rotationTrapezoid;
     final Timer timer;
 
-    // computed on initialize
+    // when we initialize, we capture the starting pose and calculate the
+    // distance and direction to our goal
     Pose2d startPose;
     Translation2d directionUnit;
-    double totalDistanceFeet;
-    double startHeadingDeg;
-    double targetHeadingDeg;
+    double distanceGoalFeet;
+    double headingGoalDeg;
 
-    // updated each execute for dashboard
-    double currentDistanceFeet;
-    double currentHeadingDeg;
-    double profileDistanceFeet;
-    double profileVelocityFps;
-    double profileHeadingDeg;
-    double profileOmegaDps;
+    // distance calculation: we start at 0 distance, and translate towards the
+    // goal. at each step, we have a "next" desired distance and velocity,
+    // and we calculate error and feedback against that.
+    double distanceCurrentFeet;
+    double distanceDesiredFeet;
+    double velocityDesiredFps;
+    double distanceErrorFeet;
+    double distanceFeedbackFps;
+
+    // heading calculation: we start at a certain heading, and rotate towards
+    // the goal. at each step, we have a "next" desired heading and velocity,
+    // and we calculate error and feedback against that.
+    double headingStartDeg;
+    double headingCurrentDeg;
+    double headingDesiredDeg;
+    double omegaDesiredDps;
+    double headingErrorDeg;
+    double headingFeedbackDps;
 
     /**
      * Creates a {@link SwerveToPoseCommand}.
@@ -70,15 +79,28 @@ public class SwerveToPoseCommand extends Command {
 
         if (verboseLogging) {
             SmartDashboard.putData("SwerveToPoseCommand", builder -> {
+
                 builder.addBooleanProperty("Running?", this::isScheduled, null);
-                builder.addDoubleProperty("TotalDistance", () -> totalDistanceFeet, null);
-                builder.addDoubleProperty("CurrentDistance", () -> currentDistanceFeet, null);
-                builder.addDoubleProperty("ProfileDistance", () -> profileDistanceFeet, null);
-                builder.addDoubleProperty("ProfileVelocity", () -> profileVelocityFps, null);
-                builder.addDoubleProperty("TargetHeading", () -> targetHeadingDeg, null);
-                builder.addDoubleProperty("CurrentHeading", () -> currentHeadingDeg, null);
-                builder.addDoubleProperty("ProfileHeading", () -> profileHeadingDeg, null);
-                builder.addDoubleProperty("ProfileOmega", () -> profileOmegaDps, null);
+
+                // Distance* groups together: Current, Desired, Error, Goal
+                builder.addDoubleProperty("DistanceCurrent", () -> distanceCurrentFeet, null);
+                builder.addDoubleProperty("DistanceDesired", () -> distanceDesiredFeet, null);
+                builder.addDoubleProperty("DistanceError", () -> distanceErrorFeet, null);
+                builder.addDoubleProperty("DistanceGoal", () -> distanceGoalFeet, null);
+
+                // Heading* groups together: Current, Desired, Error, Goal
+                builder.addDoubleProperty("HeadingCurrent", () -> headingCurrentDeg, null);
+                builder.addDoubleProperty("HeadingDesired", () -> headingDesiredDeg, null);
+                builder.addDoubleProperty("HeadingError", () -> headingErrorDeg, null);
+                builder.addDoubleProperty("HeadingGoal", () -> headingGoalDeg, null);
+
+                // Velocity* groups together (translation): Desired, Feedback
+                builder.addDoubleProperty("VelocityDesired", () -> velocityDesiredFps, null);
+                builder.addDoubleProperty("VelocityFeedback", () -> distanceFeedbackFps, null);
+
+                // Omega* groups together (rotation): Desired, Feedback
+                builder.addDoubleProperty("OmegaDesired", () -> omegaDesiredDps, null);
+                builder.addDoubleProperty("OmegaFeedback", () -> headingFeedbackDps, null);
             });
         }
     }
@@ -90,28 +112,28 @@ public class SwerveToPoseCommand extends Command {
 
         // calculate translation path
         Translation2d delta = targetPose.getTranslation().minus(startPose.getTranslation());
-        totalDistanceFeet = Units.metersToFeet(delta.getNorm());
+        distanceGoalFeet = Units.metersToFeet(delta.getNorm());
 
         // calculate unit vector for direction (handle zero distance case)
-        if (totalDistanceFeet > 0.001) {
+        if (distanceGoalFeet > 0.001) {
             directionUnit = delta.div(delta.getNorm());
         } else {
             directionUnit = Translation2d.kZero;
         }
 
         // calculate rotation path (shortest path)
-        startHeadingDeg = swerve.getHeading().getDegrees();
-        targetHeadingDeg = targetPose.getRotation().getDegrees();
-        double headingError = Util.degreeModulus(targetHeadingDeg - startHeadingDeg);
-        targetHeadingDeg = startHeadingDeg + headingError;
+        headingStartDeg = swerve.getHeading().getDegrees();
+        headingGoalDeg = targetPose.getRotation().getDegrees();
+        double headingError = Util.degreeModulus(headingGoalDeg - headingStartDeg);
+        headingGoalDeg = headingStartDeg + headingError;
 
         // configure profiles
-        translationTrapezoid.calculate(0.0, totalDistanceFeet);
-        rotationTrapezoid.calculate(startHeadingDeg, targetHeadingDeg);
+        translationTrapezoid.calculate(0.0, distanceGoalFeet);
+        rotationTrapezoid.calculate(headingStartDeg, headingGoalDeg);
         timer.restart();
 
-        Util.log("[swerve] driving to pose: %.1f ft, %.1f deg rotation",
-                totalDistanceFeet,
+        Util.log("[auto-pose] driving to pose: %.1f ft translation, %.1f deg rotation",
+                distanceGoalFeet,
                 headingError);
     }
 
@@ -122,31 +144,46 @@ public class SwerveToPoseCommand extends Command {
 
         // sample translation profile
         State translationState = translationTrapezoid.sample(t);
-        profileDistanceFeet = translationState.position;
-        profileVelocityFps = translationState.velocity;
+        distanceDesiredFeet = translationState.position;
+        velocityDesiredFps = translationState.velocity;
 
         // sample rotation profile
         State rotationState = rotationTrapezoid.sample(t);
-        profileHeadingDeg = rotationState.position;
-        profileOmegaDps = rotationState.velocity;
+        headingDesiredDeg = rotationState.position;
+        omegaDesiredDps = rotationState.velocity;
+
+        // update current state for dashboard and error calculation
+        distanceCurrentFeet = Util.feetBetween(swerve.getPose(), targetPose);
+        headingCurrentDeg = swerve.getHeading().getDegrees();
+
+        // calculate errors
+        // distance error: how far we still need to travel (positive = need to move forward)
+        distanceErrorFeet = distanceGoalFeet - distanceDesiredFeet -
+                (distanceGoalFeet - distanceCurrentFeet);
+        // simplified: distanceErrorFeet = currentDistanceFeet (remaining distance to target)
+        distanceErrorFeet = distanceCurrentFeet;
+        headingErrorDeg = Util.degreeModulus(headingGoalDeg - headingCurrentDeg);
+
+        // feedforward from profile + proportional feedback on error
+        distanceFeedbackFps = translationKp.getAsDouble() * distanceErrorFeet;
+        headingFeedbackDps = rotationKp.getAsDouble() * headingErrorDeg;
+
+        double velocityFps = velocityDesiredFps + distanceFeedbackFps;
+        double omegaDps = omegaDesiredDps + headingFeedbackDps;
 
         // calculate field-relative velocity from profile
         // velocity along the path times the unit direction vector
-        double velocityMps = Units.feetToMeters(profileVelocityFps);
+        double velocityMps = Units.feetToMeters(velocityFps);
         double vx = velocityMps * directionUnit.getX();
         double vy = velocityMps * directionUnit.getY();
-        double omega = Math.toRadians(profileOmegaDps);
-
-        // update current state for dashboard
-        currentDistanceFeet = Util.feetBetween(swerve.getPose(), targetPose);
-        currentHeadingDeg = swerve.getHeading().getDegrees();
+        double omega = Math.toRadians(omegaDps);
 
         // drive field-relative speeds converted to robot-relative
         ChassisSpeeds fieldSpeeds = new ChassisSpeeds(vx, vy, omega);
         ChassisSpeeds robotSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(
                 fieldSpeeds,
                 swerve.getHeading());
-        swerve.driveRobotRelative("toPose", robotSpeeds);
+        swerve.driveRobotRelative("auto-pose", robotSpeeds);
     }
 
     @Override
@@ -174,12 +211,13 @@ public class SwerveToPoseCommand extends Command {
     public void end(boolean interrupted) {
         swerve.driveRobotRelative("idle", Util.ZERO_SPEED);
         if (interrupted) {
-            Util.log("[swerve] pose command interrupted");
+            Util.log("[auto-pose] pose command interrupted");
         } else {
-            Util.log("[swerve] pose command complete at (%.1f, %.1f) heading %.1f",
+            Util.log("[auto-pose] pose command complete at (%.1f, %.1f,%.1f)",
                     Units.metersToFeet(swerve.getPose().getX()),
                     Units.metersToFeet(swerve.getPose().getY()),
                     swerve.getHeading().getDegrees());
         }
+        timer.stop();
     }
 }
