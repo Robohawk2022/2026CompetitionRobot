@@ -14,7 +14,7 @@ import edu.wpi.first.math.util.Units;
 public final class SwerveHardwareConfig {
 
     //==========================================================================
-    // GENERAL ROBOT & MOTORS
+    // PATHPLANNER-SPECIFIC STUFF
     //==========================================================================
 
     /** Robot mass including bumpers and battery (kg) */
@@ -23,10 +23,8 @@ public final class SwerveHardwareConfig {
     /** Robot moment of inertia (kg*m^2) - estimate or calculate from CAD */
     public static final double ROBOT_MOI = 6.0;
 
-    /** General motor properties */
-    public static final double MOTOR_FREE_SPEED_RPM = 6380.0;
-    public static final double MOTOR_STALL_TORQUE_NM = 7.09;
-    public static final double MOTOR_STALL_CURRENT_AMPS = 366.0;
+    // guess on COF based on https://www.chiefdelphi.com/t/what-is-the-coefficient-of-friction-of-the-new-swerve-drive-specialties-molded-spike-grip-wheels/512813
+    public static final double WHEEL_COF = 2.255;
 
     //==========================================================================
     // CHASSIS MEASUREMENTS
@@ -34,24 +32,26 @@ public final class SwerveHardwareConfig {
 
     public static final double WHEEL_BASE_INCHES = 19.0 + 7.0 / 16.0;
     public static final double WHEEL_BASE_METERS = Units.inchesToMeters(WHEEL_BASE_INCHES);
+
     public static final double TRACK_WIDTH_INCHES = 25.0;
     public static final double TRACK_WIDTH_METERS = Units.inchesToMeters(TRACK_WIDTH_INCHES);
 
-    public static final SwerveDriveKinematics KINEMATICS = new SwerveDriveKinematics(
+    public static final Translation2d [] MODULE_TRANSLATIONS = {
             new Translation2d(WHEEL_BASE_METERS / 2, TRACK_WIDTH_METERS / 2),   // FL
             new Translation2d(WHEEL_BASE_METERS / 2, -TRACK_WIDTH_METERS / 2),  // FR
             new Translation2d(-WHEEL_BASE_METERS / 2, TRACK_WIDTH_METERS / 2),  // BL
             new Translation2d(-WHEEL_BASE_METERS / 2, -TRACK_WIDTH_METERS / 2)  // BR
-    );
+    };
+
+    public static final SwerveDriveKinematics KINEMATICS = new SwerveDriveKinematics(MODULE_TRANSLATIONS);
 
     //==========================================================================
     // WHEELS & MOTOR GEARING
     //==========================================================================
 
-    // wheel size & friction
-    public static final double WHEEL_DIAMETER_METERS = 0.1016;  // 4 inch wheels
+    // wheel size
+    public static final double WHEEL_DIAMETER_METERS = Units.inchesToMeters(4.0);
     public static final double WHEEL_CIRCUMFERENCE_METERS = WHEEL_DIAMETER_METERS * Math.PI;
-    public static final double WHEEL_COF = 1.0;
 
     // manufacturer-supplied gear ratios - see https://www.swervedrivespecialties.com/products/mk5i-swerve-module
     public static final double SDS_MK5I_DRIVE_R1 = 7.03;

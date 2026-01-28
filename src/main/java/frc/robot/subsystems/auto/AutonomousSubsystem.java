@@ -3,6 +3,7 @@ package frc.robot.subsystems.auto;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
@@ -12,11 +13,13 @@ import com.pathplanner.lib.util.PathPlannerLogging;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.swerve.SwerveHardwareConfig;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.util.DigitBoardProgramPicker;
 import frc.robot.util.Util;
@@ -27,6 +30,7 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 
 import static frc.robot.Config.PathPlanner.debugLogging;
+import static frc.robot.Config.PathPlanner.maxSpeed;
 import static frc.robot.Config.PathPlanner.rotationD;
 import static frc.robot.Config.PathPlanner.rotationI;
 import static frc.robot.Config.PathPlanner.rotationP;
@@ -46,7 +50,6 @@ public class AutonomousSubsystem extends SubsystemBase {
     final DigitBoardProgramPicker picker;
     String selected;
     Command command;
-    boolean error;
 
     public AutonomousSubsystem(SwerveSubsystem swerve) {
 
@@ -65,14 +68,7 @@ public class AutonomousSubsystem extends SubsystemBase {
         // handler. if there is an error, we will log it and then use our
         // emergency backup configuration
 
-        try {
-            configureAutoBuilder();
-            this.error = false;
-        } catch (Exception e) {
-            Util.log("[auto] CONFIGURATION FAILED: %s", e.getMessage());
-            e.printStackTrace();
-            this.error = true;
-        }
+        configureAutoBuilder();
 
         if (debugLogging.getAsBoolean()) {
             configureLogging();
@@ -81,19 +77,31 @@ public class AutonomousSubsystem extends SubsystemBase {
         SmartDashboard.putData(getName(), builder -> {
             builder.addStringProperty("Program", () -> selected, null);
             builder.addBooleanProperty("Running?", () -> command != null && command.isScheduled(), null);
-            builder.addBooleanProperty("Error?", () -> error, null);
         });
     }
 
     /**
      * Configure PathPlanner's command builder
      */
-    private void configureAutoBuilder() throws Exception {
+    private void configureAutoBuilder() {
 
         // this loads the settings for the robot, which you edited and
         // saved through the GUI
         Util.log("[auto] loading robot configuration");
-        RobotConfig config = RobotConfig.fromGUISettings();
+
+        RobotConfig config = new RobotConfig(
+                SwerveHardwareConfig.ROBOT_MASS_KG,
+                SwerveHardwareConfig.ROBOT_MOI,
+                new ModuleConfig(
+                    SwerveHardwareConfig.WHEEL_DIAMETER_METERS / 2.0,
+                    maxSpeed.getAsDouble(),
+                    SwerveHardwareConfig.WHEEL_COF,
+                    DCMotor.getKrakenX60(1),
+                    SwerveHardwareConfig.DRIVE_GEAR_RATIO,
+                    SwerveHardwareConfig.DRIVE_CURRENT_LIMIT_AMPS,
+                    1),
+                SwerveHardwareConfig.MODULE_TRANSLATIONS
+        );
 
         // this registers all the commands we'll use when executing our
         // selected program
@@ -163,14 +171,8 @@ public class AutonomousSubsystem extends SubsystemBase {
 
         if (selected == null) {
             Util.log("[auto] NO SELECTED PROGRAM!!!");
-            return Commands.none();
-        }
-
-        // if initialization failed, we will use our emergency backup
-        // command instead of trying to do a full routine
-        if (error) {
             swerve.resetPose(createEmergencyStartPose());
-            command = createEmergencyCommand();
+            return createEmergencyCommand();
         }
 
         else {

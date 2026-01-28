@@ -121,6 +121,9 @@ public interface Config {
 
     interface PathPlanner {
 
+        /** Maximum speed in meters/sec */
+        DoubleSupplier maxSpeed = pref("PathPlanner/MaxSpeed", 3.5);
+
         /** Translation gains for path following */
         DoubleSupplier translationP = pref("PathPlanner/Translation/kP", 0.0);
         DoubleSupplier translationI = pref("PathPlanner/Translation/kI", 0.0);
