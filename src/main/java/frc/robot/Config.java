@@ -96,7 +96,7 @@ public interface Config {
         DoubleSupplier maxTranslationAcceleration = pref("SwerveAuto/MaxTranslationFPSS", 24.0);
 
         /** Proportional gain for translation feedback (units: 1/sec) */
-        DoubleSupplier translationKp = pref("SwerveAuto/TranslationKp", 1.0);
+        DoubleSupplier translationKp = pref("SwerveAuto/TranslationKp", 0.0);
 
         /** Tolerance for position commands in feet */
         DoubleSupplier positionTolerance = pref("SwerveAuto/PositionToleranceFeet", 0.1);
@@ -108,7 +108,7 @@ public interface Config {
         DoubleSupplier maxRotationAcceleration = pref("SwerveAuto/MaxRotationDPSS", 720.0);
 
         /** Proportional gain for rotation feedback (units: 1/sec) */
-        DoubleSupplier rotationKp = pref("SwerveAuto/RotationKp", 2.0);
+        DoubleSupplier rotationKp = pref("SwerveAuto/RotationKp", 0.0);
 
         /** Tolerance for heading commands in degrees */
         DoubleSupplier headingTolerance = pref("SwerveAuto/HeadingToleranceDeg", 2.0);
