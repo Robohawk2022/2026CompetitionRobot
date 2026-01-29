@@ -10,7 +10,7 @@ Removed `faceTargetDriveCommand`, eliminated `SwerveTeleopSpeedSupplier` interme
 
 ### Files Created
 - `src/main/java/frc/robot/commands/swerve/SwerveTeleopCommand.java` - Teleop drive command with sniper/turbo modes
-- `src/main/java/frc/robot/commands/swerve/SwerveOrbitCommand.java` - Orbit command with rotation-priority desaturation
+- `src/main/java/frc/robot/commands/swerve/SwerveOrbitHubCommand.java` - Orbit command that orbits around the hub
 
 ### Files Modified
 - `src/main/java/frc/robot/subsystems/swerve/SwerveSubsystem.java`
@@ -51,11 +51,11 @@ Command factory methods in subsystems should be short (~10 lines). If the logic 
 - Handles sniper/turbo speed modifiers
 - Updates subsystem telemetry via `setTelemetry()`
 
-### SwerveOrbitCommand
-- Manages its own heading control state (previousHeadingError, initialLockAcquired)
-- Includes rotation-priority desaturation logic (drivePreserveRotation)
-- Uses `swerve.driveStates()` for custom module state control
-- Reads from both Config.Swerve and Config.Orbit
+### SwerveOrbitHubCommand
+- Calculates hub center position from AprilTag locations (alliance-aware)
+- Computes linear and angular speeds for orbiting at current distance
+- Uses custom center of rotation for smooth orbiting
+- Reads from Config.SwerveTeleop (maxOrbit, deadband)
 
 ### Subsystem Helper Methods for Commands
 Added to SwerveSubsystem to support command classes:

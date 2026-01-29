@@ -1,7 +1,6 @@
 package frc.robot.testbots;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -18,9 +17,9 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.Config;
 import frc.robot.GameController;
 import frc.robot.subsystems.swerve.SwerveHardwareCTRE;
+import frc.robot.subsystems.swerve.SwerveHardwareConfig;
 import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveHardware;
 
@@ -117,7 +116,7 @@ public class SysIdTestbot extends TimedRobot {
         // initialize odometry
         hardware.refreshSignals();
         odometry = new SwerveDriveOdometry(
-            Config.Swerve.KINEMATICS,
+            SwerveHardwareConfig.KINEMATICS,
             hardware.getHeading(),
             hardware.getModulePositions()
         );

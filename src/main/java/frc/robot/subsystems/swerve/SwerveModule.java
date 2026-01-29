@@ -20,7 +20,6 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import static frc.robot.Config.Swerve.*;
@@ -38,14 +37,6 @@ public class SwerveModule {
     private final TalonFX driveMotor;
     private final TalonFX turnMotor;
     private final CANcoder turnEncoder;
-
-    private final double angularOffset;
-    private final String name;
-
-    // CAN IDs for verbose logging
-    private final int driveId;
-    private final int turnId;
-    private final int encoderId;
 
     private final VelocityVoltage driveRequest = new VelocityVoltage(0);
     private final PositionVoltage turnRequest = new PositionVoltage(0);
@@ -70,14 +61,8 @@ public class SwerveModule {
      * @param driveId       CAN ID of the drive motor
      * @param turnId        CAN ID of the turn motor
      * @param encoderId     CAN ID of the CANcoder
-     * @param angularOffset angular offset of the module in radians
      */
-    public SwerveModule(String name, int driveId, int turnId, int encoderId, double angularOffset, InvertedValue driveInvertedValue) {
-        this.name = name;
-        this.angularOffset = angularOffset;
-        this.driveId = driveId;
-        this.turnId = turnId;
-        this.encoderId = encoderId;
+    public SwerveModule(String name, int driveId, int turnId, int encoderId, InvertedValue driveInvertedValue) {
 
         driveMotor = new TalonFX(driveId);
         turnMotor = new TalonFX(turnId);
@@ -166,13 +151,6 @@ public class SwerveModule {
         config.ClosedLoopGeneral.ContinuousWrap = true;
 
         turnMotor.getConfigurator().apply(config);
-    }
-
-    private void configureCANcoder() {
-        CANcoderConfiguration config = new CANcoderConfiguration();
-        config.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-        config.MagnetSensor.MagnetOffset = -angularOffset / (2 * Math.PI);
-        turnEncoder.getConfigurator().apply(config);
     }
 
     /**
