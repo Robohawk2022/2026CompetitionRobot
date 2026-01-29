@@ -87,6 +87,11 @@ public class SwerveTeleopCommand extends Command {
     }
 
     @Override
+    public void initialize() {
+        Util.log("[swerve] entering teleop");
+    }
+
+    @Override
     public void execute() {
 
         // get conditions joystick input

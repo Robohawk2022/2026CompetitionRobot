@@ -1,7 +1,12 @@
 package frc.robot.subsystems.swerve;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -11,8 +16,8 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -20,13 +25,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.GameController;
 import frc.robot.commands.swerve.SwerveOrbitHubCommand;
 import frc.robot.commands.swerve.SwerveTeleopCommand;
-import frc.robot.subsystems.vision.LimelightEstimator;
-import frc.robot.subsystems.vision.VisionEstimateResult;
 import frc.robot.util.Util;
 
 import static frc.robot.Config.Swerve.*;
-import static frc.robot.Config.Odometry.enableDiagnostics;
-import static frc.robot.Config.Odometry.driftWarning;
 
 /**
  * Swerve drive subsystem with odometry and pose estimation.
@@ -41,26 +42,19 @@ public class SwerveSubsystem extends SubsystemBase {
 
 //region Members & constructor -------------------------------------------------
 
-    private final SwerveHardware hardware;
+    final SwerveHardware hardware;
+    final SwerveDriveOdometry odometry;
+    final SwerveDrivePoseEstimator poseEstimator;
+    final List<Consumer<Pose2d>> poseResetListeners;
+    final Field2d field2d;
 
-    private final SwerveDriveOdometry odometry;
-    private final SwerveDrivePoseEstimator poseEstimator;
-    private final Field2d field2d;
-
-    private String currentMode = "idle";
-
-    private VisionEstimateResult latestVisionResult;
-
-    // cached pose values (hawk-lib pattern)
-    private Pose2d latestOdometryPose = new Pose2d();
-    private Pose2d latestFusedPose = new Pose2d();
-
-    // reset tracking for dashboard
-    private int resetCount = 0;
-
-    private final OdometryDiagnostics diagnostics;
-
-    ChassisSpeeds latestSpeed = Util.ZERO_SPEED;
+    String currentMode = "idle";
+    Pose2d latestOdometryPose;
+    Pose2d latestFusedPose;
+    int resetCount = 0;
+    ChassisSpeeds latestSpeed;
+    boolean wheelsLocked;
+    long visionPoseCount;
 
     /**
      * Creates a {@link SwerveSubsystem}.
@@ -68,31 +62,46 @@ public class SwerveSubsystem extends SubsystemBase {
      * @param hardware the hardware interface (required)
      */
     public SwerveSubsystem(SwerveHardware hardware) {
+
         this.hardware = Objects.requireNonNull(hardware);
 
-        // initialize odometry at origin
-        odometry = new SwerveDriveOdometry(
-                KINEMATICS,
-                hardware.getHeading(),
-                hardware.getModulePositions());
-
-        poseEstimator = new SwerveDrivePoseEstimator(
+        // initialize odometry and pose estimates
+        this.odometry = new SwerveDriveOdometry(
                 KINEMATICS,
                 hardware.getHeading(),
                 hardware.getModulePositions(),
-                new Pose2d());
+                Pose2d.kZero);
+        this.poseEstimator = new SwerveDrivePoseEstimator(
+                KINEMATICS,
+                hardware.getHeading(),
+                hardware.getModulePositions(),
+                Pose2d.kZero);
+        this.poseResetListeners = new ArrayList<>();
+        this.latestOdometryPose = Pose2d.kZero;
+        this.latestFusedPose = Pose2d.kZero;
+        this.latestSpeed = Util.ZERO_SPEED;
+        this.wheelsLocked = false;
 
-        // Field2d for AdvantageScope visualization
-        field2d = new Field2d();
+        // initialize Field2d for AdvantageScope visualization
+        this.field2d = new Field2d();
         SmartDashboard.putData("Field", field2d);
 
-        // initialize diagnostics
-        diagnostics = new OdometryDiagnostics();
+        // zero the gyro heading and go through the motions of pose reset
+        resetPose(Pose2d.kZero);
 
         // dashboard telemetry
         SmartDashboard.putData(getName(), builder -> {
+
             builder.addStringProperty("Mode", () -> currentMode, null);
-            builder.addBooleanProperty("Enabled?", DriverStation::isEnabled, null);
+            builder.addBooleanProperty("WheelsLocked?", () -> wheelsLocked, null);
+            builder.addIntegerProperty("ResetCount", () -> resetCount, null);
+            builder.addBooleanProperty("ResetOdometry", () -> false, (value) -> {
+                if (value) {
+                    Util.log("[swerve] odometry reset requests from dashboard");
+                    resetPose(Pose2d.kZero);
+                }
+            });
+
             if (verboseLogging) {
                 builder.addDoubleProperty("PoseX", () -> Units.metersToFeet(getPose().getX()), null);
                 builder.addDoubleProperty("PoseY", () -> Units.metersToFeet(getPose().getY()), null);
@@ -100,19 +109,8 @@ public class SwerveSubsystem extends SubsystemBase {
                 builder.addDoubleProperty("SpeedX", () -> Units.metersToFeet(latestSpeed.vxMetersPerSecond), null);
                 builder.addDoubleProperty("SpeedY", () -> Units.metersToFeet(latestSpeed.vyMetersPerSecond), null);
                 builder.addDoubleProperty("SpeedOmega", () -> Units.radiansToDegrees(latestSpeed.omegaRadiansPerSecond), null);
+                builder.addIntegerProperty("VisionPoseCount", () -> visionPoseCount, null);
             }
-
-            // reset odometry button - click to reset pose and heading to origin
-            builder.addBooleanProperty("ResetOdometry", () -> false, (value) -> {
-                if (value) {
-                    zeroHeading();
-                    resetPose(new Pose2d());
-                    Util.log("Odometry and heading reset from dashboard");
-                }
-            });
-
-            // reset counter to verify resets are happening
-            builder.addIntegerProperty("ResetCount", () -> resetCount, null);
         });
     }
 
@@ -122,52 +120,24 @@ public class SwerveSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // refresh all hardware signals in a single CAN transaction (reduces CAN bus traffic)
+
+        // refresh all hardware signals in a single CAN transaction
         hardware.refreshSignals();
 
-        // update odometry (standard 50Hz)
+        // update odometry and pose estimator
         Rotation2d heading = hardware.getHeading();
         SwerveModulePosition[] positions = hardware.getModulePositions();
-
         odometry.update(heading, positions);
-        latestOdometryPose = odometry.getPoseMeters();
-
-        // always update the pose estimator (vision integration happens here)
         poseEstimator.update(heading, positions);
+
+        // cache pose estimates
+        latestOdometryPose = odometry.getPoseMeters();
         latestFusedPose = poseEstimator.getEstimatedPosition();
 
-        // update vision pose estimation
-        latestVisionResult = LimelightEstimator.updateEstimate(
-                poseEstimator,
-                heading.getDegrees(),
-                hardware.getYawRateDps(),
-                poseEstimator.getEstimatedPosition());
-
-        // update diagnostics
-        if (enableDiagnostics.getAsBoolean()) {
-            diagnostics.update(latestOdometryPose, poseEstimator.getEstimatedPosition(),
-                    latestVisionResult);
-            diagnostics.publishTelemetry();
-
-            // warn if drift exceeds threshold
-            double driftThreshold = driftWarning.getAsDouble();
-            if (diagnostics.getCurrentDrift() > driftThreshold) {
-                Util.log("WARNING: Odometry drift %.3fm exceeds threshold %.3fm",
-                        diagnostics.getCurrentDrift(), driftThreshold);
-            }
-        }
-
-        // update Field2d for AdvantageScope
+        // publish pose information
         field2d.setRobotPose(poseEstimator.getEstimatedPosition());
-
-        // publish poses for AdvantageScope
         Util.publishPose("Odometry", latestOdometryPose);
-        Util.publishPose("Estimated", poseEstimator.getEstimatedPosition());
-
-        // publish vision pose if valid
-        if (latestVisionResult != null && latestVisionResult.accepted && latestVisionResult.getPose() != null) {
-            Util.publishPose("Vision", latestVisionResult.getPose());
-        }
+        Util.publishPose("Fused", poseEstimator.getEstimatedPosition());
     }
 
 //endregion
@@ -182,53 +152,58 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
-     * @return the current estimated pose of the robot (fused with vision)
+     * @return the current estimated pose (odometry fused with vision)
      */
     public Pose2d getPose() {
         return latestFusedPose;
     }
 
     /**
-     * @return the odometry-only pose (no vision correction)
+     * @return the current odometry-only pose estimate
      */
     public Pose2d getOdometryPose() {
         return latestOdometryPose;
     }
 
     /**
-     * Resets the odometry to a specific pose.
-     * <p>
-     * Uses the current gyro heading and module positions (hawk-lib pattern).
-     *
-     * @param newPose the pose to reset to
+     * Submits a vision pose estimate
+     * @param estimatedPose the estimated pose
+     * @param timestamp the age of the estimate in seconds
+     * @param confidence confidence in the estimate
      */
-    public void resetPose(Pose2d newPose) {
-        Rotation2d currentHeading = hardware.getHeading();
-        SwerveModulePosition[] currentPositions = hardware.getModulePositions();
-
-        // reset odometry
-        odometry.resetPosition(currentHeading, currentPositions, newPose);
-        latestOdometryPose = newPose;
-
-        // reset pose estimator
-        poseEstimator.resetPosition(currentHeading, currentPositions, newPose);
-        latestFusedPose = newPose;
-
-        // reset vision baseline for jump detection
-        LimelightEstimator.resetLastPose();
-
-        // reset diagnostics
-        diagnostics.reset();
-
-        // increment counter for dashboard
-        resetCount++;
+    public void submitVisionEstimate(Pose2d estimatedPose, double timestamp, Vector<N3> confidence) {
+        if (estimatedPose != null) {
+            poseEstimator.addVisionMeasurement(estimatedPose, timestamp, confidence);
+            visionPoseCount++;
+        }
     }
 
     /**
-     * Zeroes the gyro heading.
+     * Zeros the gyro and resets the odometry to a specific pose
+     * @param newPose the pose to reset to
      */
-    public void zeroHeading() {
-        hardware.zeroHeading();
+    public void resetPose(Pose2d newPose) {
+
+        hardware.zeroHeading();;
+
+        Rotation2d currentHeading = hardware.getHeading();
+        SwerveModulePosition[] currentPositions = hardware.getModulePositions();
+
+        // reset odometry and fused pose estimator
+        odometry.resetPosition(currentHeading, currentPositions, newPose);
+        poseEstimator.resetPosition(currentHeading, currentPositions, newPose);
+
+        // reset pose estimates & update listeners
+        latestOdometryPose = newPose;
+        latestFusedPose = newPose;
+        for (Consumer<Pose2d> listener : poseResetListeners) {
+            listener.accept(newPose);
+        }
+
+        // increment counter for dashboard
+        resetCount++;
+
+        Util.log("[swerve] reset pose to %s", newPose);
     }
 
 //endregion
@@ -284,39 +259,27 @@ public class SwerveSubsystem extends SubsystemBase {
         hardware.setX();
     }
 
-    /**
-     * @return whether the latest vision estimate was accepted
-     */
-    public boolean isVisionValid() {
-        return latestVisionResult != null && latestVisionResult.accepted;
-    }
-
-    /**
-     * @return the latest vision estimate result (may be null or rejected)
-     */
-    public VisionEstimateResult getLatestVisionResult() {
-        return latestVisionResult;
-    }
-
-    /**
-     * @return the odometry diagnostics tracker
-     */
-    public OdometryDiagnostics getDiagnostics() {
-        return diagnostics;
-    }
-
 //endregion
 
 //region Command factories -----------------------------------------------------
 
     /**
-     * @return a command that holds position (sets X pattern)
+     * @return a command that holds position
      */
     public Command idleCommand() {
-        return run(() -> {
-            currentMode = "idle";
-            setX();
-        });
+        return run(() -> driveRobotRelative("idle", Util.ZERO_SPEED));
+    }
+
+    /**
+     * @return a command that locks the wheels in an X pattern
+     */
+    public Command lockWheelsCommand() {
+        return startRun(
+                () -> {
+                    currentMode = "lock";
+                    Util.log("[swerve] locking wheels");
+                },
+                hardware::setX);
     }
 
     /**
@@ -325,8 +288,9 @@ public class SwerveSubsystem extends SubsystemBase {
     public Command resetWheelsCommand() {
         return runOnce(() -> {
             hardware.lockTurnMotors();
+            wheelsLocked = true;
             Util.log("Wheels reset to forward");
-        });
+        }).finallyDo(() -> wheelsLocked = false);
     }
 
     /**
@@ -340,29 +304,32 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
-     * @return a command that zeroes the gyro heading
+     * @return a command that zeros the heading of the robot but keeps the
+     * current (X,Y) position
      */
     public Command zeroHeadingCommand() {
-        return runOnce(() -> {
-            zeroHeading();
-            Util.log("Gyro zeroed");
-        });
+        return resetPoseCommand(oldPose -> new Pose2d(
+                oldPose.getX(),
+                oldPose.getY(),
+                Rotation2d.kZero));
     }
 
     /**
+     * @return a command that zeros the pose of the robot
+     */
+    public Command zeroPoseCommand() {
+        return resetPoseCommand(oldPose -> Pose2d.kZero);
+    }
+
+    /**
+     *
      * @return a command that zeros the heading but keeps the current X/Y position
      */
-    public Command resetPoseCommand() {
+    public Command resetPoseCommand(Function<Pose2d,Pose2d> poseFunction) {
         return runOnce(() -> {
-            // keep current X/Y, just zero the heading
-            Pose2d current = getPose();
-            Pose2d newPose = new Pose2d(current.getX(), current.getY(), new Rotation2d());
-
-            zeroHeading();
+            Pose2d oldPose = getPose();
+            Pose2d newPose = poseFunction.apply(oldPose);
             resetPose(newPose);
-
-            Util.log("Heading reset - X:%.2f Y:%.2f Heading:%.1f",
-                    getPose().getX(), getPose().getY(), getHeading().getDegrees());
         });
     }
 

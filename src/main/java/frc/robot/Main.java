@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import frc.robot.testbots.LEDTestbot;
 import frc.robot.testbots.IntakeFrontTestbot;
 import frc.robot.testbots.SysIdTestbot;
+import frc.robot.testbots.VisionSimTestbot;
 import frc.robot.testbots.ShooterTestbot;
 import frc.robot.testbots.SwerveTestbot;
 
@@ -24,7 +25,8 @@ public final class Main {
         // RobotBase.startRobot(IntakeFrontTestbot::new);
         // RobotBase.startRobot(SysIdTestbot::new);
         // RobotBase.startRobot(ShooterTestbot::new);
-        RobotBase.startRobot(SwerveTestbot::new);
+        // RobotBase.startRobot(SwerveTestbot::new);
+        RobotBase.startRobot(VisionSimTestbot::new);
     }
 }
 

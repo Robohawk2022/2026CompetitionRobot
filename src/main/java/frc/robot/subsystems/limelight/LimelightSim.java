@@ -1,4 +1,4 @@
-package frc.robot.subsystems.vision;
+package frc.robot.subsystems.limelight;
 
 import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
@@ -23,13 +23,26 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
-import static frc.robot.Config.LimelightSim.*;
 import static frc.robot.Config.Limelight.limelightName;
+import static frc.robot.Config.LimelightSim.tagSize;
+import static frc.robot.Config.LimelightSim.cameraForwardOffset;
+import static frc.robot.Config.LimelightSim.cameraHeight;
+import static frc.robot.Config.LimelightSim.cameraPitch;
+import static frc.robot.Config.LimelightSim.cameraSideOffset;
+import static frc.robot.Config.LimelightSim.enabled;
+import static frc.robot.Config.LimelightSim.frameDropProbability;
+import static frc.robot.Config.LimelightSim.horizontalFov;
+import static frc.robot.Config.LimelightSim.maxDetectionDistance;
+import static frc.robot.Config.LimelightSim.maxTagAngle;
+import static frc.robot.Config.LimelightSim.minDetectionDistance;
+import static frc.robot.Config.LimelightSim.pipelineLatency;
+import static frc.robot.Config.LimelightSim.positionNoiseStdDev;
+import static frc.robot.Config.LimelightSim.rotationNoiseStdDev;
+import static frc.robot.Config.LimelightSim.verticalFov;
 
 /**
- * Simulates a Limelight camera for AprilTag detection.
- * <p>
- * This class simulates realistic Limelight behavior by:
+ * Simulates a Limelight camera for AprilTag detection. This class simulates
+ * realistic Limelight behavior by:
  * <ul>
  *   <li>Checking tag visibility based on distance, FOV, and orientation</li>
  *   <li>Calculating tx/ty angles and tag area</li>
@@ -38,7 +51,7 @@ import static frc.robot.Config.Limelight.limelightName;
  *   <li>Publishing to NetworkTables in the exact format LimelightHelpers expects</li>
  * </ul>
  */
-public class LimelightHardwareSim {
+public class LimelightSim {
 
     /** Enable verbose logging */
     private static final boolean verboseLogging = false;
@@ -91,13 +104,12 @@ public class LimelightHardwareSim {
     /**
      * Creates a new LimelightHardwareSim.
      */
-    public LimelightHardwareSim() {
+    public LimelightSim() {
         this.fieldLayout = Util.getFieldLayout();
 
         // get NetworkTables table for the limelight
         NetworkTable table = NetworkTableInstance.getDefault().getTable(limelightName);
      
-
         // create publishers
         botposePublisher = table.getDoubleArrayTopic("botpose_wpiblue").publish();
         botposeOrbPublisher = table.getDoubleArrayTopic("botpose_orb_wpiblue").publish();
@@ -171,14 +183,10 @@ public class LimelightHardwareSim {
      * Calculates the camera's 3D pose based on robot pose and mounting offsets.
      */
     private Pose3d calculateCameraPose(Pose2d robotPose) {
-        double forward = cameraForwardOffset.getAsDouble();
-        double side = cameraSideOffset.getAsDouble();
-        double height = cameraHeight.getAsDouble();
-        double pitchDeg = cameraPitch.getAsDouble();
 
         // transform from robot to camera
-        Translation3d cameraTranslation = new Translation3d(forward, side, height);
-        Rotation3d cameraRotation = new Rotation3d(0, Units.degreesToRadians(-pitchDeg), 0);
+        Translation3d cameraTranslation = new Translation3d(cameraForwardOffset, cameraSideOffset, cameraHeight);
+        Rotation3d cameraRotation = new Rotation3d(0, Units.degreesToRadians(-cameraPitch), 0);
         Transform3d robotToCamera = new Transform3d(cameraTranslation, cameraRotation);
 
         // robot pose in 3D (on ground plane)
@@ -199,8 +207,8 @@ public class LimelightHardwareSim {
 
         double maxDist = maxDetectionDistance.getAsDouble();
         double minDist = minDetectionDistance.getAsDouble();
-        double hFov = horizontalFov.getAsDouble() / 2.0;  // half angle
-        double vFov = verticalFov.getAsDouble() / 2.0;
+        double hFov = horizontalFov / 2.0;  // half angle
+        double vFov = verticalFov / 2.0;
         double maxAngle = maxTagAngle.getAsDouble();
 
         for (AprilTag tag : fieldLayout.getTags()) {
@@ -252,7 +260,7 @@ public class LimelightHardwareSim {
             }
 
             // calculate area (simplified model based on distance and angle)
-            double apparentSize = TAG_SIZE_METERS / distToCamera;
+            double apparentSize = tagSize / distToCamera;
             double area = 100.0 * apparentSize * apparentSize * 50.0 * Math.abs(dot);
             area = Math.min(100.0, Math.max(0.0, area));
 
