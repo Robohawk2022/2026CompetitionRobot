@@ -1,45 +1,5 @@
 [
   {
-    "name": "/Preferences/Swerve/MaxSpeedFPS",
-    "type": "double",
-    "value": 15.0,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Swerve/MaxRotationDPS",
-    "type": "double",
-    "value": 360.0,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Swerve/CosineCompensation?",
-    "type": "boolean",
-    "value": true,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Swerve/MinSpeedForAngle",
-    "type": "double",
-    "value": 0.01,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
-    "name": "/Preferences/Limelight/MaxPoseJumpFeet",
-    "type": "double",
-    "value": 1.0,
-    "properties": {
-      "persistent": true
-    }
-  },
-  {
     "name": "/Preferences/SwerveTeleop/MaxTranslateFPS",
     "type": "double",
     "value": 10.0,
@@ -58,7 +18,7 @@
   {
     "name": "/Preferences/SwerveTeleop/MaxOrbitFPS",
     "type": "double",
-    "value": 8.0,
+    "value": 15.0,
     "properties": {
       "persistent": true
     }
