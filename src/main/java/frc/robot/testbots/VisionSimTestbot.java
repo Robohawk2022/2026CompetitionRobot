@@ -1,6 +1,5 @@
 package frc.robot.testbots;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -26,8 +25,6 @@ import frc.robot.subsystems.vision.LimelightHardwareSim;
  */
 public class VisionSimTestbot extends TimedRobot {
 
-    private static final double DEADZONE = 0.05;
-
     private SwerveSubsystem swerve;
     private LimelightHardwareSim limelightSim;
     private GameController controller;
@@ -52,11 +49,7 @@ public class VisionSimTestbot extends TimedRobot {
         System.out.println(">>> Press Y to teleport to (14, 6)");
 
         // default to field-relative driving
-        swerve.setDefaultCommand(swerve.driveCommand(
-                () -> -MathUtil.applyDeadband(controller.getLeftY(), DEADZONE),
-                () -> -MathUtil.applyDeadband(controller.getLeftX(), DEADZONE),
-                () -> -MathUtil.applyDeadband(controller.getRightX(), DEADZONE),
-                true));
+        swerve.setDefaultCommand(swerve.driveCommand(controller));
 
         // button bindings
         controller.start().onTrue(Commands.runOnce(() -> {

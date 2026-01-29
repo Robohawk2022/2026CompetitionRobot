@@ -43,6 +43,29 @@ public interface Config {
         }
     }
 
+    interface SwerveTeleop {
+
+        /** Maximum speeds */
+        DoubleSupplier maxTranslate = pref("SwerveTeleop/MaxTranslateFPS", 10.0);
+        DoubleSupplier maxRotate = pref("SwerveTeleop/MaxRotateDPS", 180.0);
+        DoubleSupplier maxOrbit = pref("SwerveTeleop/MaxOrbitFPS", 8.0);
+
+        /** Speed mode factors (turbo/sniper) */
+        DoubleSupplier sniperFactor = pref("SwerveTeleop/SniperFactor", 0.25);
+        DoubleSupplier turboFactor = pref("SwerveTeleop/TurboFactor", 1.5);
+        BooleanSupplier applySniperToRotation = pref("SwerveTeleop/SniperRotation?", true);
+
+        /** Driver relative mode */
+        BooleanSupplier driverRelative = pref("SwerveTeleop/DriverRelative?", true);
+
+        /** Joystick deadband & exponent */
+        DoubleSupplier deadband = pref("SwerveTeleop/Deadband", 0.1);
+        DoubleSupplier exponent = pref("SwerveTeleop/Exponent", 2.0);
+
+        /** Use XBox mapping */
+        BooleanSupplier useXboxMapping = pref("SwerveTeleop/UseXboxMapping?", true);
+    }
+
     /**
      * Configuration for the swerve drive subsystem.
      * <p>
@@ -57,17 +80,6 @@ public interface Config {
 
         DoubleSupplier maxSpeedFps = pref("Swerve/MaxSpeedFPS", 15.0);
         DoubleSupplier maxRotationDps = pref("Swerve/MaxRotationDPS", 360.0);
-
-        // Speed mode factors (turbo/sniper)
-        DoubleSupplier sniperFactor = pref("Swerve/SniperFactor", 0.25);
-        DoubleSupplier turboFactor = pref("Swerve/TurboFactor", 1.5);
-        BooleanSupplier applySniperToRotation = pref("Swerve/SniperRotation?", true);
-
-        // Joystick deadzone
-        DoubleSupplier deadzone = pref("Swerve/Deadzone", 0.1);
-
-        // Controller type: false = 8BitDo (real robot), true = Xbox (simulation/MCP)
-        BooleanSupplier useXboxMapping = pref("Swerve/UseXboxMapping?", true);
 
         // Module optimization settings
         /** Enable cosine compensation - scales drive output by cos(angle error) */
@@ -389,87 +401,6 @@ public interface Config {
 
         /** Enable PathPlanner logging to NetworkTables/AdvantageScope */
         BooleanSupplier enableLogging = pref("PathPlanner/Logging?", true);
-    }
-
-    /**
-     * Configuration for orbit/face-target drive modes.
-     * <p>
-     * These modes allow the robot to orbit around or face a fixed target point
-     * (e.g., Tower for 2026 REBUILT game). Driver sticks control radial (toward/away)
-     * and tangential (orbit around) movement.
-     * <p>
-     * Field is ~16.5m x 8.2m. Tower is at field center (8.25m, 4.1m).
-     */
-    interface Orbit {
-
-        //=======================================================================
-        // Target position (center of scoring structure - Tower for 2026)
-        // Field: 16.5m x 8.2m, origin at blue alliance wall corner
-        //=======================================================================
-
-        /** Blue alliance target X position in meters (Tower at field center) */
-        DoubleSupplier blueTargetX = pref("Orbit/BlueTargetX_m", 8.25);
-
-        /** Blue alliance target Y position in meters */
-        DoubleSupplier blueTargetY = pref("Orbit/BlueTargetY_m", 4.1);
-
-        /** Red alliance target X position in meters (same as blue for center target) */
-        DoubleSupplier redTargetX = pref("Orbit/RedTargetX_m", 8.25);
-
-        /** Red alliance target Y position in meters */
-        DoubleSupplier redTargetY = pref("Orbit/RedTargetY_m", 4.1);
-
-        //=======================================================================
-        // Speed limits
-        //=======================================================================
-
-        /** Maximum radial speed (toward/away from target) in feet per second */
-        DoubleSupplier maxRadialSpeedFps = pref("Orbit/MaxRadialSpeedFPS", 15.0);
-
-        /** Maximum tangential speed (orbiting around target) in feet per second */
-        DoubleSupplier maxTangentSpeedFps = pref("Orbit/MaxTangentSpeedFPS", 15.0);
-
-        /** Rotation trim authority as fraction of max rotation (1.0 = 100%) */
-        DoubleSupplier rotationTrimAuthority = pref("Orbit/RotationTrimAuthority", 1.0);
-
-        //=======================================================================
-        // Heading control PID
-        //=======================================================================
-
-        /** Heading P gain for facing the target (high value = snap to target faster) */
-        DoubleSupplier headingKP = pref("Orbit/Heading/kP", 1.0);
-
-        /** Heading D gain for facing the target */
-        DoubleSupplier headingKD = pref("Orbit/Heading/kD", 0.005);
-
-        /** Heading tolerance in degrees (for "locked" indicator) */
-        DoubleSupplier headingTolerance = pref("Orbit/Heading/Tolerance", 2.0);
-
-        /** Heading error threshold to allow movement (degrees). Robot must face target within this before moving. */
-        DoubleSupplier lockThreshold = pref("Orbit/Heading/LockThreshold", 15.0);
-
-        //=======================================================================
-        // Safety limits
-        //=======================================================================
-
-        /** Minimum distance from target to prevent singularity (meters) */
-        DoubleSupplier minDistance = pref("Orbit/MinDistance_m", 0.5);
-
-        //=======================================================================
-        // Rotation priority (prevents translation from starving rotation)
-        //=======================================================================
-
-        /**
-         * Minimum rotation authority to preserve during desaturation (0.0 to 1.0).
-         * <p>
-         * When rotation demand exceeds this fraction of max omega, translation
-         * is scaled down to ensure heading control isn't starved. Higher values
-         * prioritize rotation more aggressively.
-         * <p>
-         * Example: 0.5 means if rotation is using 70% of max omega, translation
-         * is scaled to (1 - (0.7 - 0.5)) = 0.8 of its requested value.
-         */
-        DoubleSupplier rotationPriority = pref("Orbit/RotationPriority", 0.5);
     }
 
     /**
