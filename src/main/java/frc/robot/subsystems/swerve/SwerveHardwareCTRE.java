@@ -164,10 +164,17 @@ public class SwerveHardwareCTRE implements SwerveHardware {
 
     @Override
     public void setX() {
-        frontLeft.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
-        frontRight.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
-        backLeft.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
-        backRight.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
+        // stop all drive motors (setDesiredState with 0 speed preserves current angle)
+        frontLeft.setDesiredState(new SwerveModuleState(0, frontLeft.getState().angle));
+        frontRight.setDesiredState(new SwerveModuleState(0, frontRight.getState().angle));
+        backLeft.setDesiredState(new SwerveModuleState(0, backLeft.getState().angle));
+        backRight.setDesiredState(new SwerveModuleState(0, backRight.getState().angle));
+
+        // explicitly set X-pattern angles using setTurnAngle
+        frontLeft.setTurnAngle(Rotation2d.fromDegrees(45));
+        frontRight.setTurnAngle(Rotation2d.fromDegrees(-45));
+        backLeft.setTurnAngle(Rotation2d.fromDegrees(-45));
+        backRight.setTurnAngle(Rotation2d.fromDegrees(45));
     }
 
     @Override
