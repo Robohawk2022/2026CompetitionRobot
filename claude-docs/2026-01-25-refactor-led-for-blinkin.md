@@ -52,7 +52,7 @@ Maps robot states to Blinkin pattern codes:
 | `INTAKE_FULL` | Strobe Red | Hopper full (stall detected) |
 | `EJECTING` | Solid Orange | Spitting out pieces |
 | `SHOOT_RANGE_CLOSE` | Solid Green | Close to target |
-| `SHOOT_RANGE_MEDIUM` | Solid Yellow | Medium distance |
+| `SHOOT_RANGE_MEDIUM` | Solid Yellow | Medium shotType |
 | `SHOOT_RANGE_FAR` | Solid Red | Far from target |
 | `READY_TO_SHOOT` | Strobe Gold | Shooter at speed |
 | `TARGET_LOCKED` | Solid Lime | Vision acquired |

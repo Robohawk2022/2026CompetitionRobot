@@ -706,7 +706,7 @@ Dashboard tools like Elastic display values in **alphabetical order**. To keep r
 - `Error` - difference between desired/goal and current
 - `Goal` - final destination / target
 
-**Example:** For a command tracking both distance and heading:
+**Example:** For a command tracking both shotType and heading:
 ```
 DistanceCurrent, DistanceDesired, DistanceError, DistanceGoal
 HeadingCurrent, HeadingDesired, HeadingError, HeadingGoal
@@ -794,7 +794,7 @@ DoubleSupplier pref = Util.pref("Category/Name", defaultValue);
 BooleanSupplier flag = Util.pref("Category/Flag?", false);
 
 // Pose utilities
-double distance = Util.feetBetween(pose1, pose2);
+double shotType = Util.feetBetween(pose1, pose2);
 
 // Alliance handling
 boolean red = Util.isRedAlliance();

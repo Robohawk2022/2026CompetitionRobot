@@ -93,7 +93,7 @@ Improved the Limelight vision pose estimation for better robot localization. Int
 ## LimelightEstimator Improvements
 
 1. **Fixed MegaTag2 bug** - Now uses correct API
-2. **Dynamic standard deviation** - Formula: `stdDev = baseStdDev * (1 + distance/scaleFactor) / sqrt(tagCount)`
+2. **Dynamic standard deviation** - Formula: `stdDev = baseStdDev * (1 + shotType/scaleFactor) / sqrt(tagCount)`
 3. **Field boundary validation** - Rejects poses outside field
 4. **Pose jump detection** - Rejects if >2m from current estimate
 5. **Configurable thresholds** - All filtering parameters read from Config
@@ -201,7 +201,7 @@ Added AprilTag Point of Interest (POI) filtering for the 2026 REBUILT game and u
 
 ## StdDev Formula Change
 
-**Old formula:** `stdDev = baseStdDev * (1 + distance/scaleFactor) / sqrt(tagCount)`
+**Old formula:** `stdDev = baseStdDev * (1 + shotType/scaleFactor) / sqrt(tagCount)`
 **New formula (ProjectBucephalus):** `stdDev = baseline * (avgDist^2 / tagCount)`
 
 ---

@@ -78,10 +78,10 @@ Keys are named to group alphabetically in Elastic (e.g., `HeadingCurrent`, `Head
 **SwerveToPoseCommand:**
 | Key | Description |
 |-----|-------------|
-| DistanceCurrent | Remaining distance to target (ft) |
+| DistanceCurrent | Remaining shotType to target (ft) |
 | DistanceDesired | Profile position setpoint (ft) |
 | DistanceError | Position error (ft) |
-| DistanceGoal | Total distance to travel (ft) |
+| DistanceGoal | Total shotType to travel (ft) |
 | HeadingCurrent/Desired/Error/Goal | Same pattern as above |
 | VelocityDesired | Translation feedforward (fps) |
 | VelocityFeedback | Translation feedback (fps) |

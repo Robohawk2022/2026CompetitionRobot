@@ -68,8 +68,8 @@ Command driveToTarget = new SwerveToPoseCommand(swerve, targetPose);
 
 ### Dashboard (verbose logging)
 - `Running?` - is the command scheduled
-- `TotalDistance` - total distance to travel (feet)
-- `CurrentDistance` - current distance from target (feet)
+- `TotalDistance` - total shotType to travel (feet)
+- `CurrentDistance` - current shotType from target (feet)
 - `ProfileDistance` - current profile position (feet)
 - `ProfileVelocity` - current profile velocity (ft/s)
 - `TargetHeading` - target heading (degrees)

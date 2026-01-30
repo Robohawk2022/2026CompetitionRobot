@@ -53,7 +53,7 @@ Command factory methods in subsystems should be short (~10 lines). If the logic 
 
 ### SwerveOrbitHubCommand
 - Calculates hub center position from AprilTag locations (alliance-aware)
-- Computes linear and angular speeds for orbiting at current distance
+- Computes linear and angular speeds for orbiting at current shotType
 - Uses custom center of rotation for smooth orbiting
 - Reads from Config.SwerveTeleop (maxOrbit, deadband)
 
