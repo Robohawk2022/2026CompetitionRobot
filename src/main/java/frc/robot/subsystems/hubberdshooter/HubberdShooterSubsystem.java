@@ -52,7 +52,7 @@ public class HubberdShooterSubsystem extends SubsystemBase {
             builder.addDoubleProperty("Motor2RPM", () -> motor2RPM, null);
             builder.addDoubleProperty("Motor1Amps", hardware::getMotor1Amps, null);
             builder.addDoubleProperty("Motor2Amps", hardware::getMotor2Amps, null);
-            builder.addDoubleProperty("TargetRPM", shootingTargetRPM::getAsDouble, null);
+            builder.addDoubleProperty("ShootingPower%", shootingPower::getAsDouble, null);
             builder.addDoubleProperty("IntakePower%", intakePower::getAsDouble, null);
             builder.addDoubleProperty("OuttakePower%", outtakePower::getAsDouble, null);
         });
@@ -69,13 +69,6 @@ public class HubberdShooterSubsystem extends SubsystemBase {
      */
     private double powerToVolts(double powerPercent) {
         return Util.clampVolts((powerPercent / 100.0) * Util.MAX_VOLTS);
-    }
-
-    /**
-     * Converts RPM to rotations per second.
-     */
-    private double rpmToRps(double rpm) {
-        return rpm / 60.0;
     }
 
     /**
@@ -148,23 +141,17 @@ public class HubberdShooterSubsystem extends SubsystemBase {
     }
 
     /**
-     * @return a command that runs shooting mode (motors counter-rotate at target RPM)
+     * @return a command that runs shooting mode (motors counter-rotate at configured power)
      */
     public Command shootCommand() {
         return startRun(
             () -> {
                 currentMode = "shooting";
-                // Configure PID gains before starting velocity control
-                hardware.configurePid(
-                    kV.getAsDouble(),
-                    kP.getAsDouble(),
-                    kS.getAsDouble()
-                );
             },
             () -> {
-                double targetRPS = rpmToRps(shootingTargetRPM.getAsDouble());
+                double volts = powerToVolts(shootingPower.getAsDouble());
                 // Motors counter-rotate: motor1 positive, motor2 negative
-                hardware.setVelocity(targetRPS, -targetRPS);
+                hardware.applyVoltage(volts, -volts);
             }
         ).finallyDo(interrupted -> cleanup());
     }

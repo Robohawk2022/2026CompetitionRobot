@@ -3,42 +3,24 @@ package frc.robot.subsystems.hubberdshooter;
 /**
  * Interface for the HubberdShooter hardware.
  * <p>
- * The HubberdShooter uses two Falcon 500 motors that can operate in
- * voltage mode (intake/outtake) or velocity mode (shooting).
+ * The HubberdShooter uses two Falcon 500 motors that operate in
+ * voltage mode for all operating modes (off, intake, outtake, shooting).
  */
 public interface HubberdShooterHardware {
 
     /**
-     * Applies voltage to both motors (for intake/outtake modes).
+     * Applies voltage to both motors.
      * <p>
-     * In intake mode, both motors spin the same direction.
-     * In outtake mode, both motors spin the same direction (reversed from intake).
+     * <ul>
+     *   <li>Intake: both motors same positive voltage (pull fuel in)</li>
+     *   <li>Outtake: both motors same negative voltage (push fuel out)</li>
+     *   <li>Shooting: motors counter-rotate (one positive, one negative)</li>
+     * </ul>
      *
      * @param volts1 voltage for motor 1 (-12 to +12)
      * @param volts2 voltage for motor 2 (-12 to +12)
      */
     void applyVoltage(double volts1, double volts2);
-
-    /**
-     * Sets the target velocities for both motors (for shooting mode).
-     * <p>
-     * In shooting mode, motors counter-rotate to propel the fuel.
-     *
-     * @param rps1 target velocity for motor 1 in revolutions per second
-     * @param rps2 target velocity for motor 2 in revolutions per second
-     */
-    void setVelocity(double rps1, double rps2);
-
-    /**
-     * Reconfigures the velocity PID controller with new gains.
-     * <p>
-     * Call this when starting a velocity control command to ensure gains are up-to-date.
-     *
-     * @param kV feedforward gain (volts per rev/sec)
-     * @param kP proportional gain
-     * @param kS static friction compensation (volts)
-     */
-    void configurePid(double kV, double kP, double kS);
 
     /**
      * @return the current velocity of motor 1 in RPM

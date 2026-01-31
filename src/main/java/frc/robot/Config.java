@@ -341,25 +341,8 @@ public interface Config {
         /** Power for outtake mode (both motors same direction, reversed) */
         DoubleSupplier outtakePower = pref("HubberdShooter/OuttakePower%", 20.0);
 
-        //=======================================================================
-        // Shooting velocity settings
-        //=======================================================================
-
-        /** Target RPM for shooting mode */
-        DoubleSupplier shootingTargetRPM = pref("HubberdShooter/ShootingTargetRPM", 1200.0);
-
-        //=======================================================================
-        // Closed-loop gains (for shooting mode velocity control)
-        //=======================================================================
-
-        /** Velocity feedforward gain (volts per rev/sec) */
-        DoubleSupplier kV = pref("HubberdShooter/kV", 0.12);
-
-        /** Proportional gain for velocity control */
-        DoubleSupplier kP = pref("HubberdShooter/kP", 0.1);
-
-        /** Static friction compensation (volts) */
-        DoubleSupplier kS = pref("HubberdShooter/kS", 0.0);
+        /** Power for shooting mode (motors counter-rotate) */
+        DoubleSupplier shootingPower = pref("HubberdShooter/ShootingPower%", 50.0);
 
         //=======================================================================
         // Motor configuration
