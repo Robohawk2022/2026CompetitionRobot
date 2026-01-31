@@ -78,7 +78,7 @@ public interface Config {
         DoubleSupplier deadband = pref("SwerveTeleop/Deadband", 0.1);
         DoubleSupplier exponent = pref("SwerveTeleop/Exponent", 2.0);
 
-        /** Use XBox mapping */
+        /** Use XBox mapping (false = 8BitDo) */
         BooleanSupplier useXboxMapping = pref("SwerveTeleop/UseXboxMapping?", true);
 
     }
