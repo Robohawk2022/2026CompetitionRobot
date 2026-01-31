@@ -336,13 +336,13 @@ public interface Config {
         //=======================================================================
 
         /** Power for intake mode (both motors same direction) */
-        DoubleSupplier intakePower = pref("HubberdShooter/IntakePower%", 20.0);
+        DoubleSupplier intakePower = pref("HubberdShooter/IntakePower%", 5.0);
 
         /** Power for outtake mode (both motors same direction, reversed) */
-        DoubleSupplier outtakePower = pref("HubberdShooter/OuttakePower%", 20.0);
+        DoubleSupplier outtakePower = pref("HubberdShooter/OuttakePower%", 5.0);
 
         /** Power for shooting mode (motors counter-rotate) */
-        DoubleSupplier shootingPower = pref("HubberdShooter/ShootingPower%", 50.0);
+        DoubleSupplier shootingPower = pref("HubberdShooter/ShootingPower%", 10.0);
 
         //=======================================================================
         // Motor configuration
