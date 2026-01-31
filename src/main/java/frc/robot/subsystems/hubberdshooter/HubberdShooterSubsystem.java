@@ -158,6 +158,40 @@ public class HubberdShooterSubsystem extends SubsystemBase {
 
     //endregion
 
+    //region Motor test commands --------------------------------------------------
+
+    /**
+     * @return a command that runs ONLY motor 1 at low power (for direction testing)
+     */
+    public Command testMotor1Command() {
+        return startRun(
+            () -> {
+                currentMode = "test-motor1";
+            },
+            () -> {
+                double volts = powerToVolts(testPower.getAsDouble());
+                hardware.applyVoltage(volts, 0);
+            }
+        ).finallyDo(interrupted -> cleanup());
+    }
+
+    /**
+     * @return a command that runs ONLY motor 2 at low power (for direction testing)
+     */
+    public Command testMotor2Command() {
+        return startRun(
+            () -> {
+                currentMode = "test-motor2";
+            },
+            () -> {
+                double volts = powerToVolts(testPower.getAsDouble());
+                hardware.applyVoltage(0, volts);
+            }
+        ).finallyDo(interrupted -> cleanup());
+    }
+
+    //endregion
+
     //region Direct control methods ------------------------------------------------
     // WARNING: These methods do not have automatic cleanup like commands.
     // If you call these, you MUST call stop() when done.

@@ -10,34 +10,34 @@ import frc.robot.subsystems.hubberdshooter.HubberdShooterSubsystem;
 /**
  * Standalone test program for the HubberdShooter subsystem.
  * <p>
- * Run with: {@code ./gradlew simulateJava -Probot=HubberdShooterTestbot}
+ * Run with: {@code ./gradlew deploy -Probot=HubberdShooterTestbot}
  * <p>
  * <b>Button mappings:</b>
  * <ul>
- *   <li>A (hold) - Intake mode (both motors pull fuel in at 20%)</li>
- *   <li>B (hold) - Outtake mode (both motors push fuel out at 20%)</li>
- *   <li>X (hold) - Shoot mode (motors counter-rotate at 1200 RPM)</li>
+ *   <li>LEFT BUMPER (hold) - Test Motor 1 ONLY (positive voltage)</li>
+ *   <li>RIGHT BUMPER (hold) - Test Motor 2 ONLY (positive voltage)</li>
+ *   <li>A (hold) - Intake mode (both motors pull fuel in)</li>
+ *   <li>B (hold) - Outtake mode (both motors push fuel out)</li>
+ *   <li>X (hold) - Shoot mode (motors counter-rotate)</li>
  *   <li>Y (press) - Stop all motors</li>
  * </ul>
  * <p>
  * <b>Configuration (via Elastic/Shuffleboard):</b>
  * <ul>
- *   <li>{@code HubberdShooter/IntakePower%} - Power for intake mode (0-100%)</li>
- *   <li>{@code HubberdShooter/OuttakePower%} - Power for outtake mode (0-100%)</li>
- *   <li>{@code HubberdShooter/ShootingTargetRPM} - Target RPM for shooting mode</li>
- *   <li>{@code HubberdShooter/kV} - Velocity feedforward gain</li>
- *   <li>{@code HubberdShooter/kP} - Proportional gain</li>
- *   <li>{@code HubberdShooter/kS} - Static friction compensation</li>
- *   <li>{@code HubberdShooter/Motor1Inverted?} - Invert motor 1</li>
- *   <li>{@code HubberdShooter/Motor2Inverted?} - Invert motor 2 (default true for counter-rotation)</li>
+ *   <li>{@code HubberdShooter/TestPower%} - Power for individual motor tests (default 5%)</li>
+ *   <li>{@code HubberdShooter/IntakePower%} - Power for intake mode (default 5%)</li>
+ *   <li>{@code HubberdShooter/OuttakePower%} - Power for outtake mode (default 5%)</li>
+ *   <li>{@code HubberdShooter/ShootingPower%} - Power for shooting mode (default 10%)</li>
+ *   <li>{@code HubberdShooter/Motor1Inverted?} - Invert motor 1 direction</li>
+ *   <li>{@code HubberdShooter/Motor2Inverted?} - Invert motor 2 direction</li>
  * </ul>
  * <p>
- * <b>Expected behavior:</b>
- * <ul>
- *   <li>Intake (A): Both motors show positive RPM on dashboard</li>
- *   <li>Outtake (B): Both motors show negative RPM on dashboard</li>
- *   <li>Shoot (X): Motor1 positive ~1200 RPM, Motor2 negative ~1200 RPM</li>
- * </ul>
+ * <b>Motor direction test procedure:</b>
+ * <ol>
+ *   <li>Hold LEFT BUMPER - observe which way Motor 1 spins</li>
+ *   <li>Hold RIGHT BUMPER - observe which way Motor 2 spins</li>
+ *   <li>If wrong direction, toggle Motor1Inverted? or Motor2Inverted?</li>
+ * </ol>
  */
 public class HubberdShooterTestbot extends TimedRobot {
 
@@ -56,30 +56,41 @@ public class HubberdShooterTestbot extends TimedRobot {
         // Set default command to idle
         shooter.setDefaultCommand(shooter.idleCommand());
 
-        // Button bindings
+        // Button bindings - Individual motor tests
+        controller.leftBumper().whileTrue(shooter.testMotor1Command());
+        controller.rightBumper().whileTrue(shooter.testMotor2Command());
+
+        // Button bindings - Normal operation
         controller.a().whileTrue(shooter.intakeCommand());
         controller.b().whileTrue(shooter.outtakeCommand());
         controller.x().whileTrue(shooter.shootCommand());
         controller.y().onTrue(shooter.stopCommand());
 
         System.out.println(">>> Button mappings:");
+        System.out.println("    LEFT BUMPER (hold) = Test Motor 1 ONLY (positive voltage)");
+        System.out.println("    RIGHT BUMPER (hold) = Test Motor 2 ONLY (positive voltage)");
         System.out.println("    A (hold) = Intake (both motors pull fuel in)");
         System.out.println("    B (hold) = Outtake (both motors push fuel out)");
-        System.out.println("    X (hold) = Shoot (motors counter-rotate at target RPM)");
+        System.out.println("    X (hold) = Shoot (motors counter-rotate)");
         System.out.println("    Y (press) = Stop all motors");
         System.out.println("");
         System.out.println(">>> Configuration:");
+        System.out.println("    HubberdShooter/TestPower% = Power for individual motor tests (default 5%)");
         System.out.println("    HubberdShooter/IntakePower% = Power for intake mode");
         System.out.println("    HubberdShooter/OuttakePower% = Power for outtake mode");
-        System.out.println("    HubberdShooter/ShootingTargetRPM = Target RPM for shooting");
-        System.out.println("    HubberdShooter/kV = Velocity feedforward gain");
-        System.out.println("    HubberdShooter/kP = Proportional gain");
-        System.out.println("    HubberdShooter/kS = Static friction compensation");
+        System.out.println("    HubberdShooter/ShootingPower% = Power for shooting mode");
+        System.out.println("    HubberdShooter/Motor1Inverted? = Flip motor 1 direction");
+        System.out.println("    HubberdShooter/Motor2Inverted? = Flip motor 2 direction");
         System.out.println("");
-        System.out.println(">>> Expected behavior:");
-        System.out.println("    Intake (A): Both motors positive RPM");
-        System.out.println("    Outtake (B): Both motors negative RPM");
-        System.out.println("    Shoot (X): Motor1 +1200 RPM, Motor2 -1200 RPM (counter-rotate)");
+        System.out.println(">>> MOTOR DIRECTION TEST:");
+        System.out.println("    1. Hold LEFT BUMPER - observe which way Motor 1 spins");
+        System.out.println("    2. Hold RIGHT BUMPER - observe which way Motor 2 spins");
+        System.out.println("    3. If wrong direction, toggle Motor1Inverted? or Motor2Inverted?");
+        System.out.println("");
+        System.out.println(">>> Expected behavior after correct inversion:");
+        System.out.println("    Intake (A): Both motors positive RPM (pull in)");
+        System.out.println("    Outtake (B): Both motors negative RPM (push out)");
+        System.out.println("    Shoot (X): Motor1 positive, Motor2 negative (counter-rotate)");
     }
 
     @Override

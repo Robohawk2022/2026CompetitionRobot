@@ -344,6 +344,9 @@ public interface Config {
         /** Power for shooting mode (motors counter-rotate) */
         DoubleSupplier shootingPower = pref("HubberdShooter/ShootingPower%", 10.0);
 
+        /** Power for individual motor testing (very low for safety) */
+        DoubleSupplier testPower = pref("HubberdShooter/TestPower%", 5.0);
+
         //=======================================================================
         // Motor configuration
         //=======================================================================
