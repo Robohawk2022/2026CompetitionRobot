@@ -3,8 +3,8 @@ package frc.robot.subsystems.hubberdshooter;
 /**
  * Interface for the HubberdShooter hardware.
  * <p>
- * The HubberdShooter uses two Falcon 500 motors that operate in
- * voltage mode for all operating modes (off, intake, outtake, shooting).
+ * The HubberdShooter uses two motors that can operate in
+ * voltage mode (intake/outtake) or velocity mode (shooting).
  */
 public interface HubberdShooterHardware {
 

@@ -12,7 +12,7 @@ import static frc.robot.Config.HubberdShooter.*;
 /**
  * Subsystem for the HubberdShooter mechanism.
  * <p>
- * Controls two Falcon 500 motors with four operating modes:
+ * Controls two NEO motors with four operating modes:
  * <ul>
  *   <li><b>Off</b> - Motors stopped (0V)</li>
  *   <li><b>Intake</b> - Both motors same direction at configurable power</li>

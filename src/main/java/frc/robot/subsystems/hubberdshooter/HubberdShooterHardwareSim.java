@@ -7,7 +7,7 @@ package frc.robot.subsystems.hubberdshooter;
  */
 public class HubberdShooterHardwareSim implements HubberdShooterHardware {
 
-    private static final double MAX_RPM = 6380; // Falcon 500 free speed
+    private static final double MAX_RPM = 5676; // NEO free speed
     private static final double MAX_RPS = MAX_RPM / 60.0;
     private static final double NOMINAL_VOLTAGE = 12.0;
 

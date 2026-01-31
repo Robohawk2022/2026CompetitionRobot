@@ -3,7 +3,7 @@ package frc.robot.testbots;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.GameController;
-import frc.robot.subsystems.hubberdshooter.HubberdShooterHardwareCTRE;
+import frc.robot.subsystems.hubberdshooter.HubberdShooterHardwareRev;
 import frc.robot.subsystems.hubberdshooter.HubberdShooterHardwareSim;
 import frc.robot.subsystems.hubberdshooter.HubberdShooterSubsystem;
 
@@ -50,7 +50,7 @@ public class HubberdShooterTestbot extends TimedRobot {
 
         // Use appropriate hardware based on environment
         shooter = new HubberdShooterSubsystem(
-                isSimulation() ? new HubberdShooterHardwareSim() : new HubberdShooterHardwareCTRE());
+                isSimulation() ? new HubberdShooterHardwareSim() : new HubberdShooterHardwareRev());
         controller = new GameController(0);
 
         // Set default command to idle
