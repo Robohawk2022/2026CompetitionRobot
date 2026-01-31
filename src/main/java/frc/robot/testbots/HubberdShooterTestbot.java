@@ -3,7 +3,7 @@ package frc.robot.testbots;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.GameController;
 import frc.robot.subsystems.hubberdshooter.HubberdShooterHardwareCTRE;
 import frc.robot.subsystems.hubberdshooter.HubberdShooterHardwareSim;
 import frc.robot.subsystems.hubberdshooter.HubberdShooterSubsystem;
@@ -13,20 +13,23 @@ import frc.robot.subsystems.hubberdshooter.HubberdShooterSubsystem;
  * <p>
  * Run with: {@code ./gradlew simulateJava -Probot=HubberdShooterTestbot}
  * <p>
- * Button mappings for 8BitDo controller:
+ * Uses {@link GameController} which auto-maps buttons for Xbox, 8BitDo, and Logitech.
+ * Set {@code SwerveTeleop/UseXboxMapping?} to {@code false} for 8BitDo controllers.
+ * <p>
+ * Button mappings:
  * <ul>
- *   <li>A (button 1) = Intake</li>
- *   <li>B (button 2) = Outtake</li>
- *   <li>X (button 4) = Shoot</li>
- *   <li>Y (button 5) = Stop</li>
- *   <li>Left Bumper (button 7) = Test Motor 1 only</li>
- *   <li>Right Bumper (button 8) = Test Motor 2 only</li>
+ *   <li>A = Intake</li>
+ *   <li>B = Outtake</li>
+ *   <li>X = Shoot</li>
+ *   <li>Y = Stop</li>
+ *   <li>Left Bumper = Test Motor 1 only</li>
+ *   <li>Right Bumper = Test Motor 2 only</li>
  * </ul>
  */
 public class HubberdShooterTestbot extends TimedRobot {
 
     private HubberdShooterSubsystem shooter;
-    private CommandXboxController controller;
+    private GameController controller;
 
     @Override
     public void robotInit() {
@@ -34,41 +37,39 @@ public class HubberdShooterTestbot extends TimedRobot {
 
         shooter = new HubberdShooterSubsystem(
                 isSimulation() ? new HubberdShooterHardwareSim() : new HubberdShooterHardwareCTRE());
-        controller = new CommandXboxController(0);
+        controller = new GameController(0);
 
         // Set default command to idle
         shooter.setDefaultCommand(shooter.idleCommand());
 
-        // Button bindings - 8BitDo raw button numbers
-        controller.button(1).whileTrue(shooter.intakeCommand());       // A
-        controller.button(2).whileTrue(shooter.outtakeCommand());      // B
-        controller.button(4).whileTrue(shooter.shootCommand());        // X
-        controller.button(5).onTrue(shooter.stopCommand());            // Y
-        controller.button(7).whileTrue(shooter.testMotor1Command());   // Left Bumper
-        controller.button(8).whileTrue(shooter.testMotor2Command());   // Right Bumper
+        // Button bindings - uses GameController which handles Xbox/8BitDo/Logitech
+        controller.a().whileTrue(shooter.intakeCommand());
+        controller.b().whileTrue(shooter.outtakeCommand());
+        controller.x().whileTrue(shooter.shootCommand());
+        controller.y().onTrue(shooter.stopCommand());
+        controller.leftBumper().whileTrue(shooter.testMotor1Command());
+        controller.rightBumper().whileTrue(shooter.testMotor2Command());
 
-        System.out.println(">>> Button mappings (8BitDo):");
-        System.out.println("    A (btn 1) = Intake");
-        System.out.println("    B (btn 2) = Outtake");
-        System.out.println("    X (btn 4) = Shoot");
-        System.out.println("    Y (btn 5) = Stop");
-        System.out.println("    LB (btn 7) = Test Motor 1 ONLY");
-        System.out.println("    RB (btn 8) = Test Motor 2 ONLY");
+        System.out.println(">>> Controller type: " + controller.getType());
+        System.out.println(">>> Button mappings:");
+        System.out.println("    A = Intake");
+        System.out.println("    B = Outtake");
+        System.out.println("    X = Shoot");
+        System.out.println("    Y = Stop");
+        System.out.println("    LB = Test Motor 1 ONLY");
+        System.out.println("    RB = Test Motor 2 ONLY");
+        System.out.println("");
+        System.out.println(">>> If buttons are wrong, check SwerveTeleop/UseXboxMapping? preference");
+        System.out.println("    true = Xbox controller");
+        System.out.println("    false = 8BitDo controller");
     }
 
     @Override
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
 
-        // Show which raw buttons are pressed (for debugging)
-        StringBuilder pressed = new StringBuilder();
-        for (int i = 1; i <= 15; i++) {
-            if (controller.getHID().getRawButton(i)) {
-                if (pressed.length() > 0) pressed.append(", ");
-                pressed.append(i);
-            }
-        }
-        SmartDashboard.putString("RawButtonsPressed", pressed.length() > 0 ? pressed.toString() : "none");
+        // Show controller type for debugging
+        SmartDashboard.putString("ControllerType", controller.getType().toString());
     }
 
     @Override
