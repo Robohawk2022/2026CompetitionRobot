@@ -1,8 +1,9 @@
 package frc.robot.testbots;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.GameController;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.hubberdshooter.HubberdShooterHardwareCTRE;
 import frc.robot.subsystems.hubberdshooter.HubberdShooterHardwareSim;
 import frc.robot.subsystems.hubberdshooter.HubberdShooterSubsystem;
@@ -10,97 +11,68 @@ import frc.robot.subsystems.hubberdshooter.HubberdShooterSubsystem;
 /**
  * Standalone test program for the HubberdShooter subsystem.
  * <p>
- * Run with: {@code ./gradlew deploy -Probot=HubberdShooterTestbot}
+ * Run with: {@code ./gradlew simulateJava -Probot=HubberdShooterTestbot}
  * <p>
- * <b>Button mappings:</b>
+ * Button mappings for 8BitDo controller:
  * <ul>
- *   <li>LEFT BUMPER (hold) - Test Motor 1 ONLY (positive voltage)</li>
- *   <li>RIGHT BUMPER (hold) - Test Motor 2 ONLY (positive voltage)</li>
- *   <li>A (hold) - Intake mode (both motors pull fuel in)</li>
- *   <li>B (hold) - Outtake mode (both motors push fuel out)</li>
- *   <li>X (hold) - Shoot mode (motors counter-rotate)</li>
- *   <li>Y (press) - Stop all motors</li>
+ *   <li>A (button 1) = Intake</li>
+ *   <li>B (button 2) = Outtake</li>
+ *   <li>X (button 4) = Shoot</li>
+ *   <li>Y (button 5) = Stop</li>
+ *   <li>Left Bumper (button 7) = Test Motor 1 only</li>
+ *   <li>Right Bumper (button 8) = Test Motor 2 only</li>
  * </ul>
- * <p>
- * <b>Configuration (via Elastic/Shuffleboard):</b>
- * <ul>
- *   <li>{@code HubberdShooter/TestPower%} - Power for individual motor tests (default 5%)</li>
- *   <li>{@code HubberdShooter/IntakePower%} - Power for intake mode (default 5%)</li>
- *   <li>{@code HubberdShooter/OuttakePower%} - Power for outtake mode (default 5%)</li>
- *   <li>{@code HubberdShooter/ShootingPower%} - Power for shooting mode (default 10%)</li>
- *   <li>{@code HubberdShooter/Motor1Inverted?} - Invert motor 1 direction</li>
- *   <li>{@code HubberdShooter/Motor2Inverted?} - Invert motor 2 direction</li>
- * </ul>
- * <p>
- * <b>Motor direction test procedure:</b>
- * <ol>
- *   <li>Hold LEFT BUMPER - observe which way Motor 1 spins</li>
- *   <li>Hold RIGHT BUMPER - observe which way Motor 2 spins</li>
- *   <li>If wrong direction, toggle Motor1Inverted? or Motor2Inverted?</li>
- * </ol>
  */
 public class HubberdShooterTestbot extends TimedRobot {
 
     private HubberdShooterSubsystem shooter;
-    private GameController controller;
+    private CommandXboxController controller;
 
     @Override
     public void robotInit() {
         System.out.println(">>> HubberdShooterTestbot starting...");
 
-        // Use appropriate hardware based on environment
         shooter = new HubberdShooterSubsystem(
                 isSimulation() ? new HubberdShooterHardwareSim() : new HubberdShooterHardwareCTRE());
-        controller = new GameController(0);
+        controller = new CommandXboxController(0);
 
         // Set default command to idle
         shooter.setDefaultCommand(shooter.idleCommand());
 
-        // Button bindings - Individual motor tests
-        controller.leftBumper().whileTrue(shooter.testMotor1Command());
-        controller.rightBumper().whileTrue(shooter.testMotor2Command());
+        // Button bindings - 8BitDo raw button numbers
+        controller.button(1).whileTrue(shooter.intakeCommand());       // A
+        controller.button(2).whileTrue(shooter.outtakeCommand());      // B
+        controller.button(4).whileTrue(shooter.shootCommand());        // X
+        controller.button(5).onTrue(shooter.stopCommand());            // Y
+        controller.button(7).whileTrue(shooter.testMotor1Command());   // Left Bumper
+        controller.button(8).whileTrue(shooter.testMotor2Command());   // Right Bumper
 
-        // Button bindings - Normal operation
-        controller.a().whileTrue(shooter.intakeCommand());
-        controller.b().whileTrue(shooter.outtakeCommand());
-        controller.x().whileTrue(shooter.shootCommand());
-        controller.y().onTrue(shooter.stopCommand());
-
-        System.out.println(">>> Button mappings:");
-        System.out.println("    LEFT BUMPER (hold) = Test Motor 1 ONLY (positive voltage)");
-        System.out.println("    RIGHT BUMPER (hold) = Test Motor 2 ONLY (positive voltage)");
-        System.out.println("    A (hold) = Intake (both motors pull fuel in)");
-        System.out.println("    B (hold) = Outtake (both motors push fuel out)");
-        System.out.println("    X (hold) = Shoot (motors counter-rotate)");
-        System.out.println("    Y (press) = Stop all motors");
-        System.out.println("");
-        System.out.println(">>> Configuration:");
-        System.out.println("    HubberdShooter/TestPower% = Power for individual motor tests (default 5%)");
-        System.out.println("    HubberdShooter/IntakePower% = Power for intake mode");
-        System.out.println("    HubberdShooter/OuttakePower% = Power for outtake mode");
-        System.out.println("    HubberdShooter/ShootingPower% = Power for shooting mode");
-        System.out.println("    HubberdShooter/Motor1Inverted? = Flip motor 1 direction");
-        System.out.println("    HubberdShooter/Motor2Inverted? = Flip motor 2 direction");
-        System.out.println("");
-        System.out.println(">>> MOTOR DIRECTION TEST:");
-        System.out.println("    1. Hold LEFT BUMPER - observe which way Motor 1 spins");
-        System.out.println("    2. Hold RIGHT BUMPER - observe which way Motor 2 spins");
-        System.out.println("    3. If wrong direction, toggle Motor1Inverted? or Motor2Inverted?");
-        System.out.println("");
-        System.out.println(">>> Expected behavior after correct inversion:");
-        System.out.println("    Intake (A): Both motors positive RPM (pull in)");
-        System.out.println("    Outtake (B): Both motors negative RPM (push out)");
-        System.out.println("    Shoot (X): Motor1 positive, Motor2 negative (counter-rotate)");
+        System.out.println(">>> Button mappings (8BitDo):");
+        System.out.println("    A (btn 1) = Intake");
+        System.out.println("    B (btn 2) = Outtake");
+        System.out.println("    X (btn 4) = Shoot");
+        System.out.println("    Y (btn 5) = Stop");
+        System.out.println("    LB (btn 7) = Test Motor 1 ONLY");
+        System.out.println("    RB (btn 8) = Test Motor 2 ONLY");
     }
 
     @Override
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
+
+        // Show which raw buttons are pressed (for debugging)
+        StringBuilder pressed = new StringBuilder();
+        for (int i = 1; i <= 15; i++) {
+            if (controller.getHID().getRawButton(i)) {
+                if (pressed.length() > 0) pressed.append(", ");
+                pressed.append(i);
+            }
+        }
+        SmartDashboard.putString("RawButtonsPressed", pressed.length() > 0 ? pressed.toString() : "none");
     }
 
     @Override
     public void disabledInit() {
-        // Stop motors immediately when robot is disabled
         shooter.stop();
     }
 }
