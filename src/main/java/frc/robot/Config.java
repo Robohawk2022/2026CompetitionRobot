@@ -312,4 +312,77 @@ public interface Config {
 
 //endregion
 
+//region HubberdShooter ---------------------------------------------------------
+
+    /**
+     * Configuration for the HubberdShooter subsystem.
+     * <p>
+     * Two Falcon 500 motors that can operate in four modes:
+     * <ul>
+     *   <li>Off - Motors stopped</li>
+     *   <li>Intake - Both motors same direction at 20% power</li>
+     *   <li>Outtake - Both motors opposite direction at 20% power</li>
+     *   <li>Shooting - Motors counter-rotate at 600 RPM</li>
+     * </ul>
+     */
+    interface HubberdShooter {
+
+        /** CAN IDs for the shooter motors */
+        int MOTOR_1_CAN_ID = 51;
+        int MOTOR_2_CAN_ID = 52;
+
+        //=======================================================================
+        // Power settings (percentage 0-100)
+        //=======================================================================
+
+        /** Power for intake mode (both motors same direction) */
+        DoubleSupplier intakePower = pref("HubberdShooter/IntakePower%", 20.0);
+
+        /** Power for outtake mode (both motors same direction, reversed) */
+        DoubleSupplier outtakePower = pref("HubberdShooter/OuttakePower%", 20.0);
+
+        //=======================================================================
+        // Shooting velocity settings
+        //=======================================================================
+
+        /** Target RPM for shooting mode */
+        DoubleSupplier shootingTargetRPM = pref("HubberdShooter/ShootingTargetRPM", 1200.0);
+
+        //=======================================================================
+        // Closed-loop gains (for shooting mode velocity control)
+        //=======================================================================
+
+        /** Velocity feedforward gain (volts per rev/sec) */
+        DoubleSupplier kV = pref("HubberdShooter/kV", 0.12);
+
+        /** Proportional gain for velocity control */
+        DoubleSupplier kP = pref("HubberdShooter/kP", 0.1);
+
+        /** Static friction compensation (volts) */
+        DoubleSupplier kS = pref("HubberdShooter/kS", 0.0);
+
+        //=======================================================================
+        // Motor configuration
+        //=======================================================================
+
+        /** Invert motor 1 direction */
+        BooleanSupplier motor1Inverted = pref("HubberdShooter/Motor1Inverted?", false);
+
+        /** Invert motor 2 direction */
+        BooleanSupplier motor2Inverted = pref("HubberdShooter/Motor2Inverted?", false);
+
+        //=======================================================================
+        // Current limits
+        //=======================================================================
+
+        /** Stator current limit in amps */
+        DoubleSupplier statorCurrentLimit = pref("HubberdShooter/StatorCurrentLimit", 60.0);
+
+        /** Supply current limit in amps */
+        DoubleSupplier supplyCurrentLimit = pref("HubberdShooter/SupplyCurrentLimit", 40.0);
+
+    }
+
+//endregion
+
 }
