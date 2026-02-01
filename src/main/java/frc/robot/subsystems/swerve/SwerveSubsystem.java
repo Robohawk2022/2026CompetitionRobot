@@ -288,10 +288,13 @@ public class SwerveSubsystem extends SubsystemBase {
      * @return a command that resets all wheel angles to 0 (forward facing)
      */
     public Command resetWheelsCommand() {
+        SwerveModuleState [] states = new SwerveModuleState[4];
+        states[0] = new SwerveModuleState();
+        states[1] = new SwerveModuleState();
+        states[2] = new SwerveModuleState();
+        states[3] = new SwerveModuleState();
         return runOnce(() -> {
-            hardware.lockTurnMotors();
-            wheelsLocked = true;
-            Util.log("Wheels reset to forward");
+            hardware.setModuleStates(states);
         }).finallyDo(() -> wheelsLocked = false);
     }
 

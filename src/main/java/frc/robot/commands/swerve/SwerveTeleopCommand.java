@@ -89,9 +89,9 @@ public class SwerveTeleopCommand extends Command {
     public void execute() {
 
         // get conditioned joystick input
-        inputX = TeleopInput.conditionInput(-controller.getLeftY());
-        inputY = TeleopInput.conditionInput(-controller.getLeftX());
-        inputOmega = TeleopInput.conditionInput(-controller.getRightX());
+        inputX = TeleopInput.conditionInput(controller.getLeftY());
+        inputY = TeleopInput.conditionInput(controller.getLeftX());
+        inputOmega = TeleopInput.conditionInput(controller.getRightX());
 
         // ensure that the point defined by (x, y) lies on the unit
         // circle - when we scale them by the maximum translate speed

@@ -21,6 +21,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.util.Util;
 
 import static frc.robot.Config.Swerve.*;
 import static frc.robot.subsystems.swerve.SwerveHardwareConfig.*;
@@ -70,7 +71,6 @@ public class SwerveModule {
 
         configureDriveMotor(driveInvertedValue);
         configureTurnMotor();
-        // configureCANcoder();
 
         // store status signals for high-frequency odometry
         drivePositionSignal = driveMotor.getPosition();
@@ -140,11 +140,12 @@ public class SwerveModule {
 
         // use remote CANcoder for feedback
         config.Feedback.FeedbackRemoteSensorID = turnEncoder.getDeviceID();
-        config.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+        config.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
         config.Feedback.RotorToSensorRatio = TURN_GEAR_RATIO;
 
         // PID for position control
         config.Slot0.kP = TURN_KP;
+        config.Slot0.kI = TURN_KI;
         config.Slot0.kD = TURN_KD;
 
         // enable continuous input for wrap-around
@@ -195,15 +196,15 @@ public class SwerveModule {
         // if drive speed is below threshold, stop driving and preserve the previous angle
         // this prevents wheel flips when the driver releases the joystick (kinematics
         // produces arbitrary angles when ChassisSpeeds is zero)
-        if (Math.abs(state.speedMetersPerSecond) < minSpeedForAngle.getAsDouble()) {
-            driveMotor.setControl(driveRequest.withVelocity(0));
-            // preserve the previous desired angle - don't flip to arbitrary kinematics angle
-            double positionRotations = desiredState.angle.getRotations();
-            turnMotor.setControl(turnRequest.withPosition(positionRotations));
-            // keep desiredState.angle unchanged, only update speed to 0
-            desiredState = new SwerveModuleState(0, desiredState.angle);
-            return;
-        }
+        // if (Math.abs(state.speedMetersPerSecond) < minSpeedForAngle.getAsDouble()) {
+        //     driveMotor.setControl(driveRequest.withVelocity(0));
+        //     // preserve the previous desired angle - don't flip to arbitrary kinematics angle
+        //     double positionRotations = desiredState.angle.getRotations();
+        //     turnMotor.setControl(turnRequest.withPosition(positionRotations));
+        //     // keep desiredState.angle unchanged, only update speed to 0
+        //     desiredState = new SwerveModuleState(0, desiredState.angle);
+        //     return;
+        // }
 
         // optimize the state to avoid spinning more than 90 degrees
         state.optimize(currentAngle);

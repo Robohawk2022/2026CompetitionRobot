@@ -98,19 +98,25 @@ public final class SwerveHardwareConfig {
     // MOTOR_INVERSIONS
     //==========================================================================
 
-    public static final InvertedValue FL_DRIVE_INVERTED = InvertedValue.Clockwise_Positive;
-    public static final InvertedValue FR_DRIVE_INVERTED = InvertedValue.CounterClockwise_Positive;
-    public static final InvertedValue BL_DRIVE_INVERTED = InvertedValue.Clockwise_Positive;
+    // public static final InvertedValue FL_DRIVE_INVERTED = InvertedValue.Clockwise_Positive;
+    // public static final InvertedValue FR_DRIVE_INVERTED = InvertedValue.CounterClockwise_Positive;
+    // public static final InvertedValue BL_DRIVE_INVERTED = InvertedValue.Clockwise_Positive;
+    // public static final InvertedValue BR_DRIVE_INVERTED = InvertedValue.Clockwise_Positive;
+
+    public static final InvertedValue FL_DRIVE_INVERTED = InvertedValue.CounterClockwise_Positive;
+    public static final InvertedValue FR_DRIVE_INVERTED = InvertedValue.Clockwise_Positive;
+    public static final InvertedValue BL_DRIVE_INVERTED = InvertedValue.CounterClockwise_Positive;
     public static final InvertedValue BR_DRIVE_INVERTED = InvertedValue.CounterClockwise_Positive;
 
     //==========================================================================
     // PID TUNING
     //==========================================================================
 
-    public static final double DRIVE_KP = 0.1;
-    public static final double DRIVE_KV = 0.12;
+    public static final double DRIVE_KP = 1.0;
+    public static final double DRIVE_KV = 0.6;
     public static final double DRIVE_KS = 0.0;
 
-    public static final double TURN_KP = 6.0;
-    public static final double TURN_KD = 0.001;
+    public static final double TURN_KP = 200.0;
+    public static final double TURN_KI = 100.0;
+    public static final double TURN_KD = 0.00;
 }
