@@ -6,16 +6,14 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import edu.wpi.first.math.Vector;
-import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
+import com.ctre.phoenix6.swerve.SwerveRequest;
+
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
-import edu.wpi.first.math.kinematics.SwerveModulePosition;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -32,10 +30,10 @@ import frc.robot.util.Field;
 import frc.robot.util.Util;
 
 /**
- * Swerve drive subsystem with odometry and pose estimation.
+ * Swerve drive subsystem wrapping CTRE's CommandSwerveDrivetrain.
  * <p>
- * Adapted from Robohawk2022/2025CompetitionRobot, converted from
- * REV SparkMax to CTRE TalonFX.
+ * This class provides a familiar API while leveraging CTRE's optimized
+ * odometry thread and SwerveRequest-based control.
  */
 public class SwerveSubsystem extends SubsystemBase {
 
@@ -44,44 +42,31 @@ public class SwerveSubsystem extends SubsystemBase {
 
 //region Members & constructor -------------------------------------------------
 
-    final SwerveHardware hardware;
-    final SwerveDriveOdometry odometry;
-    final SwerveDrivePoseEstimator poseEstimator;
+    final CommandSwerveDrivetrain drivetrain;
     final List<Consumer<Pose2d>> poseResetListeners;
     final Field2d field2d;
 
+    // Reusable SwerveRequest objects
+    final SwerveRequest.FieldCentric fieldCentricRequest = new SwerveRequest.FieldCentric();
+    final SwerveRequest.RobotCentric robotCentricRequest = new SwerveRequest.RobotCentric();
+    final SwerveRequest.SwerveDriveBrake brakeRequest = new SwerveRequest.SwerveDriveBrake();
+    final SwerveRequest.PointWheelsAt pointRequest = new SwerveRequest.PointWheelsAt();
+
     String currentMode = "idle";
-    Pose2d latestOdometryPose;
-    Pose2d latestFusedPose;
     int resetCount = 0;
-    ChassisSpeeds latestSpeed;
+    ChassisSpeeds latestSpeed = Util.ZERO_SPEED;
     boolean wheelsLocked;
     long visionPoseCount;
 
     /**
-     * Creates a {@link SwerveSubsystem}.
+     * Creates a {@link SwerveSubsystem} wrapping the CTRE drivetrain.
      *
-     * @param hardware the hardware interface (required)
+     * @param drivetrain the CTRE CommandSwerveDrivetrain (required)
      */
-    public SwerveSubsystem(SwerveHardware hardware) {
+    public SwerveSubsystem(CommandSwerveDrivetrain drivetrain) {
 
-        this.hardware = Objects.requireNonNull(hardware);
-
-        // initialize odometry and pose estimates
-        this.odometry = new SwerveDriveOdometry(
-                SwerveHardwareConfig.KINEMATICS,
-                hardware.getHeading(),
-                hardware.getModulePositions(),
-                Pose2d.kZero);
-        this.poseEstimator = new SwerveDrivePoseEstimator(
-                SwerveHardwareConfig.KINEMATICS,
-                hardware.getHeading(),
-                hardware.getModulePositions(),
-                Pose2d.kZero);
+        this.drivetrain = Objects.requireNonNull(drivetrain);
         this.poseResetListeners = new ArrayList<>();
-        this.latestOdometryPose = Pose2d.kZero;
-        this.latestFusedPose = Pose2d.kZero;
-        this.latestSpeed = Util.ZERO_SPEED;
         this.wheelsLocked = false;
 
         // initialize Field2d for AdvantageScope visualization
@@ -122,24 +107,11 @@ public class SwerveSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-
-        // refresh all hardware signals in a single CAN transaction
-        hardware.refreshSignals();
-
-        // update odometry and pose estimator
-        Rotation2d heading = hardware.getHeading();
-        SwerveModulePosition[] positions = hardware.getModulePositions();
-        odometry.update(heading, positions);
-        poseEstimator.update(heading, positions);
-
-        // cache pose estimates
-        latestOdometryPose = odometry.getPoseMeters();
-        latestFusedPose = poseEstimator.getEstimatedPosition();
-
-        // publish pose information
-        field2d.setRobotPose(poseEstimator.getEstimatedPosition());
-        Util.publishPose("Odometry", latestOdometryPose);
-        Util.publishPose("Fused", poseEstimator.getEstimatedPosition());
+        // CTRE drivetrain handles odometry in its own thread
+        // We just need to publish visualization data
+        Pose2d pose = getPose();
+        field2d.setRobotPose(pose);
+        Util.publishPose("Fused", pose);
     }
 
 //endregion
@@ -150,54 +122,46 @@ public class SwerveSubsystem extends SubsystemBase {
      * @return the current robot heading from the gyro
      */
     public Rotation2d getHeading() {
-        return hardware.getHeading();
+        return drivetrain.getState().Pose.getRotation();
     }
 
     /**
      * @return the current estimated pose (odometry fused with vision)
      */
     public Pose2d getPose() {
-        return latestFusedPose;
+        return drivetrain.getState().Pose;
     }
 
     /**
-     * @return the current odometry-only pose estimate
+     * @return the current chassis speeds from the drivetrain
      */
-    public Pose2d getOdometryPose() {
-        return latestOdometryPose;
+    public ChassisSpeeds getCurrentSpeeds() {
+        return drivetrain.getState().Speeds;
     }
 
     /**
-     * Submits a vision pose estimate
+     * Submits a vision pose estimate to the CTRE pose estimator.
+     *
      * @param estimatedPose the estimated pose
-     * @param timestamp the age of the estimate in seconds
-     * @param confidence confidence in the estimate
+     * @param timestamp the timestamp of the estimate in seconds
+     * @param confidence standard deviations [x, y, theta]
      */
-    public void submitVisionEstimate(Pose2d estimatedPose, double timestamp, Vector<N3> confidence) {
+    public void submitVisionEstimate(Pose2d estimatedPose, double timestamp, Matrix<N3, N1> confidence) {
         if (estimatedPose != null) {
-            poseEstimator.addVisionMeasurement(estimatedPose, timestamp, confidence);
+            drivetrain.addVisionMeasurement(estimatedPose, timestamp, confidence);
             visionPoseCount++;
         }
     }
 
     /**
-     * Zeros the gyro and resets the odometry to a specific pose
+     * Zeros the gyro and resets the odometry to a specific pose.
+     *
      * @param newPose the pose to reset to
      */
     public void resetPose(Pose2d newPose) {
+        drivetrain.resetPose(newPose);
 
-        hardware.zeroHeading();;
-
-        Rotation2d currentHeading = hardware.getHeading();
-        SwerveModulePosition[] currentPositions = hardware.getModulePositions();
-
-        // reset odometry and fused pose estimator
-        odometry.resetPosition(currentHeading, currentPositions, newPose);
-        poseEstimator.resetPosition(currentHeading, currentPositions, newPose);
-
-        // reset pose estimates & update listeners
-        latestOdometryPose = newPose;
-        latestFusedPose = newPose;
+        // notify listeners
         for (Consumer<Pose2d> listener : poseResetListeners) {
             listener.accept(newPose);
         }
@@ -208,19 +172,22 @@ public class SwerveSubsystem extends SubsystemBase {
         Util.log("[swerve] reset pose to %s", newPose);
     }
 
+    /**
+     * Registers a listener to be notified when the pose is reset.
+     *
+     * @param listener the listener to register
+     */
+    public void addPoseResetListener(Consumer<Pose2d> listener) {
+        poseResetListeners.add(listener);
+    }
+
 //endregion
 
 //region Driving ---------------------------------------------------------------
 
     /**
-     * @return the current chassis speeds
-     */
-    public ChassisSpeeds getCurrentSpeeds() {
-        return SwerveHardwareConfig.KINEMATICS.toChassisSpeeds(hardware.getModuleStates());
-    }
-
-    /**
-     * Drives the robot using robot-relative speeds
+     * Drives the robot using robot-relative speeds.
+     *
      * @param mode the mode to display for debugging
      * @param speeds robot-relative chassis speeds (vx, vy in m/s, omega in rad/s)
      */
@@ -229,8 +196,7 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Drives the robot using robot-relative speeds and a custom center of
-     * rotation
+     * Drives the robot using robot-relative speeds and a custom center of rotation.
      *
      * @param mode the mode to display for debugging
      * @param speeds robot-relative chassis speeds (vx, vy in m/s, omega in rad/s)
@@ -238,27 +204,45 @@ public class SwerveSubsystem extends SubsystemBase {
      */
     public void driveRobotRelative(String mode, ChassisSpeeds speeds, Translation2d center) {
         currentMode = mode;
+        latestSpeed = speeds;
 
         if (center == null) {
             center = Translation2d.kZero;
         }
 
-        // Compensate for translational skew during rotation (20ms timestep)
-        ChassisSpeeds discretizedSpeeds = ChassisSpeeds.discretize(speeds, Util.DT);
-
-        SwerveModuleState[] states = SwerveHardwareConfig.KINEMATICS.toSwerveModuleStates(discretizedSpeeds, center);
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, SwerveHardwareConfig.MAX_WHEEL_SPEED_MPS);
-        hardware.setModuleStates(states);
-        latestSpeed = discretizedSpeeds;
+        drivetrain.setControl(
+            robotCentricRequest
+                .withVelocityX(speeds.vxMetersPerSecond)
+                .withVelocityY(speeds.vyMetersPerSecond)
+                .withRotationalRate(speeds.omegaRadiansPerSecond)
+                .withCenterOfRotation(center)
+        );
     }
 
-//endregion
+    /**
+     * Drives the robot using field-relative speeds.
+     *
+     * @param mode the mode to display for debugging
+     * @param speeds field-relative chassis speeds (vx, vy in m/s, omega in rad/s)
+     */
+    public void driveFieldRelative(String mode, ChassisSpeeds speeds) {
+        currentMode = mode;
+        latestSpeed = speeds;
+
+        drivetrain.setControl(
+            fieldCentricRequest
+                .withVelocityX(speeds.vxMetersPerSecond)
+                .withVelocityY(speeds.vyMetersPerSecond)
+                .withRotationalRate(speeds.omegaRadiansPerSecond)
+        );
+    }
 
     /**
      * Sets the wheels to an X pattern to prevent movement.
      */
     public void setX() {
-        hardware.setX();
+        currentMode = "lock";
+        drivetrain.setControl(brakeRequest);
     }
 
 //endregion
@@ -278,10 +262,9 @@ public class SwerveSubsystem extends SubsystemBase {
     public Command lockWheelsCommand() {
         return startRun(
                 () -> {
-                    currentMode = "lock";
                     Util.log("[swerve] locking wheels");
                 },
-                hardware::setX);
+                this::setX);
     }
 
     /**
@@ -289,14 +272,15 @@ public class SwerveSubsystem extends SubsystemBase {
      */
     public Command resetWheelsCommand() {
         return runOnce(() -> {
-            hardware.lockTurnMotors();
+            drivetrain.setControl(pointRequest.withModuleDirection(Rotation2d.kZero));
             wheelsLocked = true;
             Util.log("Wheels reset to forward");
         }).finallyDo(() -> wheelsLocked = false);
     }
 
     /**
-     * Creates a teleop drive command from controller inputs
+     * Creates a teleop drive command from controller inputs.
+     *
      * @param controller the game controller for driver input
      * @return the drive command (field-relative)
      * @see SwerveTeleopCommand
@@ -324,8 +308,8 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
-     *
-     * @return a command that zeros the heading but keeps the current X/Y position
+     * @param poseFunction function to compute new pose from old pose
+     * @return a command that resets the pose using the function
      */
     public Command resetPoseCommand(Function<Pose2d,Pose2d> poseFunction) {
         return runOnce(() -> {
@@ -338,7 +322,7 @@ public class SwerveSubsystem extends SubsystemBase {
     /**
      * Creates a command that drives at fixed speeds.
      *
-     * @param speeds  the speeds to drive at
+     * @param speeds the speeds to drive at
      * @param seconds how long to drive
      * @return the command
      */
@@ -363,7 +347,7 @@ public class SwerveSubsystem extends SubsystemBase {
      */
     public Command orbitCommand(GameController controller) {
         return defer(() -> {
-            
+
             // determine the location of the hub
             Pose2d hubCenter = Field.getHubCenter();
 
@@ -384,7 +368,8 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Creates a command that rotates to face the specified heading
+     * Creates a command that rotates to face the specified heading.
+     *
      * @param heading the target heading
      * @return the heading command
      * @see SwerveToHeadingCommand
@@ -395,7 +380,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
     /**
      * Creates a command that rotates to face a heading dynamically
-     * re-calculated whenever the command executes
+     * re-calculated whenever the command executes.
+     *
      * @param headingFunction function to compute the target heading
      * @return the heading command
      * @see SwerveToHeadingCommand
@@ -409,7 +395,8 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Creates a command that drives to the specified pose along a straight line
+     * Creates a command that drives to the specified pose along a straight line.
+     *
      * @param pose the target pose
      * @return the pose command
      * @see SwerveToPoseCommand
@@ -420,7 +407,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
     /**
      * Creates a command that drives to a pose dynamically re-calculated
-     * whenever the command executes
+     * whenever the command executes.
+     *
      * @param poseFunction function to compute the target pose
      * @return the pose command
      * @see SwerveToPoseCommand
@@ -431,6 +419,13 @@ public class SwerveSubsystem extends SubsystemBase {
             Pose2d newPose = poseFunction.apply(oldPose);
             return new SwerveToPoseCommand(this, newPose);
         });
+    }
+
+    /**
+     * @return the underlying CommandSwerveDrivetrain for direct access
+     */
+    public CommandSwerveDrivetrain getDrivetrain() {
+        return drivetrain;
     }
 
 //endregion

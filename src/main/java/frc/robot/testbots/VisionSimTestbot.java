@@ -7,8 +7,8 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.GameController;
 import frc.robot.subsystems.limelight.LimelightSim;
 import frc.robot.subsystems.limelight.LimelightSubsystem;
-import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.subsystems.swerve.TunerConstants;
 
 /**
  * Standalone test program for the vision simulation. Tests the LimelightSim
@@ -29,7 +29,8 @@ public class VisionSimTestbot extends TimedRobot {
 
     public VisionSimTestbot() {
 
-        swerve = new SwerveSubsystem(new SwerveHardwareSim());
+        // CTRE drivetrain handles both sim and real hardware automatically
+        swerve = new SwerveSubsystem(TunerConstants.createDrivetrain());
         limelightSim = new LimelightSim();
         limelightSubsystem = new LimelightSubsystem(swerve);
         controller = new GameController(0);

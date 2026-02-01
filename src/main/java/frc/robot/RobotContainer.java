@@ -7,9 +7,9 @@ package frc.robot;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.auto.AutonomousSubsystem;
 import frc.robot.subsystems.limelight.LimelightSubsystem;
-import frc.robot.subsystems.swerve.SwerveHardwareCTRE;
-import frc.robot.subsystems.swerve.SwerveHardwareSim;
+import frc.robot.subsystems.swerve.CommandSwerveDrivetrain;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.subsystems.swerve.TunerConstants;
 import frc.robot.util.CommandLogger;
 
 public class RobotContainer {
@@ -17,6 +17,7 @@ public class RobotContainer {
   final GameController driver = new GameController(0);
   final GameController operator = new GameController(1);
 
+  final CommandSwerveDrivetrain drivetrain;
   final SwerveSubsystem swerve;
   final LimelightSubsystem limelight;
   final AutonomousSubsystem auto;
@@ -27,9 +28,9 @@ public class RobotContainer {
     CommandLogger.addController("Driver", driver);
     CommandLogger.addController("Operator", operator);
 
-    swerve = new SwerveSubsystem(Robot.isSimulation()
-            ? new SwerveHardwareSim()
-            : new SwerveHardwareCTRE());
+    // create CTRE drivetrain and wrap it in SwerveSubsystem
+    drivetrain = TunerConstants.createDrivetrain();
+    swerve = new SwerveSubsystem(drivetrain);
     limelight = new LimelightSubsystem(swerve);
     auto = new AutonomousSubsystem(swerve);
 

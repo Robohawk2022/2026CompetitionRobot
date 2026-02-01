@@ -8,9 +8,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.GameController;
-import frc.robot.subsystems.swerve.SwerveHardwareCTRE;
-import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.subsystems.swerve.TunerConstants;
 
 /**
  * Standalone test program for the swerve drive subsystem.
@@ -24,9 +23,8 @@ public class SwerveTestbot extends TimedRobot {
 
     public SwerveTestbot() {
 
-        swerve = new SwerveSubsystem(isSimulation() ?
-                new SwerveHardwareSim() :
-                new SwerveHardwareCTRE());
+        // CTRE drivetrain handles both sim and real hardware automatically
+        swerve = new SwerveSubsystem(TunerConstants.createDrivetrain());
 
         controller = new GameController(0);
 

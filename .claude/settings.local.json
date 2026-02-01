@@ -18,7 +18,9 @@
       "mcp__frc-networktables__get_preference",
       "mcp__frc-networktables__get_robot_state",
       "Bash(curl:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   },
   "enableAllProjectMcpServers": true,
