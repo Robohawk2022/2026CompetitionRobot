@@ -50,8 +50,8 @@ public interface Config {
         /** Minimum speed (m/s) to command the angle motor - prevents jitter when stationary */
         DoubleSupplier minSpeedForAngle = pref("Swerve/MinSpeedForAngle", 0.01);
 
-        /** Maximum pose jump */
-        DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 1.0);
+        /** Maximum pose jump (vision corrections larger than this are rejected) */
+        DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 2.0);
 
     }
 
@@ -90,10 +90,10 @@ public interface Config {
     interface SwerveAuto {
 
         /** Maximum translation velocity in feet per second */
-        DoubleSupplier maxTranslationVelocity = pref("SwerveAuto/MaxTranslationFPS", 12.0);
+        DoubleSupplier maxTranslationVelocity = pref("SwerveAuto/MaxTranslationFPS", 2.0);
 
         /** Maximum translation acceleration in feet per second squared */
-        DoubleSupplier maxTranslationAcceleration = pref("SwerveAuto/MaxTranslationFPSS", 24.0);
+        DoubleSupplier maxTranslationAcceleration = pref("SwerveAuto/MaxTranslationFPSS", 4.0);
 
         /** Proportional gain for translation feedback (units: 1/sec) */
         DoubleSupplier translationKp = pref("SwerveAuto/TranslationKp", 0.0);
@@ -102,10 +102,10 @@ public interface Config {
         DoubleSupplier positionTolerance = pref("SwerveAuto/PositionToleranceFeet", 0.1);
 
         /** Maximum rotation velocity in degrees per second */
-        DoubleSupplier maxRotationVelocity = pref("SwerveAuto/MaxRotationDPS", 360.0);
+        DoubleSupplier maxRotationVelocity = pref("SwerveAuto/MaxRotationDPS", 90.0);
 
         /** Maximum rotation acceleration in degrees per second squared */
-        DoubleSupplier maxRotationAcceleration = pref("SwerveAuto/MaxRotationDPSS", 720.0);
+        DoubleSupplier maxRotationAcceleration = pref("SwerveAuto/MaxRotationDPSS", 180.0);
 
         /** Proportional gain for rotation feedback (units: 1/sec) */
         DoubleSupplier rotationKp = pref("SwerveAuto/RotationKp", 0.0);
@@ -158,9 +158,10 @@ public interface Config {
         DoubleSupplier maxYawRate = pref("Limelight/MaxYawRate", 720.0);
 
         /** Confidence levels (lower numbers mean higher confidence) */
-        Vector<N3> lowConfidence = VecBuilder.fill(2.0, 2.0, 9999999);
-        Vector<N3> mediumConfidence = VecBuilder.fill(0.9, 0.9, 9999999);
-        Vector<N3> highConfidence = VecBuilder.fill(0.5, 0.5, 9999999);
+        // X, Y in meters; Theta in radians (0.5 rad ≈ 28°, 0.3 rad ≈ 17°, 0.1 rad ≈ 6°)
+        Vector<N3> lowConfidence = VecBuilder.fill(2.0, 2.0, 0.5);
+        Vector<N3> mediumConfidence = VecBuilder.fill(0.9, 0.9, 0.3);
+        Vector<N3> highConfidence = VecBuilder.fill(0.5, 0.5, 0.1);
 
     }
 

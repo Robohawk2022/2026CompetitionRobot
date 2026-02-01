@@ -93,6 +93,18 @@ public class SwerveTestbot extends TimedRobot {
             builder.addDoubleProperty("LeftTrigger", controller::getLeftTriggerAxis, null);
             builder.addDoubleProperty("RightTrigger", controller::getRightTriggerAxis, null);
         });
+
+        // debug CTRE pose data directly
+        SmartDashboard.putData("CTRE_Pose", builder -> {
+            builder.addDoubleProperty("X_meters", () -> swerve.getPose().getX(), null);
+            builder.addDoubleProperty("Y_meters", () -> swerve.getPose().getY(), null);
+            builder.addDoubleProperty("X_feet", () -> swerve.getPose().getX() * 3.28084, null);
+            builder.addDoubleProperty("Y_feet", () -> swerve.getPose().getY() * 3.28084, null);
+            builder.addDoubleProperty("Heading_deg", () -> swerve.getHeading().getDegrees(), null);
+            builder.addDoubleProperty("Speeds_vx", () -> swerve.getCurrentSpeeds().vxMetersPerSecond, null);
+            builder.addDoubleProperty("Speeds_vy", () -> swerve.getCurrentSpeeds().vyMetersPerSecond, null);
+            builder.addDoubleProperty("Speeds_omega", () -> Math.toDegrees(swerve.getCurrentSpeeds().omegaRadiansPerSecond), null);
+        });
     }
 
     @Override
