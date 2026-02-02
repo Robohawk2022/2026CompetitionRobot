@@ -8,9 +8,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.GameController;
-import frc.robot.subsystems.swerve.SwerveHardwareCTRE;
-import frc.robot.subsystems.swerve.SwerveHardwareSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.subsystems.swerve.TunerConstants;
 
 /**
  * Standalone test program for the swerve drive subsystem.
@@ -24,9 +23,8 @@ public class SwerveTestbot extends TimedRobot {
 
     public SwerveTestbot() {
 
-        swerve = new SwerveSubsystem(isSimulation() ?
-                new SwerveHardwareSim() :
-                new SwerveHardwareCTRE());
+        // CTRE drivetrain handles both sim and real hardware automatically
+        swerve = new SwerveSubsystem(TunerConstants.createDrivetrain());
 
         controller = new GameController(0);
 
@@ -94,6 +92,18 @@ public class SwerveTestbot extends TimedRobot {
             builder.addDoubleProperty("RightX", controller::getRightX, null);
             builder.addDoubleProperty("LeftTrigger", controller::getLeftTriggerAxis, null);
             builder.addDoubleProperty("RightTrigger", controller::getRightTriggerAxis, null);
+        });
+
+        // debug CTRE pose data directly
+        SmartDashboard.putData("CTRE_Pose", builder -> {
+            builder.addDoubleProperty("X_meters", () -> swerve.getPose().getX(), null);
+            builder.addDoubleProperty("Y_meters", () -> swerve.getPose().getY(), null);
+            builder.addDoubleProperty("X_feet", () -> swerve.getPose().getX() * 3.28084, null);
+            builder.addDoubleProperty("Y_feet", () -> swerve.getPose().getY() * 3.28084, null);
+            builder.addDoubleProperty("Heading_deg", () -> swerve.getHeading().getDegrees(), null);
+            builder.addDoubleProperty("Speeds_vx", () -> swerve.getCurrentSpeeds().vxMetersPerSecond, null);
+            builder.addDoubleProperty("Speeds_vy", () -> swerve.getCurrentSpeeds().vyMetersPerSecond, null);
+            builder.addDoubleProperty("Speeds_omega", () -> Math.toDegrees(swerve.getCurrentSpeeds().omegaRadiansPerSecond), null);
         });
     }
 
