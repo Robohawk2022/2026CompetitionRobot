@@ -112,6 +112,49 @@ public class SwerveSubsystem extends SubsystemBase {
         Pose2d pose = getPose();
         field2d.setRobotPose(pose);
         Util.publishPose("Fused", pose);
+
+        // publish position prominently for Shuffleboard
+        SmartDashboard.putNumber("Pose X (ft)", Units.metersToFeet(pose.getX()));
+        SmartDashboard.putNumber("Pose Y (ft)", Units.metersToFeet(pose.getY()));
+        SmartDashboard.putNumber("Pose Heading (deg)", pose.getRotation().getDegrees());
+
+        // publish pose for PathPlanner telemetry (meters, radians)
+        SmartDashboard.putNumberArray("PathPlanner/OdometryPose",
+            new double[] { pose.getX(), pose.getY(), pose.getRotation().getRadians() });
+    }
+
+    @Override
+    public void simulationPeriodic() {
+        // In simulation, manually integrate commanded speeds to update odometry
+        // since CTRE simulation may not fully update the pose estimator
+        boolean hasMovement = latestSpeed != null &&
+            (Math.abs(latestSpeed.vxMetersPerSecond) > 0.001 ||
+             Math.abs(latestSpeed.vyMetersPerSecond) > 0.001 ||
+             Math.abs(latestSpeed.omegaRadiansPerSecond) > 0.001);
+        if (hasMovement) {
+            Pose2d currentPose = getPose();
+
+            // integrate speeds over one loop period (20ms)
+            double dt = Util.DT;
+            double dx = latestSpeed.vxMetersPerSecond * dt;
+            double dy = latestSpeed.vyMetersPerSecond * dt;
+            double dtheta = latestSpeed.omegaRadiansPerSecond * dt;
+
+            // convert robot-relative speeds to field-relative
+            Rotation2d heading = currentPose.getRotation();
+            double fieldDx = dx * heading.getCos() - dy * heading.getSin();
+            double fieldDy = dx * heading.getSin() + dy * heading.getCos();
+
+            // create new pose
+            Pose2d newPose = new Pose2d(
+                currentPose.getX() + fieldDx,
+                currentPose.getY() + fieldDy,
+                currentPose.getRotation().plus(Rotation2d.fromRadians(dtheta))
+            );
+
+            // update the drivetrain's pose (bypass normal reset to avoid notifications)
+            drivetrain.resetPose(newPose);
+        }
     }
 
 //endregion

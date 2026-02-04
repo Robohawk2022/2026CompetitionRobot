@@ -20,7 +20,9 @@
       "Bash(curl:*)",
       "Bash(pkill:*)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:pathplanner.dev)",
+      "WebFetch(domain:www.chiefdelphi.com)"
     ]
   },
   "enableAllProjectMcpServers": true,

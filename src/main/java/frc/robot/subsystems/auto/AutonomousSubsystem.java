@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.swerve.SwerveHardwareConfig;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.subsystems.swerve.TunerConstants;
 import frc.robot.util.DigitBoardProgramPicker;
 import frc.robot.util.Util;
 
@@ -31,12 +32,6 @@ import java.util.function.BiConsumer;
 
 import static frc.robot.Config.PathPlanner.debugLogging;
 import static frc.robot.Config.PathPlanner.maxSpeed;
-import static frc.robot.Config.PathPlanner.rotationD;
-import static frc.robot.Config.PathPlanner.rotationI;
-import static frc.robot.Config.PathPlanner.rotationP;
-import static frc.robot.Config.PathPlanner.translationD;
-import static frc.robot.Config.PathPlanner.translationI;
-import static frc.robot.Config.PathPlanner.translationP;
 
 /**
  * Subsystem that manages a set of declared autonomous programs and allows
@@ -85,23 +80,28 @@ public class AutonomousSubsystem extends SubsystemBase {
      */
     private void configureAutoBuilder() {
 
-        // this loads the settings for the robot, which you edited and
-        // saved through the GUI
-        Util.log("[auto] loading robot configuration");
+        // this loads the settings for the robot from PathPlanner's GUI settings file
+        Util.log("[auto] loading robot configuration from PathPlanner settings");
 
-        RobotConfig config = new RobotConfig(
-                SwerveHardwareConfig.ROBOT_MASS_KG,
-                SwerveHardwareConfig.ROBOT_MOI,
-                new ModuleConfig(
-                    SwerveHardwareConfig.WHEEL_DIAMETER_METERS / 2.0,
-                    maxSpeed.getAsDouble(),
-                    SwerveHardwareConfig.WHEEL_COF,
-                    DCMotor.getKrakenX60(1),
-                    SwerveHardwareConfig.DRIVE_GEAR_RATIO,
-                    SwerveHardwareConfig.DRIVE_CURRENT_LIMIT_AMPS,
-                    1),
-                SwerveHardwareConfig.MODULE_TRANSLATIONS
-        );
+        RobotConfig config;
+        try {
+            config = RobotConfig.fromGUISettings();
+        } catch (Exception e) {
+            Util.log("[auto] failed to load config from GUI, using manual config: %s", e.getMessage());
+            config = new RobotConfig(
+                    SwerveHardwareConfig.ROBOT_MASS_KG,
+                    SwerveHardwareConfig.ROBOT_MOI,
+                    new ModuleConfig(
+                        SwerveHardwareConfig.WHEEL_DIAMETER_METERS / 2.0,
+                        maxSpeed.getAsDouble(),
+                        SwerveHardwareConfig.WHEEL_COF,
+                        DCMotor.getKrakenX60(1),
+                        SwerveHardwareConfig.DRIVE_GEAR_RATIO,
+                        SwerveHardwareConfig.DRIVE_CURRENT_LIMIT_AMPS,
+                        1),
+                    SwerveHardwareConfig.MODULE_TRANSLATIONS
+            );
+        }
 
         // this registers all the commands we'll use when executing our
         // selected program
@@ -120,8 +120,8 @@ public class AutonomousSubsystem extends SubsystemBase {
         // supplied course; if the robot isn't moving accurately, start
         // debugging here
         PathFollowingController controller = new PPHolonomicDriveController(
-                new PIDConstants(translationP.getAsDouble(), translationI.getAsDouble(), translationD.getAsDouble()),
-                new PIDConstants(rotationP.getAsDouble(), rotationI.getAsDouble(), rotationD.getAsDouble())
+                new PIDConstants(TunerConstants.kPathTranslationP, TunerConstants.kPathTranslationI, TunerConstants.kPathTranslationD),
+                new PIDConstants(TunerConstants.kPathRotationP, TunerConstants.kPathRotationI, TunerConstants.kPathRotationD)
         );
 
         Util.log("[auto] configuring AutoBuilder");
@@ -141,17 +141,34 @@ public class AutonomousSubsystem extends SubsystemBase {
     }
 
     /**
-     * Configures logging for PathPlanner. This spams out a LOT of data, so
-     * be thoughtful when using it.
+     * Configures logging for PathPlanner. Publishes poses to SmartDashboard
+     * for visualization in PathPlanner and other tools.
      */
     private void configureLogging() {
+        // publish target pose for PathPlanner visualization
         PathPlannerLogging.setLogTargetPoseCallback(pose -> {
+            SmartDashboard.putNumberArray("PathPlanner/TargetPose",
+                new double[] { pose.getX(), pose.getY(), pose.getRotation().getRadians() });
             Util.log("[auto] target pose: %s", pose);
         });
+
+        // publish active path for PathPlanner visualization
         PathPlannerLogging.setLogActivePathCallback(path -> {
+            double[] pathArray = new double[path.size() * 3];
+            for (int i = 0; i < path.size(); i++) {
+                Pose2d pose = path.get(i);
+                pathArray[i * 3] = pose.getX();
+                pathArray[i * 3 + 1] = pose.getY();
+                pathArray[i * 3 + 2] = pose.getRotation().getRadians();
+            }
+            SmartDashboard.putNumberArray("PathPlanner/ActivePath", pathArray);
             Util.log("[auto] active path: %s", path);
         });
+
+        // publish current pose for PathPlanner visualization
         PathPlannerLogging.setLogCurrentPoseCallback(pose -> {
+            SmartDashboard.putNumberArray("PathPlanner/CurrentPose",
+                new double[] { pose.getX(), pose.getY(), pose.getRotation().getRadians() });
             Util.log("[auto] current pose: %s", pose);
         });
     }
@@ -212,6 +229,7 @@ public class AutonomousSubsystem extends SubsystemBase {
         // we use a LinkedHashMap so the programs will be shown in the
         // same order as below
         Map<String,String> programs = new LinkedHashMap<>();
+        programs.put("ZIGZ", "ZigZag");
         programs.put("EX01", "Example1");
         programs.put("EX02", "Example2");
         programs.put("EX03", "Example3");
@@ -244,12 +262,13 @@ public class AutonomousSubsystem extends SubsystemBase {
      * stuff to the beginning or end.
      */
     private Command decorateAutoCommand(Command autoCommand) {
-        Command printAlliance = Commands.runOnce(() -> {
+        // wrap with a command that requires swerve so the teleop command gets interrupted
+        Command requireSwerve = Commands.runOnce(() -> {
             String alliance = Util.isRedAlliance() ? "RED" : "BLUE";
             Util.log("[auto] starting auto as %s alliance", alliance);
-        });
+        }, swerve);
         Command logComplete = Commands.print("[auto] done with auto");
-        return printAlliance.andThen(autoCommand).andThen(logComplete);
+        return requireSwerve.andThen(autoCommand).andThen(logComplete);
     }
 
     /*
