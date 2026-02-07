@@ -22,6 +22,8 @@ public class LEDHardwareBlinkin implements LEDHardware {
      */
     public LEDHardwareBlinkin() {
         blinkin = new Spark(pwmPort);
+        // Blinkin is not a motor - disable safety so the signal isn't zeroed after timeout
+        blinkin.setSafetyEnabled(false);
     }
 
     @Override
