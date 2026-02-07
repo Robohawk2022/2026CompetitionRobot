@@ -369,4 +369,82 @@ public interface Config {
 
 //endregion
 
+//region Launcher --------------------------------------------------------------
+
+    /**
+     * Configuration for the Launcher subsystem.
+     * <p>
+     * Four NEO motors: intake, agitator, lower wheel, upper wheel.
+     * Different upper/lower wheel speeds control ball arc via Magnus effect.
+     * Wheels use closed-loop velocity control (feedforward + PD feedback).
+     * Intake and agitator use open-loop voltage control.
+     */
+    interface Launcher {
+
+        // TODO update CAN IDs once the build team wires the motors
+        int INTAKE_CAN_ID = 30;
+        int AGITATOR_CAN_ID = 31;
+        int LOWER_WHEEL_CAN_ID = 32;
+        int UPPER_WHEEL_CAN_ID = 33;
+
+        //=======================================================================
+        // Intake & agitator - open loop (percentage 0-100)
+        //=======================================================================
+
+        /** Power for intake motor when pulling balls in */
+        DoubleSupplier intakePower = pref("Launcher/IntakePower%", 30.0);
+
+        /** Power for agitator motor when feeding balls toward wheels */
+        DoubleSupplier agitatorPower = pref("Launcher/AgitatorPower%", 30.0);
+
+        /** Power for agitator when actively feeding a shot */
+        DoubleSupplier feedPower = pref("Launcher/FeedPower%", 50.0);
+
+        //=======================================================================
+        // Wheel velocity PID - closed loop
+        //=======================================================================
+
+        /** Feedforward: volts per RPM (V / RPM). Start with 12.0 / 5676 = ~0.002 for NEO */
+        DoubleSupplier kV = pref("Launcher/Wheels/kV", 0.002);
+
+        /** Proportional feedback: volts per RPM of error */
+        DoubleSupplier kP = pref("Launcher/Wheels/kP", 0.001);
+
+        /** Derivative feedback: volts per RPM/s of error change rate */
+        DoubleSupplier kD = pref("Launcher/Wheels/kD", 0.0);
+
+        /** RPM tolerance for "at speed" check */
+        DoubleSupplier tolerance = pref("Launcher/Wheels/ToleranceRPM", 100.0);
+
+        //=======================================================================
+        // Shot presets - target RPMs for lower/upper wheels
+        //=======================================================================
+
+        /** High arc: upper faster = backspin = more lift */
+        DoubleSupplier highArcLowerRPM = pref("Launcher/HighArc/LowerRPM", 2000.0);
+        DoubleSupplier highArcUpperRPM = pref("Launcher/HighArc/UpperRPM", 3500.0);
+
+        /** Flat shot: lower faster = topspin = flatter trajectory */
+        DoubleSupplier flatLowerRPM = pref("Launcher/Flat/LowerRPM", 3500.0);
+        DoubleSupplier flatUpperRPM = pref("Launcher/Flat/UpperRPM", 2000.0);
+
+        /** Neutral: equal speed = no spin bias */
+        DoubleSupplier neutralRPM = pref("Launcher/Neutral/RPM", 3000.0);
+
+        //=======================================================================
+        // Motor configuration
+        //=======================================================================
+
+        BooleanSupplier intakeInverted = pref("Launcher/IntakeInverted?", false);
+        BooleanSupplier agitatorInverted = pref("Launcher/AgitatorInverted?", false);
+        BooleanSupplier lowerWheelInverted = pref("Launcher/LowerWheelInverted?", false);
+        BooleanSupplier upperWheelInverted = pref("Launcher/UpperWheelInverted?", false);
+
+        /** Current limit for all launcher motors in amps */
+        DoubleSupplier currentLimit = pref("Launcher/CurrentLimit", 40.0);
+
+    }
+
+//endregion
+
 }
