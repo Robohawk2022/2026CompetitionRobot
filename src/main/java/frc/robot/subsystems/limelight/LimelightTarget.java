@@ -1,6 +1,7 @@
 package frc.robot.subsystems.limelight;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.util.sendable.SendableBuilder;
 import frc.robot.util.Field;
 
 /**
@@ -15,6 +16,13 @@ public class LimelightTarget {
     int tagId = -1;
     Pose2d tagPose = null;
     boolean valid = false;
+
+    public void addToDashboard(SendableBuilder builder) {
+        builder.addDoubleProperty("Targeting/Area", this::getArea, null);
+        builder.addDoubleProperty("Targeting/HorizontalOffset", this::getHorizontalOffset, null);
+        builder.addDoubleProperty("Targeting/VerticalOffset", this::getVerticalOffset, null);
+        builder.addIntegerProperty("Targeting/DetectedTagId", this::getTagId, null);
+    }
 
     /**
      * Invalidates the estimate (clears area/offset)
