@@ -43,6 +43,7 @@ public class LimelightSubsystem extends SubsystemBase {
 
     final SwerveSubsystem swerve;
     final LimelightTarget latestTarget;
+    final LimelightResults results;
     double lastTime;
     double lastYaw;
     double lastYawRate;
@@ -51,13 +52,7 @@ public class LimelightSubsystem extends SubsystemBase {
     Pose2d latestTagPose;
     Pose2d latestTargetPose;
     long restrictedTag;
-    long noEstimate;
-    long noTags;
-    long poseOutsideField;
-    long poseJumpTooBig;
-    long lowConfidenceCount;
-    long highConfidenceCount;
-    long mediumConfidenceCount;
+    boolean resetPose;
 
     /**
      * Creates a {@link LimelightSubsystem}
@@ -68,33 +63,19 @@ public class LimelightSubsystem extends SubsystemBase {
 
         this.swerve = Objects.requireNonNull(swerve);
         this.latestTarget = new LimelightTarget();
-        this.noEstimate = 0L;
-        this.noTags = 0L;
-        this.poseOutsideField = 0L;
-        this.poseJumpTooBig = 0L;
-        this.lowConfidenceCount = 0L;
-        this.highConfidenceCount = 0L;
-        this.mediumConfidenceCount = 0L;
+        this.results = new LimelightResults();
         this.latestEstimate = null;
         this.latestTagPose = null;
 
         SmartDashboard.putData("LimelightSubsystem", builder -> {
             builder.addIntegerProperty("RestrictedTag", () -> restrictedTag, null);
             builder.addBooleanProperty("TooFast?", () -> spinningTooFast, null);
-            builder.addBooleanProperty("HasEstimate?", () -> latestEstimate != null, null);
+            builder.addBooleanProperty("HasEstimate?", () -> results.validEstimate, null);
             builder.addBooleanProperty("HasTarget?", latestTarget::isValid, null);
+            builder.addBooleanProperty("ResetPose?", () -> resetPose, val -> resetPose = val);
             if (verboseLogging) {
-                builder.addDoubleProperty("Targeting/Area", latestTarget::getArea, null);
-                builder.addDoubleProperty("Targeting/HorizontalOffset", latestTarget::getHorizontalOffset, null);
-                builder.addDoubleProperty("Targeting/VerticalOffset", latestTarget::getVerticalOffset, null);
-                builder.addIntegerProperty("Targeting/DetectedTagId", latestTarget::getTagId, null);
-                builder.addIntegerProperty("Results/ErrNoEstimate", () -> noEstimate, null);
-                builder.addIntegerProperty("Results/ErrNoTags", () -> noEstimate, null);
-                builder.addIntegerProperty("Results/ErrOutsideField", () -> poseOutsideField, null);
-                builder.addIntegerProperty("Results/ErrTooFar", () -> poseJumpTooBig, null);
-                builder.addIntegerProperty("Results/ConfLow", () -> lowConfidenceCount, null);
-                builder.addIntegerProperty("Results/ConfMed", () -> mediumConfidenceCount, null);
-                builder.addIntegerProperty("Results/ConfHigh", () -> highConfidenceCount, null);
+                latestTarget.addToDashboard(builder);
+                results.addToDashboard(builder);
             }
         });
     }
@@ -134,15 +115,10 @@ public class LimelightSubsystem extends SubsystemBase {
             latestTarget.invalidate();
         }
 
-        // publish poses as appropriate
-        Util.publishPose("LimelightTargetPose", latestTarget.getTagPose());
-        if (latestEstimate != null) {
-            Util.publishPose("limelightPoseEstimate", latestEstimate);
-            Util.publishPose("LimelightPoseTag", latestTagPose);
-        } else {
-            Util.publishPose("limelightPoseEstimate", Util.NAN_POSE);
-            Util.publishPose("LimelightPoseTag", Util.NAN_POSE);
-        }
+        // publish poses
+        Util.publishPose("LimelightTarget", latestTarget.getTagPose());
+        Util.publishPose("limelightEstimate", latestEstimate);
+        Util.publishPose("LimelightEstimateTag", latestTagPose);
     }
 
 //endregion
@@ -229,26 +205,37 @@ public class LimelightSubsystem extends SubsystemBase {
         // grab the estimate; if there isn't one, we're done
         PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightName);
         if (estimate == null || estimate.pose == null) {
-            noEstimate++;
+            results.noEstimate();
             return;
         }
 
         // if the estimate somehow isn't based on fiducials, we won't use it
         // (this would be really weird and is more of a sanity check)
         if (estimate.rawFiducials == null || estimate.rawFiducials.length < 1) {
-            noTags++;
+            results.noTags();
             return;
         }
 
         // if the pose is outside the field, there's no use dealing with it
         if (Field.isOutsideField(estimate.pose)) {
-            poseOutsideField++;
+            results.poseOutsideField();
             return;
+        }
+
+        // we'll remember where the latest estimate and latest tag pose are
+        latestEstimate = estimate.pose;
+        latestTagPose = Field.getTagPose(estimate.rawFiducials[0].id);
+
+        // if we're forced a pose reset, we'll do it here (before we check
+        // how far we are from the current pose)
+        if (resetPose) {
+            swerve.resetPose(latestEstimate);
+            resetPose = false;
         }
 
         // if the pose is too far from the current pose, we don't submit it
         if (Util.feetBetween(currentPose, estimate.pose) > maxPoseJumpFeet.getAsDouble()) {
-            poseJumpTooBig++;
+            results.poseJumpTooBig();
             return;
         }
 
@@ -259,26 +246,24 @@ public class LimelightSubsystem extends SubsystemBase {
 
         // close-up multi-tag estimates are the bomb!
         if (multiTag && nearDistance) {
-            highConfidenceCount++;
+            results.highConfidence();
             confidence = Limelight.highConfidence;
         }
 
         // multi-tag and far off, or close by, are ok
         else if (multiTag || nearDistance) {
-            mediumConfidenceCount++;
+            results.mediumConfidence();
             confidence = Limelight.mediumConfidence;
         }
 
         // all others are low-confidence
         else {
-            lowConfidenceCount++;
+            results.lowConfidence();
             confidence = Limelight.lowConfidence;
         }
 
         // we're good to go!
         swerve.submitVisionEstimate(estimate.pose, estimate.timestampSeconds, confidence);
-        latestEstimate = estimate.pose;
-        latestTagPose = Field.getTagPose(estimate.rawFiducials[0].id);
     }
 
 //endregion
@@ -286,14 +271,7 @@ public class LimelightSubsystem extends SubsystemBase {
 //region Pose estimate ---------------------------------------------------------
 
     public Command resetPoseFromVisionCommand() {
-        return runOnce(() -> {
-            if (latestEstimate != null) {
-                Util.log("[limelight] resetting to vision pose");
-                swerve.resetPose(latestEstimate);
-            } else {
-                Util.log("[limelight] no vision pose for reset!!!");
-            }
-        });
+        return runOnce(() -> resetPose = true);
     }
 
 //endregion
