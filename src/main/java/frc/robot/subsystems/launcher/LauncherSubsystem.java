@@ -185,7 +185,8 @@ public class LauncherSubsystem extends SubsystemBase {
     }
 
     /**
-     * Eject: lower wheel spins backward, agitator reversed.
+     * Eject: lower wheel spins forward (opposite of intake) to push ball out,
+     * agitator reversed to push ball back toward intake side.
      *
      * @return a command that reverses to eject a ball
      */
@@ -196,7 +197,8 @@ public class LauncherSubsystem extends SubsystemBase {
                 applyPIDGains();
             },
             () -> {
-                driveWheels(-intakeSpeedRPM.getAsDouble(), 0);
+                // lower wheel forward (positive = opposite of intake) to push ball out
+                driveWheels(intakeSpeedRPM.getAsDouble(), 0);
                 hardware.applyAgitatorVolts(-powerToVolts(agitatorPower.getAsDouble()));
             }
         ).finallyDo(interrupted -> cleanup());

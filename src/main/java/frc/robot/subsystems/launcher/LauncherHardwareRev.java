@@ -80,7 +80,7 @@ public class LauncherHardwareRev implements LauncherHardware {
         // configure onboard velocity PID
         config.closedLoop.p(kP.getAsDouble());
         config.closedLoop.d(kD.getAsDouble());
-        config.closedLoop.velocityFF(kV.getAsDouble());
+        config.closedLoop.feedForward.kV(kV.getAsDouble());
 
         return config;
     }
@@ -112,14 +112,14 @@ public class LauncherHardwareRev implements LauncherHardware {
     public void resetPID(double kV, double kP, double kD) {
         lowerConfig.closedLoop.p(kP);
         lowerConfig.closedLoop.d(kD);
-        lowerConfig.closedLoop.velocityFF(kV);
+        lowerConfig.closedLoop.feedForward.kV(kV);
         lowerWheelMotor.configure(lowerConfig,
                 SparkBase.ResetMode.kNoResetSafeParameters,
                 SparkBase.PersistMode.kNoPersistParameters);
 
         upperConfig.closedLoop.p(kP);
         upperConfig.closedLoop.d(kD);
-        upperConfig.closedLoop.velocityFF(kV);
+        upperConfig.closedLoop.feedForward.kV(kV);
         upperWheelMotor.configure(upperConfig,
                 SparkBase.ResetMode.kNoResetSafeParameters,
                 SparkBase.PersistMode.kNoPersistParameters);

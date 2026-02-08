@@ -22,7 +22,10 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:pathplanner.dev)",
-      "WebFetch(domain:www.chiefdelphi.com)"
+      "WebFetch(domain:www.chiefdelphi.com)",
+      "WebFetch(domain:codedocs.revrobotics.com)",
+      "WebSearch",
+      "WebFetch(domain:docs.revrobotics.com)"
     ]
   },
   "enableAllProjectMcpServers": true,

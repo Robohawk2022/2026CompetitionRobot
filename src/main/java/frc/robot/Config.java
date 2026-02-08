@@ -404,13 +404,15 @@ public interface Config {
         // Wheel velocity PID - closed loop
         //=======================================================================
 
-        /** Feedforward: volts per RPM (V / RPM). Start with 12.0 / 5676 = ~0.002 for NEO */
+        /** Feedforward: volts per RPM (V / RPM). Start with 12.0 / 5676 = ~0.002 for NEO.
+         *  Uses SparkMax feedForward.kV() API. */
         DoubleSupplier kV = pref("Launcher/Wheels/kV", 0.002);
 
-        /** Proportional feedback: volts per RPM of error */
-        DoubleSupplier kP = pref("Launcher/Wheels/kP", 0.001);
+        /** Proportional feedback: duty cycle per RPM of error (SparkMax onboard PID).
+         *  Small values! 0.0001 is a reasonable start. */
+        DoubleSupplier kP = pref("Launcher/Wheels/kP", 0.0001);
 
-        /** Derivative feedback: volts per RPM/s of error change rate */
+        /** Derivative feedback: duty cycle per RPM/s of error change rate (SparkMax onboard PID) */
         DoubleSupplier kD = pref("Launcher/Wheels/kD", 0.0);
 
         /** RPM tolerance for "at speed" check */
