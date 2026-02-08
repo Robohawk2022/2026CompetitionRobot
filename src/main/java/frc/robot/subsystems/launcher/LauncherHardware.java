@@ -1,25 +1,41 @@
 package frc.robot.subsystems.launcher;
 
 /**
- * Interface for the hardware of a launcher subsystem with 4 NEO motors:
- * intake, agitator, lower wheel, and upper wheel.
+ * Interface for the hardware of a launcher subsystem with 3 NEO motors:
+ * agitator, lower wheel, and upper wheel.
+ * <p>
+ * The lower wheel doubles as intake by spinning backward.
+ * Wheels use onboard closed-loop velocity control (SparkMax PID).
+ * Agitator uses open-loop voltage control.
  */
 public interface LauncherHardware {
 
-    /** Applies voltage to the intake motor */
-    void applyIntakeVolts(double volts);
+    /**
+     * Sets the target RPM for the lower wheel using onboard velocity PID.
+     *
+     * @param rpm target RPM (negative = reverse for intake)
+     */
+    void setLowerWheelRPM(double rpm);
 
-    /** Applies voltage to the agitator motor */
+    /**
+     * Sets the target RPM for the upper wheel using onboard velocity PID.
+     *
+     * @param rpm target RPM (negative = reverse)
+     */
+    void setUpperWheelRPM(double rpm);
+
+    /** Applies voltage to the agitator motor (open-loop) */
     void applyAgitatorVolts(double volts);
 
-    /** Applies voltage to the lower wheel motor */
-    void applyLowerWheelVolts(double volts);
-
-    /** Applies voltage to the upper wheel motor */
-    void applyUpperWheelVolts(double volts);
-
-    /** @return intake motor velocity in RPM */
-    double getIntakeRPM();
+    /**
+     * Resets/reconfigures the onboard velocity PID with current gains.
+     * Call this when starting a command to pick up live-tuned values.
+     *
+     * @param kV feedforward gain (volts per RPM)
+     * @param kP proportional gain
+     * @param kD derivative gain
+     */
+    void resetPID(double kV, double kP, double kD);
 
     /** @return agitator motor velocity in RPM */
     double getAgitatorRPM();
@@ -29,9 +45,6 @@ public interface LauncherHardware {
 
     /** @return upper wheel motor velocity in RPM */
     double getUpperWheelRPM();
-
-    /** @return intake motor current in amps */
-    double getIntakeAmps();
 
     /** @return agitator motor current in amps */
     double getAgitatorAmps();
@@ -44,9 +57,8 @@ public interface LauncherHardware {
 
     /** Stops all motors */
     default void stopAll() {
-        applyIntakeVolts(0);
+        setLowerWheelRPM(0);
+        setUpperWheelRPM(0);
         applyAgitatorVolts(0);
-        applyLowerWheelVolts(0);
-        applyUpperWheelVolts(0);
     }
 }

@@ -5,29 +5,31 @@ import java.util.Objects;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.util.PDController;
 import frc.robot.util.Util;
 
 import static frc.robot.Config.Launcher.*;
 
 /**
- * Subsystem for the launcher mechanism with 4 NEO motors.
+ * Subsystem for the launcher mechanism with 3 NEO motors.
  * <p>
  * <b>Motors:</b>
  * <ul>
- *   <li>Intake - pulls balls into the launcher (open-loop voltage)</li>
  *   <li>Agitator - feeds balls from intake to the wheels (open-loop voltage)</li>
- *   <li>Lower wheel - bottom flywheel (closed-loop velocity)</li>
- *   <li>Upper wheel - top flywheel (closed-loop velocity)</li>
+ *   <li>Lower wheel - bottom flywheel (onboard velocity PID), doubles as intake</li>
+ *   <li>Upper wheel - top flywheel (onboard velocity PID)</li>
  * </ul>
+ * <p>
+ * <b>Intake:</b> The lower wheel spins backward at a configurable RPM to pull
+ * balls in, while the agitator feeds them forward. No separate intake motor.
  * <p>
  * <b>Arc control:</b> By running the upper and lower wheels at different
  * speeds, we create spin on the ball (Magnus effect). Upper faster = backspin
  * = higher arc. Lower faster = topspin = flatter shot.
  * <p>
- * <b>Velocity control:</b> The wheels use feedforward (kV * targetRPM) plus
- * PD feedback to hold a target RPM. Tune kV first to get close, then add kP
- * to correct the remaining error.
+ * <b>Velocity control:</b> The wheels use SparkMax onboard PID (1kHz) with
+ * feedforward (kV) and proportional/derivative feedback (kP/kD). Tune kV first
+ * to get close, then add kP to correct the remaining error. Gains are
+ * live-tunable via Preferences and applied when commands start.
  */
 public class LauncherSubsystem extends SubsystemBase {
 
@@ -67,15 +69,10 @@ public class LauncherSubsystem extends SubsystemBase {
 //region Implementation --------------------------------------------------------
 
     final LauncherHardware hardware;
-    final PDController lowerPID;
-    final PDController upperPID;
 
     String currentMode;
-    double intakeRPM, agitatorRPM, lowerWheelRPM, upperWheelRPM;
+    double agitatorRPM, lowerWheelRPM, upperWheelRPM;
     double lowerTargetRPM, upperTargetRPM;
-    double lowerVolts, upperVolts;
-    double lowerFeedforward, upperFeedforward;
-    double lowerFeedback, upperFeedback;
 
     /**
      * Creates a {@link LauncherSubsystem}.
@@ -85,8 +82,6 @@ public class LauncherSubsystem extends SubsystemBase {
     public LauncherSubsystem(LauncherHardware hardware) {
         this.hardware = Objects.requireNonNull(hardware);
         this.currentMode = "idle";
-        this.lowerPID = new PDController(kP, kD, tolerance);
-        this.upperPID = new PDController(kP, kD, tolerance);
 
         SmartDashboard.putData(getName(), builder -> {
             builder.addStringProperty("Mode", () -> currentMode, null);
@@ -99,17 +94,9 @@ public class LauncherSubsystem extends SubsystemBase {
 
             builder.addBooleanProperty("AtSpeed?", this::atSpeed, null);
 
-            builder.addDoubleProperty("IntakeRPM", () -> intakeRPM, null);
             builder.addDoubleProperty("AgitatorRPM", () -> agitatorRPM, null);
 
             if (verboseLogging) {
-                builder.addDoubleProperty("LowerWheelFeedforward", () -> lowerFeedforward, null);
-                builder.addDoubleProperty("LowerWheelFeedback", () -> lowerFeedback, null);
-                builder.addDoubleProperty("LowerWheelVolts", () -> lowerVolts, null);
-                builder.addDoubleProperty("UpperWheelFeedforward", () -> upperFeedforward, null);
-                builder.addDoubleProperty("UpperWheelFeedback", () -> upperFeedback, null);
-                builder.addDoubleProperty("UpperWheelVolts", () -> upperVolts, null);
-                builder.addDoubleProperty("IntakeAmps", hardware::getIntakeAmps, null);
                 builder.addDoubleProperty("AgitatorAmps", hardware::getAgitatorAmps, null);
                 builder.addDoubleProperty("LowerWheelAmps", hardware::getLowerWheelAmps, null);
                 builder.addDoubleProperty("UpperWheelAmps", hardware::getUpperWheelAmps, null);
@@ -119,7 +106,6 @@ public class LauncherSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        intakeRPM = hardware.getIntakeRPM();
         agitatorRPM = hardware.getAgitatorRPM();
         lowerWheelRPM = hardware.getLowerWheelRPM();
         upperWheelRPM = hardware.getUpperWheelRPM();
@@ -129,38 +115,28 @@ public class LauncherSubsystem extends SubsystemBase {
      * @return true if both wheels are within tolerance of their target RPM
      */
     public boolean atSpeed() {
+        double tol = tolerance.getAsDouble();
         return lowerTargetRPM > 0
-            && lowerPID.withinTolerance(lowerWheelRPM, lowerTargetRPM)
-            && upperPID.withinTolerance(upperWheelRPM, upperTargetRPM);
+            && Math.abs(lowerWheelRPM - lowerTargetRPM) <= tol
+            && Math.abs(upperWheelRPM - upperTargetRPM) <= tol;
     }
 
     /**
-     * Applies closed-loop velocity control to a wheel.
-     * Voltage = feedforward (kV * target) + feedback (PD on error).
-     */
-    private double calculateWheelVolts(PDController pid, double currentRPM, double targetRPM) {
-        double feedforward = kV.getAsDouble() * targetRPM;
-        double feedback = pid.calculate(currentRPM, targetRPM);
-        return Util.clampVolts(feedforward + feedback);
-    }
-
-    /**
-     * Runs closed-loop control on both wheels and stores telemetry.
+     * Sends RPM targets to both wheels via onboard PID.
      */
     private void driveWheels(double lowerTarget, double upperTarget) {
         lowerTargetRPM = lowerTarget;
         upperTargetRPM = upperTarget;
+        hardware.setLowerWheelRPM(lowerTarget);
+        hardware.setUpperWheelRPM(upperTarget);
+    }
 
-        lowerFeedforward = kV.getAsDouble() * lowerTarget;
-        lowerFeedback = lowerPID.calculate(lowerWheelRPM, lowerTarget);
-        lowerVolts = Util.clampVolts(lowerFeedforward + lowerFeedback);
-
-        upperFeedforward = kV.getAsDouble() * upperTarget;
-        upperFeedback = upperPID.calculate(upperWheelRPM, upperTarget);
-        upperVolts = Util.clampVolts(upperFeedforward + upperFeedback);
-
-        hardware.applyLowerWheelVolts(lowerVolts);
-        hardware.applyUpperWheelVolts(upperVolts);
+    /**
+     * Pushes current PID gains from Config to the SparkMax onboard controllers.
+     * Called at command start to pick up any live-tuned values.
+     */
+    private void applyPIDGains() {
+        hardware.resetPID(kV.getAsDouble(), kP.getAsDouble(), kD.getAsDouble());
     }
 
     private double powerToVolts(double powerPercent) {
@@ -171,12 +147,6 @@ public class LauncherSubsystem extends SubsystemBase {
         hardware.stopAll();
         lowerTargetRPM = 0;
         upperTargetRPM = 0;
-        lowerVolts = 0;
-        upperVolts = 0;
-        lowerFeedforward = 0;
-        upperFeedforward = 0;
-        lowerFeedback = 0;
-        upperFeedback = 0;
         currentMode = "idle";
     }
 
@@ -195,38 +165,46 @@ public class LauncherSubsystem extends SubsystemBase {
     }
 
     /**
-     * @return a command that runs the intake motor to pull balls in
+     * Intake: lower wheel spins backward (negative RPM) to pull balls in,
+     * agitator feeds forward, upper wheel off.
+     *
+     * @return a command that runs the intake
      */
     public Command intakeCommand() {
         return startRun(
-            () -> currentMode = "intake",
             () -> {
-                hardware.applyIntakeVolts(powerToVolts(intakePower.getAsDouble()));
+                currentMode = "intake";
+                applyPIDGains();
+            },
+            () -> {
+                // lower wheel backward at intake speed (negative = reverse)
+                driveWheels(-intakeSpeedRPM.getAsDouble(), 0);
                 hardware.applyAgitatorVolts(powerToVolts(agitatorPower.getAsDouble()));
-                hardware.applyLowerWheelVolts(0);
-                hardware.applyUpperWheelVolts(0);
             }
         ).finallyDo(interrupted -> cleanup());
     }
 
     /**
-     * @return a command that reverses intake and agitator to eject a ball
+     * Eject: lower wheel spins backward, agitator reversed.
+     *
+     * @return a command that reverses to eject a ball
      */
     public Command ejectCommand() {
         return startRun(
-            () -> currentMode = "eject",
             () -> {
-                hardware.applyIntakeVolts(-powerToVolts(intakePower.getAsDouble()));
+                currentMode = "eject";
+                applyPIDGains();
+            },
+            () -> {
+                driveWheels(-intakeSpeedRPM.getAsDouble(), 0);
                 hardware.applyAgitatorVolts(-powerToVolts(agitatorPower.getAsDouble()));
-                hardware.applyLowerWheelVolts(0);
-                hardware.applyUpperWheelVolts(0);
             }
         ).finallyDo(interrupted -> cleanup());
     }
 
     /**
      * Spins up the wheels without feeding a ball. Use this to pre-spin
-     * before shooting. Uses closed-loop velocity control.
+     * before shooting. Uses onboard velocity PID.
      *
      * @param preset the shot preset controlling wheel RPM targets
      * @return a command that spins the wheels to the preset RPMs
@@ -235,11 +213,9 @@ public class LauncherSubsystem extends SubsystemBase {
         return startRun(
             () -> {
                 currentMode = "spin-up:" + preset.name();
-                lowerPID.reset();
-                upperPID.reset();
+                applyPIDGains();
             },
             () -> {
-                hardware.applyIntakeVolts(0);
                 hardware.applyAgitatorVolts(0);
                 driveWheels(preset.lowerRPM(), preset.upperRPM());
             }
@@ -248,7 +224,7 @@ public class LauncherSubsystem extends SubsystemBase {
 
     /**
      * Spins up the wheels and feeds the ball using the agitator.
-     * Uses closed-loop velocity control on the wheels.
+     * Uses onboard velocity PID on the wheels.
      *
      * @param preset the shot preset controlling wheel RPM targets
      * @return a command that shoots at the preset arc
@@ -257,11 +233,9 @@ public class LauncherSubsystem extends SubsystemBase {
         return startRun(
             () -> {
                 currentMode = "shoot:" + preset.name();
-                lowerPID.reset();
-                upperPID.reset();
+                applyPIDGains();
             },
             () -> {
-                hardware.applyIntakeVolts(powerToVolts(intakePower.getAsDouble()));
                 hardware.applyAgitatorVolts(powerToVolts(feedPower.getAsDouble()));
                 driveWheels(preset.lowerRPM(), preset.upperRPM());
             }

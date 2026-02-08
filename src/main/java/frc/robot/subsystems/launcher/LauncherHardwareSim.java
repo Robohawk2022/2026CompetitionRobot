@@ -3,7 +3,8 @@ package frc.robot.subsystems.launcher;
 /**
  * Implements {@link LauncherHardware} for simulation.
  * <p>
- * Simulates four NEO motors with first-order dynamics.
+ * Simulates three NEO motors with first-order dynamics.
+ * Wheels accept RPM targets (simulating onboard PID).
  */
 public class LauncherHardwareSim implements LauncherHardware {
 
@@ -12,14 +13,13 @@ public class LauncherHardwareSim implements LauncherHardware {
     private static final double TIME_CONSTANT = 0.4; // first-order response
 
     // simulation state (in RPM)
-    private double intakeRPM, intakeTargetRPM;
     private double agitatorRPM, agitatorTargetRPM;
     private double lowerWheelRPM, lowerWheelTargetRPM;
     private double upperWheelRPM, upperWheelTargetRPM;
 
     private double updateMotor(double current, double target) {
-        double updated = current + (target - current) * TIME_CONSTANT;
-        return Math.max(-MAX_RPM, Math.min(MAX_RPM, updated));
+        double clamped = Math.max(-MAX_RPM, Math.min(MAX_RPM, target));
+        return current + (clamped - current) * TIME_CONSTANT;
     }
 
     private double voltsToRPM(double volts) {
@@ -33,9 +33,15 @@ public class LauncherHardwareSim implements LauncherHardware {
     }
 
     @Override
-    public void applyIntakeVolts(double volts) {
-        intakeTargetRPM = voltsToRPM(volts);
-        intakeRPM = updateMotor(intakeRPM, intakeTargetRPM);
+    public void setLowerWheelRPM(double rpm) {
+        lowerWheelTargetRPM = rpm;
+        lowerWheelRPM = updateMotor(lowerWheelRPM, lowerWheelTargetRPM);
+    }
+
+    @Override
+    public void setUpperWheelRPM(double rpm) {
+        upperWheelTargetRPM = rpm;
+        upperWheelRPM = updateMotor(upperWheelRPM, upperWheelTargetRPM);
     }
 
     @Override
@@ -45,30 +51,20 @@ public class LauncherHardwareSim implements LauncherHardware {
     }
 
     @Override
-    public void applyLowerWheelVolts(double volts) {
-        lowerWheelTargetRPM = voltsToRPM(volts);
-        lowerWheelRPM = updateMotor(lowerWheelRPM, lowerWheelTargetRPM);
+    public void resetPID(double kV, double kP, double kD) {
+        // no-op in simulation
     }
 
-    @Override
-    public void applyUpperWheelVolts(double volts) {
-        upperWheelTargetRPM = voltsToRPM(volts);
-        upperWheelRPM = updateMotor(upperWheelRPM, upperWheelTargetRPM);
-    }
-
-    @Override public double getIntakeRPM() { return intakeRPM; }
     @Override public double getAgitatorRPM() { return agitatorRPM; }
     @Override public double getLowerWheelRPM() { return lowerWheelRPM; }
     @Override public double getUpperWheelRPM() { return upperWheelRPM; }
 
-    @Override public double getIntakeAmps() { return simulateAmps(intakeRPM, intakeTargetRPM); }
     @Override public double getAgitatorAmps() { return simulateAmps(agitatorRPM, agitatorTargetRPM); }
     @Override public double getLowerWheelAmps() { return simulateAmps(lowerWheelRPM, lowerWheelTargetRPM); }
     @Override public double getUpperWheelAmps() { return simulateAmps(upperWheelRPM, upperWheelTargetRPM); }
 
     @Override
     public void stopAll() {
-        intakeTargetRPM = 0; intakeRPM *= 0.1;
         agitatorTargetRPM = 0; agitatorRPM *= 0.1;
         lowerWheelTargetRPM = 0; lowerWheelRPM *= 0.1;
         upperWheelTargetRPM = 0; upperWheelRPM *= 0.1;

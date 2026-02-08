@@ -374,25 +374,25 @@ public interface Config {
     /**
      * Configuration for the Launcher subsystem.
      * <p>
-     * Four NEO motors: intake, agitator, lower wheel, upper wheel.
+     * Three NEO motors: agitator, lower wheel, upper wheel.
+     * The lower wheel doubles as intake by spinning backward.
      * Different upper/lower wheel speeds control ball arc via Magnus effect.
      * Wheels use closed-loop velocity control (feedforward + PD feedback).
-     * Intake and agitator use open-loop voltage control.
+     * Agitator uses open-loop voltage control.
      */
     interface Launcher {
 
         // TODO update CAN IDs once the build team wires the motors
-        int INTAKE_CAN_ID = 30;
         int AGITATOR_CAN_ID = 31;
         int LOWER_WHEEL_CAN_ID = 32;
         int UPPER_WHEEL_CAN_ID = 33;
 
         //=======================================================================
-        // Intake & agitator - open loop (percentage 0-100)
+        // Intake & agitator
         //=======================================================================
 
-        /** Power for intake motor when pulling balls in */
-        DoubleSupplier intakePower = pref("Launcher/IntakePower%", 30.0);
+        /** RPM for lower wheel when intaking (spins backward to pull balls in) */
+        DoubleSupplier intakeSpeedRPM = pref("Launcher/IntakeSpeedRPM", 1500.0);
 
         /** Power for agitator motor when feeding balls toward wheels */
         DoubleSupplier agitatorPower = pref("Launcher/AgitatorPower%", 30.0);
@@ -435,7 +435,6 @@ public interface Config {
         // Motor configuration
         //=======================================================================
 
-        BooleanSupplier intakeInverted = pref("Launcher/IntakeInverted?", false);
         BooleanSupplier agitatorInverted = pref("Launcher/AgitatorInverted?", false);
         BooleanSupplier lowerWheelInverted = pref("Launcher/LowerWheelInverted?", false);
         BooleanSupplier upperWheelInverted = pref("Launcher/UpperWheelInverted?", false);
