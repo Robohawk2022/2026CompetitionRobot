@@ -1,0 +1,48 @@
+package frc.robot.subsystems.agitator;
+
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.spark.SparkBase;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkMaxConfig;
+
+import static frc.robot.Config.Agitator.*;
+
+/**
+ * Implements {@link AgitatorHardware} using a REV SparkMax motor (NEO).
+ */
+public class AgitatorHardwareRev implements AgitatorHardware {
+
+    private final SparkMax motor;
+    private final RelativeEncoder encoder;
+
+    public AgitatorHardwareRev() {
+        motor = new SparkMax(CAN_ID, MotorType.kBrushless);
+        encoder = motor.getEncoder();
+
+        SparkMaxConfig config = new SparkMaxConfig();
+        config.idleMode(IdleMode.kCoast);
+        config.inverted(inverted.getAsBoolean());
+        config.smartCurrentLimit((int) currentLimit.getAsDouble());
+        config.openLoopRampRate(0.1);
+        motor.configure(config,
+                SparkBase.ResetMode.kResetSafeParameters,
+                SparkBase.PersistMode.kPersistParameters);
+    }
+
+    @Override
+    public void applyVolts(double volts) {
+        motor.setVoltage(volts);
+    }
+
+    @Override
+    public double getRPM() {
+        return encoder.getVelocity();
+    }
+
+    @Override
+    public double getAmps() {
+        return motor.getOutputCurrent();
+    }
+}

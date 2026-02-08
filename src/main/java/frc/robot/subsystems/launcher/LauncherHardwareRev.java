@@ -14,15 +14,13 @@ import static frc.robot.Config.Launcher.*;
 
 /**
  * Implements {@link LauncherHardware} using REV SparkMax motors (NEO)
- * with onboard closed-loop velocity control for the wheels.
+ * with onboard closed-loop velocity control.
  */
 public class LauncherHardwareRev implements LauncherHardware {
 
-    private final SparkMax agitatorMotor;
     private final SparkMax lowerWheelMotor;
     private final SparkMax upperWheelMotor;
 
-    private final RelativeEncoder agitatorEncoder;
     private final RelativeEncoder lowerWheelEncoder;
     private final RelativeEncoder upperWheelEncoder;
 
@@ -33,54 +31,38 @@ public class LauncherHardwareRev implements LauncherHardware {
     private final SparkMaxConfig upperConfig;
 
     public LauncherHardwareRev() {
-        agitatorMotor = new SparkMax(AGITATOR_CAN_ID, MotorType.kBrushless);
         lowerWheelMotor = new SparkMax(LOWER_WHEEL_CAN_ID, MotorType.kBrushless);
         upperWheelMotor = new SparkMax(UPPER_WHEEL_CAN_ID, MotorType.kBrushless);
 
-        agitatorEncoder = agitatorMotor.getEncoder();
         lowerWheelEncoder = lowerWheelMotor.getEncoder();
         upperWheelEncoder = upperWheelMotor.getEncoder();
 
         lowerController = lowerWheelMotor.getClosedLoopController();
         upperController = upperWheelMotor.getClosedLoopController();
 
-        // agitator is open-loop only
-        configureOpenLoop(agitatorMotor, agitatorInverted.getAsBoolean());
-
-        // wheels use closed-loop velocity control
-        lowerConfig = createWheelConfig(lowerWheelInverted.getAsBoolean());
+        // separate PID per wheel
+        lowerConfig = createWheelConfig(lowerWheelInverted.getAsBoolean(),
+                lowerKV.getAsDouble(), lowerKP.getAsDouble());
         lowerWheelMotor.configure(lowerConfig,
                 SparkBase.ResetMode.kResetSafeParameters,
                 SparkBase.PersistMode.kPersistParameters);
 
-        upperConfig = createWheelConfig(upperWheelInverted.getAsBoolean());
+        upperConfig = createWheelConfig(upperWheelInverted.getAsBoolean(),
+                upperKV.getAsDouble(), upperKP.getAsDouble());
         upperWheelMotor.configure(upperConfig,
                 SparkBase.ResetMode.kResetSafeParameters,
                 SparkBase.PersistMode.kPersistParameters);
     }
 
-    private void configureOpenLoop(SparkMax motor, boolean inverted) {
-        SparkMaxConfig config = new SparkMaxConfig();
-        config.idleMode(IdleMode.kCoast);
-        config.inverted(inverted);
-        config.smartCurrentLimit((int) currentLimit.getAsDouble());
-        config.openLoopRampRate(0.1);
-        motor.configure(config,
-                SparkBase.ResetMode.kResetSafeParameters,
-                SparkBase.PersistMode.kPersistParameters);
-    }
-
-    private SparkMaxConfig createWheelConfig(boolean inverted) {
+    private SparkMaxConfig createWheelConfig(boolean inverted, double kV, double kP) {
         SparkMaxConfig config = new SparkMaxConfig();
         config.idleMode(IdleMode.kCoast);
         config.inverted(inverted);
         config.smartCurrentLimit((int) currentLimit.getAsDouble());
         config.closedLoopRampRate(0.1);
 
-        // configure onboard velocity PID
-        config.closedLoop.p(kP.getAsDouble());
-        config.closedLoop.d(kD.getAsDouble());
-        config.closedLoop.feedForward.kV(kV.getAsDouble());
+        config.closedLoop.p(kP);
+        config.closedLoop.feedForward.kV(kV);
 
         return config;
     }
@@ -104,30 +86,21 @@ public class LauncherHardwareRev implements LauncherHardware {
     }
 
     @Override
-    public void applyAgitatorVolts(double volts) {
-        agitatorMotor.setVoltage(volts);
-    }
-
-    @Override
-    public void resetPID(double kV, double kP, double kD) {
+    public void resetLowerPID(double kV, double kP) {
         lowerConfig.closedLoop.p(kP);
-        lowerConfig.closedLoop.d(kD);
         lowerConfig.closedLoop.feedForward.kV(kV);
         lowerWheelMotor.configure(lowerConfig,
                 SparkBase.ResetMode.kNoResetSafeParameters,
                 SparkBase.PersistMode.kNoPersistParameters);
+    }
 
+    @Override
+    public void resetUpperPID(double kV, double kP) {
         upperConfig.closedLoop.p(kP);
-        upperConfig.closedLoop.d(kD);
         upperConfig.closedLoop.feedForward.kV(kV);
         upperWheelMotor.configure(upperConfig,
                 SparkBase.ResetMode.kNoResetSafeParameters,
                 SparkBase.PersistMode.kNoPersistParameters);
-    }
-
-    @Override
-    public double getAgitatorRPM() {
-        return agitatorEncoder.getVelocity();
     }
 
     @Override
@@ -138,11 +111,6 @@ public class LauncherHardwareRev implements LauncherHardware {
     @Override
     public double getUpperWheelRPM() {
         return upperWheelEncoder.getVelocity();
-    }
-
-    @Override
-    public double getAgitatorAmps() {
-        return agitatorMotor.getOutputCurrent();
     }
 
     @Override
