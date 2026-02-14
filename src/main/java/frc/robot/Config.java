@@ -386,7 +386,7 @@ public interface Config {
         DoubleSupplier forwardPower = pref("Agitator/ForwardPower%", 80.0);
 
         /** Power for agitator when feeding a shot (0-100%, code negates direction) */
-        DoubleSupplier feedPower = pref("Agitator/FeedPower%", 75.0);
+        DoubleSupplier feedPower = pref("Agitator/FeedPower%", 100.0);
 
         BooleanSupplier inverted = pref("Agitator/Inverted?", true);
 
