@@ -58,7 +58,7 @@ public class LauncherTestbot extends TimedRobot {
         Preferences.setBoolean("Launcher/UpperWheelInverted?", false);
         Preferences.setDouble("Agitator/ForwardPower%", 80.0);
         Preferences.setDouble("Agitator/FeedPower%", 100.0);
-        Preferences.setBoolean("Agitator/Inverted?", true);
+        Preferences.setBoolean("Agitator/Inverted?", false);
         Preferences.setDouble("Agitator/CurrentLimit", 40.0);
         System.out.println(">>> Force-set all Preferences to code defaults");
 
