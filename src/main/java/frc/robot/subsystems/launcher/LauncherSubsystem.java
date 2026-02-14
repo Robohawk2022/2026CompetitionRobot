@@ -52,7 +52,7 @@ public class LauncherSubsystem extends SubsystemBase {
             return switch (this) {
                 case HIGH_ARC -> highArcLowerRPM.getAsDouble();
                 case FLAT -> flatLowerRPM.getAsDouble();
-                case NEUTRAL -> neutralRPM.getAsDouble();
+                case NEUTRAL -> neutralLowerRPM.getAsDouble();
             };
         }
 
@@ -60,7 +60,7 @@ public class LauncherSubsystem extends SubsystemBase {
             return switch (this) {
                 case HIGH_ARC -> highArcUpperRPM.getAsDouble();
                 case FLAT -> flatUpperRPM.getAsDouble();
-                case NEUTRAL -> neutralRPM.getAsDouble();
+                case NEUTRAL -> neutralUpperRPM.getAsDouble();
             };
         }
     }
@@ -171,7 +171,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "intake";
                 applyPIDGains();
             },
-            () -> driveWheels(intakeSpeedRPM.getAsDouble(), -intakeSpeedRPM.getAsDouble())
+            () -> driveWheels(intakeLowerRPM.getAsDouble(), -intakeUpperRPM.getAsDouble())
         ).finallyDo(interrupted -> cleanup());
     }
 
@@ -186,7 +186,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "eject";
                 applyPIDGains();
             },
-            () -> driveWheels(-intakeSpeedRPM.getAsDouble(), 0)
+            () -> driveWheels(-ejectSpeedRPM.getAsDouble(), 0)
         ).finallyDo(interrupted -> cleanup());
     }
 
