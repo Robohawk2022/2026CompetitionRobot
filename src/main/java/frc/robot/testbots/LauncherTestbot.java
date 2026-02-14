@@ -54,7 +54,7 @@ public class LauncherTestbot extends TimedRobot {
         Preferences.setDouble("Launcher/Upper/kP", 0.0001);
         Preferences.setDouble("Launcher/Wheels/ToleranceRPM", 100.0);
         Preferences.setDouble("Launcher/CurrentLimit", 40.0);
-        Preferences.setBoolean("Launcher/LowerWheelInverted?", true);
+        Preferences.setBoolean("Launcher/LowerWheelInverted?", false);
         Preferences.setBoolean("Launcher/UpperWheelInverted?", false);
         Preferences.setDouble("Agitator/ForwardPower%", 80.0);
         Preferences.setDouble("Agitator/FeedPower%", 100.0);

@@ -364,7 +364,7 @@ public interface Config {
         // Motor configuration
         //=======================================================================
 
-        BooleanSupplier lowerWheelInverted = pref("Launcher/LowerWheelInverted?", true);
+        BooleanSupplier lowerWheelInverted = pref("Launcher/LowerWheelInverted?", false);
         BooleanSupplier upperWheelInverted = pref("Launcher/UpperWheelInverted?", false);
 
         /** Current limit for wheel motors in amps */
