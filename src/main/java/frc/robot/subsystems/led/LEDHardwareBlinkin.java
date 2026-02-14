@@ -22,6 +22,7 @@ public class LEDHardwareBlinkin implements LEDHardware {
      */
     public LEDHardwareBlinkin() {
         blinkin = new Spark(pwmPort);
+        blinkin.setSafetyEnabled(false);
     }
 
     @Override

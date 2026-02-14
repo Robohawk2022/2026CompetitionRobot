@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.GameController;
+import frc.robot.subsystems.limelight.LimelightSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.TunerConstants;
 
@@ -19,12 +20,14 @@ import frc.robot.subsystems.swerve.TunerConstants;
 public class SwerveTestbot extends TimedRobot {
 
     final SwerveSubsystem swerve;
+    final LimelightSubsystem limelight;
     final GameController controller;
 
     public SwerveTestbot() {
 
         // CTRE drivetrain handles both sim and real hardware automatically
         swerve = new SwerveSubsystem(TunerConstants.createDrivetrain());
+        limelight = new LimelightSubsystem(swerve);
 
         controller = new GameController(0);
 
@@ -75,6 +78,9 @@ public class SwerveTestbot extends TimedRobot {
         // Orbit mode: hold left bumper to orbit around the Reef while facing it
         controller.leftBumper()
                 .whileTrue(swerve.orbitCommand(controller));
+
+        controller.rightBumper()
+                .onTrue(limelight.resetPoseFromVisionCommand());
 
     }
 

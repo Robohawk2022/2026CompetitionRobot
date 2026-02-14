@@ -58,6 +58,8 @@ public class LimelightSubsystem extends SubsystemBase {
     long lowConfidenceCount;
     long highConfidenceCount;
     long mediumConfidenceCount;
+    boolean forceResetPose;
+    boolean estimateSuccessful;
 
     /**
      * Creates a {@link LimelightSubsystem}
@@ -77,12 +79,15 @@ public class LimelightSubsystem extends SubsystemBase {
         this.mediumConfidenceCount = 0L;
         this.latestEstimate = null;
         this.latestTagPose = null;
+        this.forceResetPose = false;
+        this.estimateSuccessful = false;
 
         SmartDashboard.putData("LimelightSubsystem", builder -> {
             builder.addIntegerProperty("RestrictedTag", () -> restrictedTag, null);
             builder.addBooleanProperty("TooFast?", () -> spinningTooFast, null);
-            builder.addBooleanProperty("HasEstimate?", () -> latestEstimate != null, null);
+            builder.addBooleanProperty("HasEstimate?", () -> estimateSuccessful, null);
             builder.addBooleanProperty("HasTarget?", latestTarget::isValid, null);
+            builder.addBooleanProperty("ResetPose?", () -> forceResetPose, val -> forceResetPose = val);
             if (verboseLogging) {
                 builder.addDoubleProperty("Targeting/Area", latestTarget::getArea, null);
                 builder.addDoubleProperty("Targeting/HorizontalOffset", latestTarget::getHorizontalOffset, null);
@@ -220,6 +225,7 @@ public class LimelightSubsystem extends SubsystemBase {
 
         latestEstimate = null;
         latestTagPose = null;
+        estimateSuccessful = false;
 
         // if we're spinning too fast, there's nothing to do
         if (spinningTooFast) {
@@ -240,13 +246,23 @@ public class LimelightSubsystem extends SubsystemBase {
             return;
         }
 
+        latestEstimate = estimate.pose;
+
         // if the pose is outside the field, there's no use dealing with it
         if (Field.isOutsideField(estimate.pose)) {
             poseOutsideField++;
             return;
         }
 
-        // if the pose is too far from the current pose, we don't submit it
+        // if we're resetting the robot's pose, we will do that now with the
+        // estimate we have
+        if (forceResetPose) {
+            swerve.resetPose(estimate.pose);
+            forceResetPose = false;
+        }
+
+        // if the pose is too far from the current pose, we don't submit it ...
+        // UNLESS a pose reset has been requested
         if (Util.feetBetween(currentPose, estimate.pose) > maxPoseJumpFeet.getAsDouble()) {
             poseJumpTooBig++;
             return;
@@ -277,7 +293,7 @@ public class LimelightSubsystem extends SubsystemBase {
 
         // we're good to go!
         swerve.submitVisionEstimate(estimate.pose, estimate.timestampSeconds, confidence);
-        latestEstimate = estimate.pose;
+        estimateSuccessful = true;
         latestTagPose = Field.getTagPose(estimate.rawFiducials[0].id);
     }
 
@@ -286,14 +302,7 @@ public class LimelightSubsystem extends SubsystemBase {
 //region Pose estimate ---------------------------------------------------------
 
     public Command resetPoseFromVisionCommand() {
-        return runOnce(() -> {
-            if (latestEstimate != null) {
-                Util.log("[limelight] resetting to vision pose");
-                swerve.resetPose(latestEstimate);
-            } else {
-                Util.log("[limelight] no vision pose for reset!!!");
-            }
-        });
+        return runOnce(() -> forceResetPose = true);
     }
 
 //endregion
