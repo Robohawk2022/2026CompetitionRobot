@@ -381,7 +381,7 @@ public interface Config {
         /** Power for agitator when feeding a shot (0-100%, typically higher than forward) */
         DoubleSupplier feedPower = pref("Agitator/FeedPower%", 10.0);
 
-        BooleanSupplier inverted = pref("Agitator/Inverted?", false);
+        BooleanSupplier inverted = pref("Agitator/Inverted?", true);
 
         /** Current limit in amps */
         DoubleSupplier currentLimit = pref("Agitator/CurrentLimit", 40.0);
