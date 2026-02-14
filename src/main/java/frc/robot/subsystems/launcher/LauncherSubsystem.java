@@ -171,12 +171,12 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "intake";
                 applyPIDGains();
             },
-            () -> driveWheels(-intakeSpeedRPM.getAsDouble(), 0)
+            () -> driveWheels(intakeSpeedRPM.getAsDouble(), 0)
         ).finallyDo(interrupted -> cleanup());
     }
 
     /**
-     * Spins the lower wheel forward to push ball back out. Upper wheel off.
+     * Spins the lower wheel backward to push ball back out. Upper wheel off.
      *
      * @return a command that runs the lower wheel for eject
      */
@@ -186,7 +186,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "eject";
                 applyPIDGains();
             },
-            () -> driveWheels(intakeSpeedRPM.getAsDouble(), 0)
+            () -> driveWheels(-intakeSpeedRPM.getAsDouble(), 0)
         ).finallyDo(interrupted -> cleanup());
     }
 

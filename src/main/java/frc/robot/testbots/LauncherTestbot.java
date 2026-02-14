@@ -77,7 +77,7 @@ public class LauncherTestbot extends TimedRobot {
         return Commands.parallel(
             launcher.spinUpCommand(preset),
             Commands.sequence(
-                Commands.waitUntil(launcher::atSpeed),
+                Commands.waitUntil(launcher::atSpeed).withTimeout(2.0),
                 agitator.feedCommand()
             )
         );
