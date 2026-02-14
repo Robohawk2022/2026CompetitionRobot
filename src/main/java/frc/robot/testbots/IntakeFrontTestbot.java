@@ -70,7 +70,7 @@ public class IntakeFrontTestbot extends TimedRobot {
         System.out.println(">>> Button mappings:");
         System.out.println("    A (hold) = Intake (suck in)");
         System.out.println("    B (hold) = Eject (spit out)");
-        System.out.println("");
+        System.out.println();
         System.out.println(">>> Configuration:");
         System.out.println("    IntakeFront/IntakeSpeedRPS = Intake speed (rev/sec)");
         System.out.println("    IntakeFront/EjectSpeedRPS = Eject speed (rev/sec)");
@@ -79,7 +79,7 @@ public class IntakeFrontTestbot extends TimedRobot {
         System.out.println("    IntakeFront/kP = Proportional gain");
         System.out.println("    IntakeFront/StallThresholdRPM = Stall detection threshold");
         System.out.println("    IntakeFront/StallTimeSec = Time before stall triggers");
-        System.out.println("");
+        System.out.println();
         System.out.println(">>> Stall Detection:");
         System.out.println("    Watch 'Stalled?' on dashboard - true indicates hopper full");
     }
