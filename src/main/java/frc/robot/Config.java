@@ -358,7 +358,7 @@ public interface Config {
 
         /** Neutral shot: 100% lower, 25% upper */
         DoubleSupplier neutralLowerRPM = pref("Launcher/Neutral/LowerRPM", 5676.0);
-        DoubleSupplier neutralUpperRPM = pref("Launcher/Neutral/UpperRPM", 1419.0);
+        DoubleSupplier neutralUpperRPM = pref("Launcher/Neutral/UpperRPM", 710.0);
 
         //=======================================================================
         // Motor configuration
