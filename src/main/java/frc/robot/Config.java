@@ -376,10 +376,10 @@ public interface Config {
         int CAN_ID = 2;
 
         /** Power for agitator when feeding balls toward wheels (0-100%) */
-        DoubleSupplier forwardPower = pref("Agitator/ForwardPower%", 20.0);
+        DoubleSupplier forwardPower = pref("Agitator/ForwardPower%", 40.0);
 
         /** Power for agitator when feeding a shot (0-100%, typically higher than forward) */
-        DoubleSupplier feedPower = pref("Agitator/FeedPower%", 20.0);
+        DoubleSupplier feedPower = pref("Agitator/FeedPower%", 40.0);
 
         BooleanSupplier inverted = pref("Agitator/Inverted?", true);
 
