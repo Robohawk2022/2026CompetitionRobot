@@ -25,8 +25,8 @@ public class AgitatorHardwareRev implements AgitatorHardware {
         config = new SparkMaxConfig();
         config.idleMode(IdleMode.kCoast);
         config.inverted(inverted.getAsBoolean());
-        config.smartCurrentLimit((int) currentLimit.getAsDouble());
-        config.openLoopRampRate(0.1);
+        config.smartCurrentLimit(80);
+        config.openLoopRampRate(0.0);
         motor.configure(config,
                 SparkBase.ResetMode.kResetSafeParameters,
                 SparkBase.PersistMode.kPersistParameters);
