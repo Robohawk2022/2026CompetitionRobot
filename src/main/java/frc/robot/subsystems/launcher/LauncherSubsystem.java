@@ -87,8 +87,10 @@ public class LauncherSubsystem extends SubsystemBase {
 
             builder.addDoubleProperty("LowerWheelCurrent", () -> lowerWheelRPM, null);
             builder.addDoubleProperty("LowerWheelTarget", () -> lowerTargetRPM, null);
+            builder.addDoubleProperty("LowerWheelError", () -> lowerTargetRPM - lowerWheelRPM, null);
             builder.addDoubleProperty("UpperWheelCurrent", () -> upperWheelRPM, null);
             builder.addDoubleProperty("UpperWheelTarget", () -> upperTargetRPM, null);
+            builder.addDoubleProperty("UpperWheelError", () -> upperTargetRPM - upperWheelRPM, null);
 
             builder.addBooleanProperty("AtSpeed?", this::atSpeed, null);
 
