@@ -234,30 +234,6 @@ public interface Config {
 
 //endregion
 
-//region Shooter ---------------------------------------------------------------
-
-    interface Shooter {
-
-        /** Physical properties of the mechanism */
-        double gearRatio = 1.0 / 3.0;
-        double wheelDiameter = 4.0 / 12.0;
-        double wheelCircumference = wheelDiameter * Math.PI;
-
-        /** Feedforward/feedback constants for speed */
-        DoubleSupplier p = pref("ShooterSubsystem/kP", 0.0);
-        DoubleSupplier d = pref("ShooterSubsystem/kD", 0.0);
-        DoubleSupplier v = pref("ShooterSubsystem/kV", 0.0);
-        DoubleSupplier tolerance = pref("ShooterSubsystem/Tolerance", 0.0);
-
-        /** Preset speeds in feet per seconds */
-        DoubleSupplier speed1 = pref("ShooterPresets/Speed1", 10.0);
-        DoubleSupplier speed2 = pref("ShooterPresets/Speed1", 20.0);
-        DoubleSupplier speed3 = pref("ShooterPresets/Speed3", 3.0);
-
-    }
-
-//endregion
-
 //region Intake ----------------------------------------------------------------
 
     interface IntakeFront {
@@ -308,62 +284,6 @@ public interface Config {
 
         /** Current limit for the intake motor in amps */
         DoubleSupplier currentLimit = pref("IntakeFront/CurrentLimit", 40.0);
-
-    }
-
-//endregion
-
-//region HubberdShooter ---------------------------------------------------------
-
-    /**
-     * Configuration for the HubberdShooter subsystem.
-     * <p>
-     * Two Falcon 500 motors that can operate in four modes:
-     * <ul>
-     *   <li>Off - Motors stopped</li>
-     *   <li>Intake - Both motors same direction at 20% power</li>
-     *   <li>Outtake - Both motors opposite direction at 20% power</li>
-     *   <li>Shooting - Motors counter-rotate at 600 RPM</li>
-     * </ul>
-     */
-    interface HubberdShooter {
-
-        /** CAN IDs for the shooter motors */
-        int MOTOR_1_CAN_ID = 51;
-        int MOTOR_2_CAN_ID = 52;
-
-        //=======================================================================
-        // Power settings (percentage 0-100)
-        //=======================================================================
-
-        /** Power for intake mode (both motors same direction) */
-        DoubleSupplier intakePower = pref("HubberdShooter/IntakePower%", 20.0);
-
-        /** Power for outtake mode (both motors same direction, reversed) */
-        DoubleSupplier outtakePower = pref("HubberdShooter/OuttakePower%", 20.0);
-
-        /** Power for shooting mode (motors counter-rotate) */
-        DoubleSupplier shootingPower = pref("HubberdShooter/ShootingPower%", 50.0);
-
-        //=======================================================================
-        // Motor configuration
-        //=======================================================================
-
-        /** Invert motor 1 direction */
-        BooleanSupplier motor1Inverted = pref("HubberdShooter/Motor1Inverted?", false);
-
-        /** Invert motor 2 direction */
-        BooleanSupplier motor2Inverted = pref("HubberdShooter/Motor2Inverted?", false);
-
-        //=======================================================================
-        // Current limits
-        //=======================================================================
-
-        /** Stator current limit in amps */
-        DoubleSupplier statorCurrentLimit = pref("HubberdShooter/StatorCurrentLimit", 60.0);
-
-        /** Supply current limit in amps */
-        DoubleSupplier supplyCurrentLimit = pref("HubberdShooter/SupplyCurrentLimit", 40.0);
 
     }
 

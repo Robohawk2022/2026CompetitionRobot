@@ -26,7 +26,8 @@
       "WebFetch(domain:codedocs.revrobotics.com)",
       "WebSearch",
       "WebFetch(domain:docs.revrobotics.com)",
-      "mcp__frc-networktables__reconnect"
+      "mcp__frc-networktables__reconnect",
+      "Bash(find:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
