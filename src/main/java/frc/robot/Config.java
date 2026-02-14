@@ -396,4 +396,48 @@ public interface Config {
 
 //endregion
 
+//region Shooting (Distance-Based) ------------------------------------------------
+
+    /**
+     * Configuration for distance-based shooting.
+     * <p>
+     * The robot calculates distance to the hub and selects the appropriate
+     * RPMs and agitator power. Three ranges: point-blank, close, and far.
+     * Distances are in feet. If distance &lt;= pointBlankThreshold, use point-blank.
+     * If distance &lt;= closeThreshold, use close. Otherwise, use far.
+     */
+    interface Shooting {
+
+        // Distance thresholds (feet)
+        DoubleSupplier pointBlankThresholdFeet = pref("Shooting/PointBlankThresholdFeet", 3.0);
+        DoubleSupplier closeThresholdFeet = pref("Shooting/CloseThresholdFeet", 8.0);
+
+        //=======================================================================
+        // Point-blank shot parameters
+        //=======================================================================
+
+        DoubleSupplier pointBlankLowerRPM = pref("Shooting/PointBlank/LowerRPM", 800.0);
+        DoubleSupplier pointBlankUpperRPM = pref("Shooting/PointBlank/UpperRPM", 800.0);
+        DoubleSupplier pointBlankAgitator = pref("Shooting/PointBlank/AgitatorPower%", 60.0);
+
+        //=======================================================================
+        // Close-range shot parameters
+        //=======================================================================
+
+        DoubleSupplier closeLowerRPM = pref("Shooting/Close/LowerRPM", 1500.0);
+        DoubleSupplier closeUpperRPM = pref("Shooting/Close/UpperRPM", 1500.0);
+        DoubleSupplier closeAgitator = pref("Shooting/Close/AgitatorPower%", 80.0);
+
+        //=======================================================================
+        // Long-range shot parameters
+        //=======================================================================
+
+        DoubleSupplier farLowerRPM = pref("Shooting/Far/LowerRPM", 3000.0);
+        DoubleSupplier farUpperRPM = pref("Shooting/Far/UpperRPM", 3000.0);
+        DoubleSupplier farAgitator = pref("Shooting/Far/AgitatorPower%", 100.0);
+
+    }
+
+//endregion
+
 }

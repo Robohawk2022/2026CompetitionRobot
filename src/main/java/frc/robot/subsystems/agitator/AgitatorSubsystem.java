@@ -1,6 +1,7 @@
 package frc.robot.subsystems.agitator;
 
 import java.util.Objects;
+import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -99,6 +100,23 @@ public class AgitatorSubsystem extends SubsystemBase {
                 hardware.resetConfig();
             },
             () -> hardware.applyVolts(-powerToVolts(feedPower.getAsDouble()))
+        ).finallyDo(interrupted -> cleanup());
+    }
+
+    /**
+     * Runs agitator at a specified feed power for shooting.
+     * Used by distance-based shooting where power varies per shot type.
+     *
+     * @param powerSupplier supplier for the power percentage (0-100)
+     * @return a command that feeds at the specified power
+     */
+    public Command feedCommandWithPower(DoubleSupplier powerSupplier) {
+        return startRun(
+            () -> {
+                currentMode = "feed";
+                hardware.resetConfig();
+            },
+            () -> hardware.applyVolts(-powerToVolts(powerSupplier.getAsDouble()))
         ).finallyDo(interrupted -> cleanup());
     }
 

@@ -1,6 +1,7 @@
 package frc.robot.subsystems.launcher;
 
 import java.util.Objects;
+import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -204,6 +205,25 @@ public class LauncherSubsystem extends SubsystemBase {
                 applyPIDGains();
             },
             () -> driveWheels(preset.lowerRPM(), preset.upperRPM())
+        ).finallyDo(interrupted -> cleanup());
+    }
+
+    /**
+     * Spins both wheels at RPMs provided by suppliers. Runs continuously
+     * until interrupted. Used by distance-based shooting.
+     *
+     * @param lowerRPM supplier for lower wheel target RPM
+     * @param upperRPM supplier for upper wheel target RPM
+     * @param label mode label for dashboard
+     * @return a command that spins the wheels
+     */
+    public Command spinUpCommand(DoubleSupplier lowerRPM, DoubleSupplier upperRPM, String label) {
+        return startRun(
+            () -> {
+                currentMode = "spin-up:" + label;
+                applyPIDGains();
+            },
+            () -> driveWheels(lowerRPM.getAsDouble(), upperRPM.getAsDouble())
         ).finallyDo(interrupted -> cleanup());
     }
 
