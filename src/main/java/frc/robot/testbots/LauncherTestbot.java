@@ -42,8 +42,8 @@ public class LauncherTestbot extends TimedRobot {
         Preferences.setDouble("Launcher/IntakeLowerRPM", 4825.0);
         Preferences.setDouble("Launcher/IntakeUpperRPM", 1589.0);
         Preferences.setDouble("Launcher/EjectSpeedRPM", 2000.0);
-        Preferences.setDouble("Launcher/Neutral/LowerRPM", 5676.0);
-        Preferences.setDouble("Launcher/Neutral/UpperRPM", 710.0);
+        Preferences.setDouble("Launcher/Neutral/LowerRPM", 4257.0);
+        Preferences.setDouble("Launcher/Neutral/UpperRPM", 533.0);
         Preferences.setDouble("Launcher/HighArc/LowerRPM", 2000.0);
         Preferences.setDouble("Launcher/HighArc/UpperRPM", 2000.0);
         Preferences.setDouble("Launcher/Flat/LowerRPM", 2000.0);
