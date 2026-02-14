@@ -6,6 +6,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+import edu.wpi.first.math.MathUtil;
+
 import static frc.robot.Config.Launcher.*;
 
 /**
@@ -113,14 +115,18 @@ public class LauncherSubsystem extends SubsystemBase {
             && Math.abs(upperWheelRPM - upperTargetRPM) <= tol;
     }
 
+    /** Maximum safe RPM for NEO motors (free speed is 5676) */
+    static final double MAX_RPM = 5700;
+
     /**
      * Sends RPM targets to both wheels via onboard PID.
+     * Clamps values to NEO safe range to prevent runaway from bad config.
      */
     private void driveWheels(double lowerTarget, double upperTarget) {
-        lowerTargetRPM = lowerTarget;
-        upperTargetRPM = upperTarget;
-        hardware.setLowerWheelRPM(lowerTarget);
-        hardware.setUpperWheelRPM(upperTarget);
+        lowerTargetRPM = MathUtil.clamp(lowerTarget, -MAX_RPM, MAX_RPM);
+        upperTargetRPM = MathUtil.clamp(upperTarget, -MAX_RPM, MAX_RPM);
+        hardware.setLowerWheelRPM(lowerTargetRPM);
+        hardware.setUpperWheelRPM(upperTargetRPM);
     }
 
     /**
@@ -203,10 +209,7 @@ public class LauncherSubsystem extends SubsystemBase {
      * @return a command that immediately stops both wheels
      */
     public Command stopCommand() {
-        return runOnce(() -> {
-            currentMode = "stopped";
-            hardware.stopAll();
-        });
+        return runOnce(() -> cleanup());
     }
 
     /**
