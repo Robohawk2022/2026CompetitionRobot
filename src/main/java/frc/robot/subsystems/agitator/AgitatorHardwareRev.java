@@ -16,12 +16,13 @@ public class AgitatorHardwareRev implements AgitatorHardware {
 
     private final SparkMax motor;
     private final RelativeEncoder encoder;
+    private final SparkMaxConfig config;
 
     public AgitatorHardwareRev() {
         motor = new SparkMax(CAN_ID, MotorType.kBrushless);
         encoder = motor.getEncoder();
 
-        SparkMaxConfig config = new SparkMaxConfig();
+        config = new SparkMaxConfig();
         config.idleMode(IdleMode.kCoast);
         config.inverted(inverted.getAsBoolean());
         config.smartCurrentLimit((int) currentLimit.getAsDouble());
@@ -29,6 +30,14 @@ public class AgitatorHardwareRev implements AgitatorHardware {
         motor.configure(config,
                 SparkBase.ResetMode.kResetSafeParameters,
                 SparkBase.PersistMode.kPersistParameters);
+    }
+
+    @Override
+    public void resetConfig() {
+        config.inverted(inverted.getAsBoolean());
+        motor.configure(config,
+                SparkBase.ResetMode.kNoResetSafeParameters,
+                SparkBase.PersistMode.kNoPersistParameters);
     }
 
     @Override

@@ -21,6 +21,9 @@ public interface AgitatorHardware {
     /** @return motor output current in amps */
     double getAmps();
 
+    /** Refreshes motor config (inversion, current limit) from Preferences */
+    default void resetConfig() {}
+
     /** Stops the motor */
     default void stop() {
         applyVolts(0);

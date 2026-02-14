@@ -87,6 +87,7 @@ public class LauncherHardwareRev implements LauncherHardware {
 
     @Override
     public void resetLowerPID(double kV, double kP) {
+        lowerConfig.inverted(lowerWheelInverted.getAsBoolean());
         lowerConfig.closedLoop.p(kP);
         lowerConfig.closedLoop.feedForward.kV(kV);
         lowerWheelMotor.configure(lowerConfig,
@@ -96,6 +97,7 @@ public class LauncherHardwareRev implements LauncherHardware {
 
     @Override
     public void resetUpperPID(double kV, double kP) {
+        upperConfig.inverted(upperWheelInverted.getAsBoolean());
         upperConfig.closedLoop.p(kP);
         upperConfig.closedLoop.feedForward.kV(kV);
         upperWheelMotor.configure(upperConfig,

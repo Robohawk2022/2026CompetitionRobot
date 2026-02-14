@@ -79,7 +79,10 @@ public class AgitatorSubsystem extends SubsystemBase {
      */
     public Command forwardCommand() {
         return startRun(
-            () -> currentMode = "forward",
+            () -> {
+                currentMode = "forward";
+                hardware.resetConfig();
+            },
             () -> hardware.applyVolts(powerToVolts(forwardPower.getAsDouble()))
         ).finallyDo(interrupted -> cleanup());
     }
@@ -91,7 +94,10 @@ public class AgitatorSubsystem extends SubsystemBase {
      */
     public Command feedCommand() {
         return startRun(
-            () -> currentMode = "feed",
+            () -> {
+                currentMode = "feed";
+                hardware.resetConfig();
+            },
             () -> hardware.applyVolts(powerToVolts(feedPower.getAsDouble()))
         ).finallyDo(interrupted -> cleanup());
     }
@@ -103,7 +109,10 @@ public class AgitatorSubsystem extends SubsystemBase {
      */
     public Command reverseCommand() {
         return startRun(
-            () -> currentMode = "reverse",
+            () -> {
+                currentMode = "reverse";
+                hardware.resetConfig();
+            },
             () -> hardware.applyVolts(-powerToVolts(forwardPower.getAsDouble()))
         ).finallyDo(interrupted -> cleanup());
     }
