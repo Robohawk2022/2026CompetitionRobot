@@ -27,7 +27,11 @@
       "WebSearch",
       "WebFetch(domain:docs.revrobotics.com)",
       "mcp__frc-networktables__reconnect",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: invert lower wheel and agitator defaults for correct direction\n\nTesting revealed both the agitator and lower wheel spin the wrong direction.\n- Agitator/Inverted? default: false → true\n- Launcher/LowerWheelInverted? default: false → true\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git commit:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

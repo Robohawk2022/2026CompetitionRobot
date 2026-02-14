@@ -98,7 +98,7 @@ public class AgitatorSubsystem extends SubsystemBase {
                 currentMode = "feed";
                 hardware.resetConfig();
             },
-            () -> hardware.applyVolts(powerToVolts(feedPower.getAsDouble()))
+            () -> hardware.applyVolts(-powerToVolts(feedPower.getAsDouble()))
         ).finallyDo(interrupted -> cleanup());
     }
 
