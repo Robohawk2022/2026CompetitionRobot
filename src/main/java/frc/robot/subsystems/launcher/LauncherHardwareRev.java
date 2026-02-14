@@ -1,8 +1,10 @@
 package frc.robot.subsystems.launcher;
 
-import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.ResetMode;
+import com.revrobotics.spark.ClosedLoopSlot;
+import com.revrobotics.spark.SparkBase;
+import com.revrobotics.spark.SparkBase.ControlType;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
@@ -11,74 +13,94 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import static frc.robot.Config.Launcher.*;
 
 /**
- * Implements {@link LauncherHardware} using REV SparkMax motors (NEO).
+ * Implements {@link LauncherHardware} using REV SparkMax motors (NEO)
+ * with onboard closed-loop velocity control.
  */
 public class LauncherHardwareRev implements LauncherHardware {
 
-    private final SparkMax intakeMotor;
-    private final SparkMax agitatorMotor;
     private final SparkMax lowerWheelMotor;
     private final SparkMax upperWheelMotor;
 
-    private final RelativeEncoder intakeEncoder;
-    private final RelativeEncoder agitatorEncoder;
     private final RelativeEncoder lowerWheelEncoder;
     private final RelativeEncoder upperWheelEncoder;
 
+    private final SparkClosedLoopController lowerController;
+    private final SparkClosedLoopController upperController;
+
+    private final SparkMaxConfig lowerConfig;
+    private final SparkMaxConfig upperConfig;
+
     public LauncherHardwareRev() {
-        intakeMotor = new SparkMax(INTAKE_CAN_ID, MotorType.kBrushless);
-        agitatorMotor = new SparkMax(AGITATOR_CAN_ID, MotorType.kBrushless);
         lowerWheelMotor = new SparkMax(LOWER_WHEEL_CAN_ID, MotorType.kBrushless);
         upperWheelMotor = new SparkMax(UPPER_WHEEL_CAN_ID, MotorType.kBrushless);
 
-        intakeEncoder = intakeMotor.getEncoder();
-        agitatorEncoder = agitatorMotor.getEncoder();
         lowerWheelEncoder = lowerWheelMotor.getEncoder();
         upperWheelEncoder = upperWheelMotor.getEncoder();
 
-        configureMotor(intakeMotor, intakeInverted.getAsBoolean(), IdleMode.kCoast);
-        configureMotor(agitatorMotor, agitatorInverted.getAsBoolean(), IdleMode.kCoast);
-        configureMotor(lowerWheelMotor, lowerWheelInverted.getAsBoolean(), IdleMode.kCoast);
-        configureMotor(upperWheelMotor, upperWheelInverted.getAsBoolean(), IdleMode.kCoast);
+        lowerController = lowerWheelMotor.getClosedLoopController();
+        upperController = upperWheelMotor.getClosedLoopController();
+
+        // separate PID per wheel
+        lowerConfig = createWheelConfig(lowerWheelInverted.getAsBoolean(),
+                lowerKV.getAsDouble(), lowerKP.getAsDouble());
+        lowerWheelMotor.configure(lowerConfig,
+                SparkBase.ResetMode.kResetSafeParameters,
+                SparkBase.PersistMode.kPersistParameters);
+
+        upperConfig = createWheelConfig(upperWheelInverted.getAsBoolean(),
+                upperKV.getAsDouble(), upperKP.getAsDouble());
+        upperWheelMotor.configure(upperConfig,
+                SparkBase.ResetMode.kResetSafeParameters,
+                SparkBase.PersistMode.kPersistParameters);
     }
 
-    private void configureMotor(SparkMax motor, boolean inverted, IdleMode idleMode) {
+    private SparkMaxConfig createWheelConfig(boolean inverted, double kV, double kP) {
         SparkMaxConfig config = new SparkMaxConfig();
-        config.idleMode(idleMode);
+        config.idleMode(IdleMode.kCoast);
         config.inverted(inverted);
         config.smartCurrentLimit((int) currentLimit.getAsDouble());
-        config.openLoopRampRate(0.1);
-        motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        config.closedLoopRampRate(0.1);
+
+        config.closedLoop.p(kP);
+        config.closedLoop.feedForward.kV(kV);
+
+        return config;
     }
 
     @Override
-    public void applyIntakeVolts(double volts) {
-        intakeMotor.setVoltage(volts);
+    public void setLowerWheelRPM(double rpm) {
+        if (rpm == 0) {
+            lowerWheelMotor.set(0);
+        } else {
+            lowerController.setReference(rpm, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
+        }
     }
 
     @Override
-    public void applyAgitatorVolts(double volts) {
-        agitatorMotor.setVoltage(volts);
+    public void setUpperWheelRPM(double rpm) {
+        if (rpm == 0) {
+            upperWheelMotor.set(0);
+        } else {
+            upperController.setReference(rpm, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
+        }
     }
 
     @Override
-    public void applyLowerWheelVolts(double volts) {
-        lowerWheelMotor.setVoltage(volts);
+    public void resetLowerPID(double kV, double kP) {
+        lowerConfig.closedLoop.p(kP);
+        lowerConfig.closedLoop.feedForward.kV(kV);
+        lowerWheelMotor.configure(lowerConfig,
+                SparkBase.ResetMode.kNoResetSafeParameters,
+                SparkBase.PersistMode.kNoPersistParameters);
     }
 
     @Override
-    public void applyUpperWheelVolts(double volts) {
-        upperWheelMotor.setVoltage(volts);
-    }
-
-    @Override
-    public double getIntakeRPM() {
-        return intakeEncoder.getVelocity();
-    }
-
-    @Override
-    public double getAgitatorRPM() {
-        return agitatorEncoder.getVelocity();
+    public void resetUpperPID(double kV, double kP) {
+        upperConfig.closedLoop.p(kP);
+        upperConfig.closedLoop.feedForward.kV(kV);
+        upperWheelMotor.configure(upperConfig,
+                SparkBase.ResetMode.kNoResetSafeParameters,
+                SparkBase.PersistMode.kNoPersistParameters);
     }
 
     @Override
@@ -89,16 +111,6 @@ public class LauncherHardwareRev implements LauncherHardware {
     @Override
     public double getUpperWheelRPM() {
         return upperWheelEncoder.getVelocity();
-    }
-
-    @Override
-    public double getIntakeAmps() {
-        return intakeMotor.getOutputCurrent();
-    }
-
-    @Override
-    public double getAgitatorAmps() {
-        return agitatorMotor.getOutputCurrent();
     }
 
     @Override

@@ -1,28 +1,38 @@
 package frc.robot.subsystems.launcher;
 
 /**
- * Interface for the hardware of a launcher subsystem with 4 NEO motors:
- * intake, agitator, lower wheel, and upper wheel.
+ * Interface for the launcher wheel hardware: lower wheel and upper wheel.
+ * <p>
+ * Both wheels use onboard closed-loop velocity control (SparkMax PID).
+ * The lower wheel doubles as intake by spinning backward.
  */
 public interface LauncherHardware {
 
-    /** Applies voltage to the intake motor */
-    void applyIntakeVolts(double volts);
+    /**
+     * Sets the target RPM for the lower wheel using onboard velocity PID.
+     *
+     * @param rpm target RPM (negative = reverse for intake)
+     */
+    void setLowerWheelRPM(double rpm);
 
-    /** Applies voltage to the agitator motor */
-    void applyAgitatorVolts(double volts);
+    /**
+     * Sets the target RPM for the upper wheel using onboard velocity PID.
+     *
+     * @param rpm target RPM (negative = reverse)
+     */
+    void setUpperWheelRPM(double rpm);
 
-    /** Applies voltage to the lower wheel motor */
-    void applyLowerWheelVolts(double volts);
+    /**
+     * Resets/reconfigures the lower wheel onboard velocity PID.
+     * Call this when starting a command to pick up live-tuned values.
+     */
+    void resetLowerPID(double kV, double kP);
 
-    /** Applies voltage to the upper wheel motor */
-    void applyUpperWheelVolts(double volts);
-
-    /** @return intake motor velocity in RPM */
-    double getIntakeRPM();
-
-    /** @return agitator motor velocity in RPM */
-    double getAgitatorRPM();
+    /**
+     * Resets/reconfigures the upper wheel onboard velocity PID.
+     * Call this when starting a command to pick up live-tuned values.
+     */
+    void resetUpperPID(double kV, double kP);
 
     /** @return lower wheel motor velocity in RPM */
     double getLowerWheelRPM();
@@ -30,23 +40,15 @@ public interface LauncherHardware {
     /** @return upper wheel motor velocity in RPM */
     double getUpperWheelRPM();
 
-    /** @return intake motor current in amps */
-    double getIntakeAmps();
-
-    /** @return agitator motor current in amps */
-    double getAgitatorAmps();
-
     /** @return lower wheel motor current in amps */
     double getLowerWheelAmps();
 
     /** @return upper wheel motor current in amps */
     double getUpperWheelAmps();
 
-    /** Stops all motors */
+    /** Stops both wheels */
     default void stopAll() {
-        applyIntakeVolts(0);
-        applyAgitatorVolts(0);
-        applyLowerWheelVolts(0);
-        applyUpperWheelVolts(0);
+        setLowerWheelRPM(0);
+        setUpperWheelRPM(0);
     }
 }
