@@ -307,7 +307,7 @@ public interface Config {
         int UPPER_WHEEL_CAN_ID = 8;
 
         /** RPM for lower wheel when intaking (spins backward to pull balls in) */
-        DoubleSupplier intakeSpeedRPM = pref("Launcher/IntakeSpeedRPM", 1000.0);
+        DoubleSupplier intakeSpeedRPM = pref("Launcher/IntakeSpeedRPM", 2000.0);
 
         //=======================================================================
         // Lower wheel velocity PID - closed loop (SparkMax onboard)
@@ -343,15 +343,15 @@ public interface Config {
         //=======================================================================
 
         /** High arc: upper faster = backspin = more lift */
-        DoubleSupplier highArcLowerRPM = pref("Launcher/HighArc/LowerRPM", 1000.0);
-        DoubleSupplier highArcUpperRPM = pref("Launcher/HighArc/UpperRPM", 1000.0);
+        DoubleSupplier highArcLowerRPM = pref("Launcher/HighArc/LowerRPM", 2000.0);
+        DoubleSupplier highArcUpperRPM = pref("Launcher/HighArc/UpperRPM", 2000.0);
 
         /** Flat shot: lower faster = topspin = flatter trajectory */
-        DoubleSupplier flatLowerRPM = pref("Launcher/Flat/LowerRPM", 1000.0);
-        DoubleSupplier flatUpperRPM = pref("Launcher/Flat/UpperRPM", 1000.0);
+        DoubleSupplier flatLowerRPM = pref("Launcher/Flat/LowerRPM", 2000.0);
+        DoubleSupplier flatUpperRPM = pref("Launcher/Flat/UpperRPM", 2000.0);
 
         /** Neutral: equal speed = no spin bias */
-        DoubleSupplier neutralRPM = pref("Launcher/Neutral/RPM", 1000.0);
+        DoubleSupplier neutralRPM = pref("Launcher/Neutral/RPM", 2000.0);
 
         //=======================================================================
         // Motor configuration
@@ -376,10 +376,10 @@ public interface Config {
         int CAN_ID = 2;
 
         /** Power for agitator when feeding balls toward wheels (0-100%) */
-        DoubleSupplier forwardPower = pref("Agitator/ForwardPower%", 40.0);
+        DoubleSupplier forwardPower = pref("Agitator/ForwardPower%", 60.0);
 
         /** Power for agitator when feeding a shot (0-100%, typically higher than forward) */
-        DoubleSupplier feedPower = pref("Agitator/FeedPower%", 40.0);
+        DoubleSupplier feedPower = pref("Agitator/FeedPower%", 60.0);
 
         BooleanSupplier inverted = pref("Agitator/Inverted?", true);
 
