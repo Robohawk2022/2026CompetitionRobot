@@ -303,8 +303,8 @@ public interface Config {
     interface Launcher {
 
         // TODO update CAN IDs once the build team wires the motors
-        int LOWER_WHEEL_CAN_ID = 32;
-        int UPPER_WHEEL_CAN_ID = 33;
+        int LOWER_WHEEL_CAN_ID = 9;
+        int UPPER_WHEEL_CAN_ID = 8;
 
         /** RPM for lower wheel when intaking (spins backward to pull balls in) */
         DoubleSupplier intakeSpeedRPM = pref("Launcher/IntakeSpeedRPM", 200.0);
@@ -373,7 +373,7 @@ public interface Config {
      */
     interface Agitator {
 
-        int CAN_ID = 31;
+        int CAN_ID = 2;
 
         /** Power for agitator when feeding balls toward wheels (0-100%) */
         DoubleSupplier forwardPower = pref("Agitator/ForwardPower%", 10.0);
