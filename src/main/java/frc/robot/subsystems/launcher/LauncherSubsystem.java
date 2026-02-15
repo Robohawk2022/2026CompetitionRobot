@@ -204,7 +204,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 applyPIDGains();
             },
             () -> driveWheels(preset.lowerRPM(), preset.upperRPM())
-        ).finallyDo(interrupted -> cleanup());
+        ); // .finallyDo(interrupted -> cleanup());
     }
 
     /**
