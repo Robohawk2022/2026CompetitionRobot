@@ -26,13 +26,13 @@ public interface LauncherHardware {
      * Resets/reconfigures the lower wheel onboard velocity PID.
      * Call this when starting a command to pick up live-tuned values.
      */
-    void resetLowerPID(double kV, double kP);
+    void resetLowerPID(double kV, double kP, double kI, double kD);
 
     /**
      * Resets/reconfigures the upper wheel onboard velocity PID.
      * Call this when starting a command to pick up live-tuned values.
      */
-    void resetUpperPID(double kV, double kP);
+    void resetUpperPID(double kV, double kP, double kI, double kD);
 
     /** @return lower wheel motor velocity in RPM */
     double getLowerWheelRPM();

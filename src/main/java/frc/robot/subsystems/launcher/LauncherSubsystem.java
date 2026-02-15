@@ -135,8 +135,18 @@ public class LauncherSubsystem extends SubsystemBase {
      * Pushes current PID gains from Config to the SparkMax onboard controllers.
      */
     private void applyPIDGains() {
-        hardware.resetLowerPID(lowerKV.getAsDouble(), lowerKP.getAsDouble());
-        hardware.resetUpperPID(upperKV.getAsDouble(), upperKP.getAsDouble());
+
+        hardware.resetLowerPID(
+            lowerKV.getAsDouble(), 
+            lowerKP.getAsDouble(),
+            lowerKI.getAsDouble(),
+            lowerKD.getAsDouble());
+
+        hardware.resetUpperPID(
+            upperKV.getAsDouble(), 
+            upperKP.getAsDouble(),
+            upperKI.getAsDouble(),
+            upperKD.getAsDouble());
     }
 
     private void cleanup() {

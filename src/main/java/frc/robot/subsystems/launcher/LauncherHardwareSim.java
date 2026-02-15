@@ -36,8 +36,8 @@ public class LauncherHardwareSim implements LauncherHardware {
         upperWheelRPM = updateMotor(upperWheelRPM, upperWheelTargetRPM);
     }
 
-    @Override public void resetLowerPID(double kV, double kP) { }
-    @Override public void resetUpperPID(double kV, double kP) { }
+    @Override public void resetLowerPID(double kV, double kP, double kI, double kD) { }
+    @Override public void resetUpperPID(double kV, double kP, double kI, double kD) { }
 
     @Override public double getLowerWheelRPM() { return lowerWheelRPM; }
     @Override public double getUpperWheelRPM() { return upperWheelRPM; }

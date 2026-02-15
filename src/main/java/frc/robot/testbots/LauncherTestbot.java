@@ -37,31 +37,6 @@ public class LauncherTestbot extends TimedRobot {
     public void robotInit() {
         System.out.println(">>> LauncherTestbot starting...");
 
-        // Force-set all Preferences to code defaults (overrides any stored values)
-        Preferences.removeAll();
-        Preferences.setDouble("Launcher/IntakeLowerRPM", 4825.0);
-        Preferences.setDouble("Launcher/IntakeUpperRPM", 1589.0);
-        Preferences.setDouble("Launcher/EjectSpeedRPM", 2000.0);
-        Preferences.setDouble("Launcher/Neutral/LowerRPM", 4257.0);
-        Preferences.setDouble("Launcher/Neutral/UpperRPM", 533.0);
-        Preferences.setDouble("Launcher/HighArc/LowerRPM", 2000.0);
-        Preferences.setDouble("Launcher/HighArc/UpperRPM", 2000.0);
-        Preferences.setDouble("Launcher/Flat/LowerRPM", 2000.0);
-        Preferences.setDouble("Launcher/Flat/UpperRPM", 2000.0);
-        Preferences.setDouble("Launcher/Lower/kV", 0.002);
-        Preferences.setDouble("Launcher/Lower/kP", 0.0001);
-        Preferences.setDouble("Launcher/Upper/kV", 0.002);
-        Preferences.setDouble("Launcher/Upper/kP", 0.0001);
-        Preferences.setDouble("Launcher/Wheels/ToleranceRPM", 100.0);
-        Preferences.setDouble("Launcher/CurrentLimit", 40.0);
-        Preferences.setBoolean("Launcher/LowerWheelInverted?", false);
-        Preferences.setBoolean("Launcher/UpperWheelInverted?", false);
-        Preferences.setDouble("Agitator/ForwardPower%", 80.0);
-        Preferences.setDouble("Agitator/FeedPower%", 100.0);
-        Preferences.setBoolean("Agitator/Inverted?", false);
-        Preferences.setDouble("Agitator/CurrentLimit", 40.0);
-        System.out.println(">>> Force-set all Preferences to code defaults");
-
         boolean sim = isSimulation();
         launcher = new LauncherSubsystem(sim ? new LauncherHardwareSim() : new LauncherHardwareRev());
         agitator = new AgitatorSubsystem(sim ? new AgitatorHardwareSim() : new AgitatorHardwareRev());

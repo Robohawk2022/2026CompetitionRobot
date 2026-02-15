@@ -322,10 +322,9 @@ public interface Config {
         /** Lower wheel feedforward: volts per RPM. Start with 12.0 / 5676 = ~0.002 for NEO.
          *  Uses SparkMax feedForward.kV() API. */
         DoubleSupplier lowerKV = pref("Launcher/Lower/kV", 0.0002);
-
-        /** Lower wheel proportional: duty cycle per RPM of error.
-         *  Small values! 0.0001 is a reasonable start. */
         DoubleSupplier lowerKP = pref("Launcher/Lower/kP", 0.0003);
+        DoubleSupplier lowerKI = pref("Launcher/Lower/kI", 0.0);
+        DoubleSupplier lowerKD = pref("Launcher/Lower/kD", 0.0);
 
         //=======================================================================
         // Upper wheel velocity PID - closed loop (SparkMax onboard)
@@ -338,6 +337,8 @@ public interface Config {
         /** Upper wheel proportional: duty cycle per RPM of error.
          *  Small values! 0.0001 is a reasonable start. */
         DoubleSupplier upperKP = pref("Launcher/Upper/kP", 0.0003);
+        DoubleSupplier upperKI = pref("Launcher/Upper/kI", 0.0);
+        DoubleSupplier upperKD = pref("Launcher/Upper/kD", 0.0);
 
         //=======================================================================
 

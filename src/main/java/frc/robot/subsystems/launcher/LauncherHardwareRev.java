@@ -86,9 +86,11 @@ public class LauncherHardwareRev implements LauncherHardware {
     }
 
     @Override
-    public void resetLowerPID(double kV, double kP) {
+    public void resetLowerPID(double kV, double kP, double kI, double kD) {
         lowerConfig.inverted(lowerWheelInverted.getAsBoolean());
         lowerConfig.closedLoop.p(kP);
+        lowerConfig.closedLoop.i(kI);
+        lowerConfig.closedLoop.d(kD);
         lowerConfig.closedLoop.feedForward.kV(kV);
         lowerWheelMotor.configure(lowerConfig,
                 SparkBase.ResetMode.kNoResetSafeParameters,
@@ -96,9 +98,11 @@ public class LauncherHardwareRev implements LauncherHardware {
     }
 
     @Override
-    public void resetUpperPID(double kV, double kP) {
+    public void resetUpperPID(double kV, double kP, double kI, double kD) {
         upperConfig.inverted(upperWheelInverted.getAsBoolean());
         upperConfig.closedLoop.p(kP);
+        upperConfig.closedLoop.i(kI);
+        upperConfig.closedLoop.d(kD);
         upperConfig.closedLoop.feedForward.kV(kV);
         upperWheelMotor.configure(upperConfig,
                 SparkBase.ResetMode.kNoResetSafeParameters,
