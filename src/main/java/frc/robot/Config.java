@@ -358,7 +358,7 @@ public interface Config {
         DoubleSupplier flatUpperRPM = pref("Launcher/Flat/UpperRPM", 2000.0);
 
         /** Neutral shot: 100% lower, 25% upper */
-        DoubleSupplier neutralLowerRPM = pref("Launcher/Neutral/LowerRPM", 4257.0);
+        DoubleSupplier neutralLowerRPM = pref("Launcher/Neutral/LowerRPM", 2400.0);
         DoubleSupplier neutralUpperRPM = pref("Launcher/Neutral/UpperRPM", 533.0);
 
         //=======================================================================
