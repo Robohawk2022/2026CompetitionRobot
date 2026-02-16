@@ -357,7 +357,7 @@ public interface Config {
         double SHOOTER_INTAKE_RPM = 1000.0;
 
         /** Shooter RPM for shooting (much higher than feeders) */
-        double SHOOTER_RPM = 3000.0;
+        double SHOOTER_RPM = 2000.0;
 
         //=======================================================================
         // Motor configuration
