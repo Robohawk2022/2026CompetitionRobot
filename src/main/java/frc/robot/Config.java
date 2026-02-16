@@ -357,7 +357,7 @@ public interface Config {
         double SHOOTER_INTAKE_RPM = 1000.0;
 
         /** Shooter RPM for shooting (much higher than feeders) */
-        DoubleSupplier shooterRPM = pref("Launcher/ShooterRPM", 2500.0);
+        DoubleSupplier shooterRPM = pref("Launcher/ShooterRPM", 2525.0);
 
         //=======================================================================
         // Motor configuration
