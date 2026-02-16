@@ -13,48 +13,64 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import static frc.robot.Config.Launcher.*;
 
 /**
- * Implements {@link LauncherHardware} using REV SparkMax motors (NEO)
+ * Implements {@link LauncherHardware} using 3 REV SparkMax motors (NEO)
  * with onboard closed-loop velocity control.
+ * <p>
+ * Feeder Left (CAN 1), Feeder Right (CAN 2), Shooter (CAN 3).
  */
 public class LauncherHardwareRev implements LauncherHardware {
 
-    private final SparkMax lowerWheelMotor;
-    private final SparkMax upperWheelMotor;
+    private final SparkMax feederLeftMotor;
+    private final SparkMax feederRightMotor;
+    private final SparkMax shooterMotor;
 
-    private final RelativeEncoder lowerWheelEncoder;
-    private final RelativeEncoder upperWheelEncoder;
+    private final RelativeEncoder feederLeftEncoder;
+    private final RelativeEncoder feederRightEncoder;
+    private final RelativeEncoder shooterEncoder;
 
-    private final SparkClosedLoopController lowerController;
-    private final SparkClosedLoopController upperController;
+    private final SparkClosedLoopController feederLeftController;
+    private final SparkClosedLoopController feederRightController;
+    private final SparkClosedLoopController shooterController;
 
-    private final SparkMaxConfig lowerConfig;
-    private final SparkMaxConfig upperConfig;
+    private final SparkMaxConfig feederLeftConfig;
+    private final SparkMaxConfig feederRightConfig;
+    private final SparkMaxConfig shooterConfig;
 
     public LauncherHardwareRev() {
-        lowerWheelMotor = new SparkMax(LOWER_WHEEL_CAN_ID, MotorType.kBrushless);
-        upperWheelMotor = new SparkMax(UPPER_WHEEL_CAN_ID, MotorType.kBrushless);
+        feederLeftMotor = new SparkMax(FEEDER_LEFT_CAN_ID, MotorType.kBrushless);
+        feederRightMotor = new SparkMax(FEEDER_RIGHT_CAN_ID, MotorType.kBrushless);
+        shooterMotor = new SparkMax(SHOOTER_CAN_ID, MotorType.kBrushless);
 
-        lowerWheelEncoder = lowerWheelMotor.getEncoder();
-        upperWheelEncoder = upperWheelMotor.getEncoder();
+        feederLeftEncoder = feederLeftMotor.getEncoder();
+        feederRightEncoder = feederRightMotor.getEncoder();
+        shooterEncoder = shooterMotor.getEncoder();
 
-        lowerController = lowerWheelMotor.getClosedLoopController();
-        upperController = upperWheelMotor.getClosedLoopController();
+        feederLeftController = feederLeftMotor.getClosedLoopController();
+        feederRightController = feederRightMotor.getClosedLoopController();
+        shooterController = shooterMotor.getClosedLoopController();
 
-        // separate PID per wheel
-        lowerConfig = createWheelConfig(lowerWheelInverted.getAsBoolean(),
-                lowerKV.getAsDouble(), lowerKP.getAsDouble());
-        lowerWheelMotor.configure(lowerConfig,
+        // feeder motors share PID gains
+        feederLeftConfig = createMotorConfig(feederLeftInverted.getAsBoolean(),
+                feederKV.getAsDouble(), feederKP.getAsDouble());
+        feederLeftMotor.configure(feederLeftConfig,
                 SparkBase.ResetMode.kResetSafeParameters,
                 SparkBase.PersistMode.kPersistParameters);
 
-        upperConfig = createWheelConfig(upperWheelInverted.getAsBoolean(),
-                upperKV.getAsDouble(), upperKP.getAsDouble());
-        upperWheelMotor.configure(upperConfig,
+        feederRightConfig = createMotorConfig(feederRightInverted.getAsBoolean(),
+                feederKV.getAsDouble(), feederKP.getAsDouble());
+        feederRightMotor.configure(feederRightConfig,
+                SparkBase.ResetMode.kResetSafeParameters,
+                SparkBase.PersistMode.kPersistParameters);
+
+        // shooter has its own PID gains
+        shooterConfig = createMotorConfig(shooterInverted.getAsBoolean(),
+                shooterKV.getAsDouble(), shooterKP.getAsDouble());
+        shooterMotor.configure(shooterConfig,
                 SparkBase.ResetMode.kResetSafeParameters,
                 SparkBase.PersistMode.kPersistParameters);
     }
 
-    private SparkMaxConfig createWheelConfig(boolean inverted, double kV, double kP) {
+    private SparkMaxConfig createMotorConfig(boolean inverted, double kV, double kP) {
         SparkMaxConfig config = new SparkMaxConfig();
         config.idleMode(IdleMode.kCoast);
         config.inverted(inverted);
@@ -67,65 +83,80 @@ public class LauncherHardwareRev implements LauncherHardware {
         return config;
     }
 
-    @Override
-    public void setLowerWheelRPM(double rpm) {
+    private void setMotorRPM(SparkMax motor, SparkClosedLoopController controller, double rpm) {
         if (rpm == 0) {
-            lowerWheelMotor.set(0);
+            motor.set(0);
         } else {
-            lowerController.setReference(rpm, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
+            controller.setReference(rpm, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
         }
     }
 
     @Override
-    public void setUpperWheelRPM(double rpm) {
-        if (rpm == 0) {
-            upperWheelMotor.set(0);
-        } else {
-            upperController.setReference(rpm, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
-        }
+    public void setFeederLeftRPM(double rpm) {
+        setMotorRPM(feederLeftMotor, feederLeftController, rpm);
     }
 
     @Override
-    public void resetLowerPID(double kV, double kP, double kI, double kD) {
-        lowerConfig.inverted(lowerWheelInverted.getAsBoolean());
-        lowerConfig.closedLoop.p(kP);
-        lowerConfig.closedLoop.i(kI);
-        lowerConfig.closedLoop.d(kD);
-        lowerConfig.closedLoop.feedForward.kV(kV);
-        lowerWheelMotor.configure(lowerConfig,
+    public void setFeederRightRPM(double rpm) {
+        setMotorRPM(feederRightMotor, feederRightController, rpm);
+    }
+
+    @Override
+    public void setShooterRPM(double rpm) {
+        setMotorRPM(shooterMotor, shooterController, rpm);
+    }
+
+    @Override
+    public double getFeederLeftRPM() {
+        return feederLeftEncoder.getVelocity();
+    }
+
+    @Override
+    public double getFeederRightRPM() {
+        return feederRightEncoder.getVelocity();
+    }
+
+    @Override
+    public double getShooterRPM() {
+        return shooterEncoder.getVelocity();
+    }
+
+    @Override
+    public double getFeederLeftAmps() {
+        return feederLeftMotor.getOutputCurrent();
+    }
+
+    @Override
+    public double getFeederRightAmps() {
+        return feederRightMotor.getOutputCurrent();
+    }
+
+    @Override
+    public double getShooterAmps() {
+        return shooterMotor.getOutputCurrent();
+    }
+
+    @Override
+    public void resetFeederPID(double kV, double kP, double kI, double kD) {
+        // apply to both feeder motors
+        applyPID(feederLeftConfig, feederLeftMotor, feederLeftInverted.getAsBoolean(), kV, kP, kI, kD);
+        applyPID(feederRightConfig, feederRightMotor, feederRightInverted.getAsBoolean(), kV, kP, kI, kD);
+    }
+
+    @Override
+    public void resetShooterPID(double kV, double kP, double kI, double kD) {
+        applyPID(shooterConfig, shooterMotor, shooterInverted.getAsBoolean(), kV, kP, kI, kD);
+    }
+
+    private void applyPID(SparkMaxConfig config, SparkMax motor, boolean inverted,
+                           double kV, double kP, double kI, double kD) {
+        config.inverted(inverted);
+        config.closedLoop.p(kP);
+        config.closedLoop.i(kI);
+        config.closedLoop.d(kD);
+        config.closedLoop.feedForward.kV(kV);
+        motor.configure(config,
                 SparkBase.ResetMode.kNoResetSafeParameters,
                 SparkBase.PersistMode.kNoPersistParameters);
-    }
-
-    @Override
-    public void resetUpperPID(double kV, double kP, double kI, double kD) {
-        upperConfig.inverted(upperWheelInverted.getAsBoolean());
-        upperConfig.closedLoop.p(kP);
-        upperConfig.closedLoop.i(kI);
-        upperConfig.closedLoop.d(kD);
-        upperConfig.closedLoop.feedForward.kV(kV);
-        upperWheelMotor.configure(upperConfig,
-                SparkBase.ResetMode.kNoResetSafeParameters,
-                SparkBase.PersistMode.kNoPersistParameters);
-    }
-
-    @Override
-    public double getLowerWheelRPM() {
-        return lowerWheelEncoder.getVelocity();
-    }
-
-    @Override
-    public double getUpperWheelRPM() {
-        return upperWheelEncoder.getVelocity();
-    }
-
-    @Override
-    public double getLowerWheelAmps() {
-        return lowerWheelMotor.getOutputCurrent();
-    }
-
-    @Override
-    public double getUpperWheelAmps() {
-        return upperWheelMotor.getOutputCurrent();
     }
 }

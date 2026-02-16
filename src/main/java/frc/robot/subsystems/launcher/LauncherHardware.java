@@ -1,54 +1,68 @@
 package frc.robot.subsystems.launcher;
 
 /**
- * Interface for the launcher wheel hardware: lower wheel and upper wheel.
+ * Interface for the launcher hardware: 2 feeder motors + 1 shooter motor.
  * <p>
- * Both wheels use onboard closed-loop velocity control (SparkMax PID).
- * The lower wheel doubles as intake by spinning backward.
+ * All motors use onboard closed-loop velocity control (SparkMax PID).
+ * Feeders spin inward to pull balls in; shooter flings them out.
  */
 public interface LauncherHardware {
 
     /**
-     * Sets the target RPM for the lower wheel using onboard velocity PID.
+     * Sets the target RPM for the left feeder using onboard velocity PID.
      *
-     * @param rpm target RPM (negative = reverse for intake)
+     * @param rpm target RPM (positive = inward, negative = outward)
      */
-    void setLowerWheelRPM(double rpm);
+    void setFeederLeftRPM(double rpm);
 
     /**
-     * Sets the target RPM for the upper wheel using onboard velocity PID.
+     * Sets the target RPM for the right feeder using onboard velocity PID.
      *
-     * @param rpm target RPM (negative = reverse)
+     * @param rpm target RPM (positive = inward, negative = outward)
      */
-    void setUpperWheelRPM(double rpm);
+    void setFeederRightRPM(double rpm);
 
     /**
-     * Resets/reconfigures the lower wheel onboard velocity PID.
+     * Sets the target RPM for the shooter using onboard velocity PID.
+     *
+     * @param rpm target RPM (positive = shoot direction)
+     */
+    void setShooterRPM(double rpm);
+
+    /** @return left feeder motor velocity in RPM */
+    double getFeederLeftRPM();
+
+    /** @return right feeder motor velocity in RPM */
+    double getFeederRightRPM();
+
+    /** @return shooter motor velocity in RPM */
+    double getShooterRPM();
+
+    /** @return left feeder motor current in amps */
+    double getFeederLeftAmps();
+
+    /** @return right feeder motor current in amps */
+    double getFeederRightAmps();
+
+    /** @return shooter motor current in amps */
+    double getShooterAmps();
+
+    /**
+     * Resets/reconfigures the feeder onboard velocity PID (both motors).
      * Call this when starting a command to pick up live-tuned values.
      */
-    void resetLowerPID(double kV, double kP, double kI, double kD);
+    void resetFeederPID(double kV, double kP, double kI, double kD);
 
     /**
-     * Resets/reconfigures the upper wheel onboard velocity PID.
+     * Resets/reconfigures the shooter onboard velocity PID.
      * Call this when starting a command to pick up live-tuned values.
      */
-    void resetUpperPID(double kV, double kP, double kI, double kD);
+    void resetShooterPID(double kV, double kP, double kI, double kD);
 
-    /** @return lower wheel motor velocity in RPM */
-    double getLowerWheelRPM();
-
-    /** @return upper wheel motor velocity in RPM */
-    double getUpperWheelRPM();
-
-    /** @return lower wheel motor current in amps */
-    double getLowerWheelAmps();
-
-    /** @return upper wheel motor current in amps */
-    double getUpperWheelAmps();
-
-    /** Stops both wheels */
+    /** Stops all three motors */
     default void stopAll() {
-        setLowerWheelRPM(0);
-        setUpperWheelRPM(0);
+        setFeederLeftRPM(0);
+        setFeederRightRPM(0);
+        setShooterRPM(0);
     }
 }

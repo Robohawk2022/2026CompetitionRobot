@@ -294,102 +294,72 @@ public interface Config {
     /**
      * Configuration for the Launcher subsystem.
      * <p>
-     * Three NEO motors: agitator, lower wheel, upper wheel.
-     * The lower wheel doubles as intake by spinning backward.
-     * Different upper/lower wheel speeds control ball arc via Magnus effect.
-     * Wheels use closed-loop velocity control (feedforward + PD feedback).
-     * Agitator uses open-loop voltage control.
+     * Three NEO motors on SparkMax:
+     * <ul>
+     *   <li>2 feeder motors (bottom, facing each other) — spin inward to pull balls in</li>
+     *   <li>1 shooter motor (top) — flings balls out at high speed</li>
+     * </ul>
+     * Feeders have ~3:1 gearboxes, shooter has no gearbox.
+     * All use closed-loop velocity control (SparkMax onboard PID).
      */
     interface Launcher {
 
-        // TODO update CAN IDs once the build team wires the motors
-        int LOWER_WHEEL_CAN_ID = 9;
-        int UPPER_WHEEL_CAN_ID = 8;
-
-        /** RPM for lower wheel during intake (85% of NEO free speed) */
-        DoubleSupplier intakeLowerRPM = pref("Launcher/IntakeLowerRPM", 4825.0);
-
-        /** RPM for upper wheel during intake (28% of NEO free speed, code negates) */
-        DoubleSupplier intakeUpperRPM = pref("Launcher/IntakeUpperRPM", 1589.0);
-
-        /** RPM for lower wheel during eject */
-        DoubleSupplier ejectSpeedRPM = pref("Launcher/EjectSpeedRPM", 2000.0);
-
         //=======================================================================
-        // Lower wheel velocity PID - closed loop (SparkMax onboard)
+        // CAN IDs
         //=======================================================================
 
-        /** Lower wheel feedforward: volts per RPM. Start with 12.0 / 5676 = ~0.002 for NEO.
-         *  Uses SparkMax feedForward.kV() API. */
-        DoubleSupplier lowerKV = pref("Launcher/Lower/kV", 0.00017);
-        DoubleSupplier lowerKP = pref("Launcher/Lower/kP", 0.0004);
-        DoubleSupplier lowerKI = pref("Launcher/Lower/kI", 0.0);
-        DoubleSupplier lowerKD = pref("Launcher/Lower/kD", 0.001);
+        int FEEDER_LEFT_CAN_ID = 32;
+        int FEEDER_RIGHT_CAN_ID = 11;
+        int SHOOTER_CAN_ID = 60;
 
         //=======================================================================
-        // Upper wheel velocity PID - closed loop (SparkMax onboard)
+        // Gear ratios (for reference)
         //=======================================================================
 
-        /** Upper wheel feedforward: volts per RPM. Start with 12.0 / 5676 = ~0.002 for NEO.
-         *  Uses SparkMax feedForward.kV() API. */
-        DoubleSupplier upperKV = pref("Launcher/Upper/kV", 0.00027);
-        DoubleSupplier upperKP = pref("Launcher/Upper/kP", 0.0002);
-        DoubleSupplier upperKI = pref("Launcher/Upper/kI", 0.0);
-        DoubleSupplier upperKD = pref("Launcher/Upper/kD", 0.001);
+        double FEEDER_GEAR_RATIO = 3.0;
 
         //=======================================================================
-
-        /** RPM tolerance for "at speed" check */
-        DoubleSupplier tolerance = pref("Launcher/Wheels/ToleranceRPM", 100.0);
-
-        //=======================================================================
-        // Shot presets - target RPMs for lower/upper wheels
+        // Feeder velocity PID - closed loop (SparkMax onboard)
+        // Shared gains for both feeder motors (same mechanism)
         //=======================================================================
 
-        /** High arc: upper faster = backspin = more lift */
-        DoubleSupplier highArcLowerRPM = pref("Launcher/HighArc/LowerRPM", 2000.0);
-        DoubleSupplier highArcUpperRPM = pref("Launcher/HighArc/UpperRPM", 2000.0);
+        DoubleSupplier feederKV = pref("Launcher/Feeder/kV", 0.00017);
+        DoubleSupplier feederKP = pref("Launcher/Feeder/kP", 0.0004);
 
-        /** Flat shot: lower faster = topspin = flatter trajectory */
-        DoubleSupplier flatLowerRPM = pref("Launcher/Flat/LowerRPM", 2000.0);
-        DoubleSupplier flatUpperRPM = pref("Launcher/Flat/UpperRPM", 2000.0);
+        //=======================================================================
+        // Shooter velocity PID - closed loop (SparkMax onboard)
+        //=======================================================================
 
-        /** Neutral shot: 100% lower, 25% upper */
-        DoubleSupplier neutralLowerRPM = pref("Launcher/Neutral/LowerRPM", 2400.0);
-        DoubleSupplier neutralUpperRPM = pref("Launcher/Neutral/UpperRPM", 533.0);
+        DoubleSupplier shooterKV = pref("Launcher/Shooter/kV", 0.00017);
+        DoubleSupplier shooterKP = pref("Launcher/Shooter/kP", 0.0004);
+
+        //=======================================================================
+        // RPM targets
+        //=======================================================================
+
+        /** Feeder RPM for intake (pulling balls in) */
+        DoubleSupplier feederRPM = pref("Launcher/FeederRPM", 2000.0);
+
+        /** Feeder RPM when feeding balls to shooter during a shot */
+        DoubleSupplier feedShootRPM = pref("Launcher/FeedShootRPM", 3000.0);
+
+        /** Shooter RPM for shooting (much higher than feeders) */
+        DoubleSupplier shooterRPM = pref("Launcher/ShooterRPM", 4500.0);
 
         //=======================================================================
         // Motor configuration
         //=======================================================================
 
-        BooleanSupplier lowerWheelInverted = pref("Launcher/LowerWheelInverted?", false);
-        BooleanSupplier upperWheelInverted = pref("Launcher/UpperWheelInverted?", false);
+        BooleanSupplier feederLeftInverted = pref("Launcher/FeederLeftInverted?", false);
+        BooleanSupplier feederRightInverted = pref("Launcher/FeederRightInverted?", true);
+        BooleanSupplier shooterInverted = pref("Launcher/ShooterInverted?", false);
 
-        /** Current limit for wheel motors in amps */
+        /** Current limit for all launcher motors in amps */
         DoubleSupplier currentLimit = pref("Launcher/CurrentLimit", 40.0);
 
-    }
+        /** RPM tolerance for "at speed" check */
+        DoubleSupplier tolerance = pref("Launcher/ToleranceRPM", 100.0);
 
-    /**
-     * Configuration for the Agitator subsystem.
-     * <p>
-     * Single NEO motor that feeds balls toward or away from the launcher wheels.
-     * Open-loop voltage control.
-     */
-    interface Agitator {
-
-        int CAN_ID = 2;
-
-        /** Power for agitator when feeding balls toward wheels (0-100%) */
-        DoubleSupplier forwardPower = pref("Agitator/ForwardPower%", 80.0);
-
-        /** Power for agitator when feeding a shot (0-100%, code negates direction) */
-        DoubleSupplier feedPower = pref("Agitator/FeedPower%", 100.0);
-
-        BooleanSupplier inverted = pref("Agitator/Inverted?", false);
-
-        /** Current limit in amps */
-        DoubleSupplier currentLimit = pref("Agitator/CurrentLimit", 40.0);
     }
 
 //endregion

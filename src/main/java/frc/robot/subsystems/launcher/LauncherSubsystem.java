@@ -11,67 +11,31 @@ import edu.wpi.first.math.MathUtil;
 import static frc.robot.Config.Launcher.*;
 
 /**
- * Subsystem for the launcher wheels (lower + upper).
+ * Subsystem for the launcher: 2 feeder motors + 1 shooter motor.
  * <p>
  * <b>Motors:</b>
  * <ul>
- *   <li>Lower wheel - bottom flywheel (onboard velocity PID), doubles as intake</li>
- *   <li>Upper wheel - top flywheel (onboard velocity PID)</li>
+ *   <li>Feeder Left - bottom left (onboard velocity PID), spins inward</li>
+ *   <li>Feeder Right - bottom right (onboard velocity PID), spins inward</li>
+ *   <li>Shooter - top flywheel (onboard velocity PID), flings balls out</li>
  * </ul>
  * <p>
- * <b>Intake:</b> The lower wheel spins backward at a configurable RPM to pull
- * balls in. No separate intake motor.
+ * <b>Intake:</b> Both feeders spin inward at intake RPM to pull balls in.
  * <p>
- * <b>Arc control:</b> By running the upper and lower wheels at different
- * speeds, we create spin on the ball (Magnus effect). Upper faster = backspin
- * = higher arc. Lower faster = topspin = flatter shot.
- * <p>
- * <b>Velocity control:</b> Each wheel has its own SparkMax onboard PID (1kHz)
- * with feedforward (kV) and proportional feedback (kP). Gains are live-tunable
- * via Preferences and applied when commands start.
- * <p>
- * <b>Note:</b> The agitator is a separate subsystem ({@code AgitatorSubsystem}).
- * Shoot sequences are composed by combining both subsystems.
+ * <b>Shooting:</b> Feeders spin inward at feed RPM while shooter spins at
+ * shoot RPM. All three must reach target before feeding begins.
  */
 public class LauncherSubsystem extends SubsystemBase {
 
     static final boolean verboseLogging = true;
-
-    /**
-     * Shot presets with different wheel RPM targets for arc control.
-     */
-    public enum ShotPreset {
-        /** High arc - upper wheel faster for backspin */
-        HIGH_ARC,
-        /** Flat shot - lower wheel faster for topspin */
-        FLAT,
-        /** Equal speed - neutral spin */
-        NEUTRAL;
-
-        public double lowerRPM() {
-            return switch (this) {
-                case HIGH_ARC -> highArcLowerRPM.getAsDouble();
-                case FLAT -> flatLowerRPM.getAsDouble();
-                case NEUTRAL -> neutralLowerRPM.getAsDouble();
-            };
-        }
-
-        public double upperRPM() {
-            return switch (this) {
-                case HIGH_ARC -> highArcUpperRPM.getAsDouble();
-                case FLAT -> flatUpperRPM.getAsDouble();
-                case NEUTRAL -> neutralUpperRPM.getAsDouble();
-            };
-        }
-    }
 
 //region Implementation --------------------------------------------------------
 
     final LauncherHardware hardware;
 
     String currentMode;
-    double lowerWheelRPM, upperWheelRPM;
-    double lowerTargetRPM, upperTargetRPM;
+    double feederLeftRPM, feederRightRPM, currentShooterRPM;
+    double feederLeftTarget, feederRightTarget, shooterTarget;
 
     /**
      * Creates a {@link LauncherSubsystem}.
@@ -84,75 +48,81 @@ public class LauncherSubsystem extends SubsystemBase {
 
         SmartDashboard.putData(getName(), builder -> {
             builder.addStringProperty("Mode", () -> currentMode, null);
-
-            builder.addDoubleProperty("LowerWheelCurrent", () -> Util.chopDigits(lowerWheelRPM), null);
-            builder.addDoubleProperty("LowerWheelTarget", () -> lowerTargetRPM, null);
-            builder.addDoubleProperty("LowerWheelError", () -> Util.chopDigits(lowerTargetRPM - lowerWheelRPM), null);
-            builder.addDoubleProperty("UpperWheelCurrent", () -> Util.chopDigits(upperWheelRPM), null);
-            builder.addDoubleProperty("UpperWheelTarget", () -> upperTargetRPM, null);
-            builder.addDoubleProperty("UpperWheelError", () -> Util.chopDigits(upperTargetRPM - upperWheelRPM), null);
-
             builder.addBooleanProperty("AtSpeed?", this::atSpeed, null);
 
+            builder.addDoubleProperty("FeederLeftCurrent", () -> Util.chopDigits(feederLeftRPM), null);
+            builder.addDoubleProperty("FeederLeftTarget", () -> feederLeftTarget, null);
+            builder.addDoubleProperty("FeederRightCurrent", () -> Util.chopDigits(feederRightRPM), null);
+            builder.addDoubleProperty("FeederRightTarget", () -> feederRightTarget, null);
+            builder.addDoubleProperty("ShooterCurrent", () -> Util.chopDigits(currentShooterRPM), null);
+            builder.addDoubleProperty("ShooterTarget", () -> shooterTarget, null);
+
             if (verboseLogging) {
-                builder.addDoubleProperty("LowerWheelAmps", hardware::getLowerWheelAmps, null);
-                builder.addDoubleProperty("UpperWheelAmps", hardware::getUpperWheelAmps, null);
+                builder.addDoubleProperty("FeederLeftAmps", hardware::getFeederLeftAmps, null);
+                builder.addDoubleProperty("FeederRightAmps", hardware::getFeederRightAmps, null);
+                builder.addDoubleProperty("ShooterAmps", hardware::getShooterAmps, null);
             }
         });
     }
 
     @Override
     public void periodic() {
-        lowerWheelRPM = hardware.getLowerWheelRPM();
-        upperWheelRPM = hardware.getUpperWheelRPM();
+        feederLeftRPM = hardware.getFeederLeftRPM();
+        feederRightRPM = hardware.getFeederRightRPM();
+        currentShooterRPM = hardware.getShooterRPM();
     }
 
     /**
-     * @return true if both wheels are within tolerance of their target RPM
+     * @return true if all active motors are within tolerance of their target RPM
      */
     public boolean atSpeed() {
         double tol = tolerance.getAsDouble();
-        return lowerTargetRPM > 0
-            && Math.abs(lowerWheelRPM - lowerTargetRPM) <= tol
-            && Math.abs(upperWheelRPM - upperTargetRPM) <= tol;
+        // only check motors that have a non-zero target
+        boolean feedersOk = feederLeftTarget == 0
+            || (Math.abs(feederLeftRPM - feederLeftTarget) <= tol
+                && Math.abs(feederRightRPM - feederRightTarget) <= tol);
+        boolean shooterOk = shooterTarget == 0
+            || Math.abs(currentShooterRPM - shooterTarget) <= tol;
+        // at least one motor must be running
+        return (feederLeftTarget != 0 || shooterTarget != 0) && feedersOk && shooterOk;
     }
 
     /** Maximum safe RPM for NEO motors (free speed is 5676) */
     static final double MAX_RPM = 5700;
 
     /**
-     * Sends RPM targets to both wheels via onboard PID.
-     * Clamps values to NEO safe range to prevent runaway from bad config.
+     * Sends RPM targets to all three motors via onboard PID.
+     * Clamps values to NEO safe range.
      */
-    private void driveWheels(double lowerTarget, double upperTarget) {
-        lowerTargetRPM = MathUtil.clamp(lowerTarget, -MAX_RPM, MAX_RPM);
-        upperTargetRPM = MathUtil.clamp(upperTarget, -MAX_RPM, MAX_RPM);
-        hardware.setLowerWheelRPM(lowerTargetRPM);
-        hardware.setUpperWheelRPM(upperTargetRPM);
+    private void driveMotors(double feederLeft, double feederRight, double shooter) {
+        feederLeftTarget = MathUtil.clamp(feederLeft, -MAX_RPM, MAX_RPM);
+        feederRightTarget = MathUtil.clamp(feederRight, -MAX_RPM, MAX_RPM);
+        shooterTarget = MathUtil.clamp(shooter, -MAX_RPM, MAX_RPM);
+        hardware.setFeederLeftRPM(feederLeftTarget);
+        hardware.setFeederRightRPM(feederRightTarget);
+        hardware.setShooterRPM(shooterTarget);
     }
 
     /**
      * Pushes current PID gains from Config to the SparkMax onboard controllers.
      */
     private void applyPIDGains() {
+        hardware.resetFeederPID(
+            feederKV.getAsDouble(),
+            feederKP.getAsDouble(),
+            0, 0);
 
-        hardware.resetLowerPID(
-            lowerKV.getAsDouble(), 
-            lowerKP.getAsDouble(),
-            lowerKI.getAsDouble(),
-            lowerKD.getAsDouble());
-
-        hardware.resetUpperPID(
-            upperKV.getAsDouble(), 
-            upperKP.getAsDouble(),
-            upperKI.getAsDouble(),
-            upperKD.getAsDouble());
+        hardware.resetShooterPID(
+            shooterKV.getAsDouble(),
+            shooterKP.getAsDouble(),
+            0, 0);
     }
 
     private void cleanup() {
         hardware.stopAll();
-        lowerTargetRPM = 0;
-        upperTargetRPM = 0;
+        feederLeftTarget = 0;
+        feederRightTarget = 0;
+        shooterTarget = 0;
         currentMode = "idle";
     }
 
@@ -161,7 +131,7 @@ public class LauncherSubsystem extends SubsystemBase {
 //region Command factories -----------------------------------------------------
 
     /**
-     * @return a command that idles both wheels (default command)
+     * @return a command that idles all motors (default command)
      */
     public Command idleCommand() {
         return run(() -> {
@@ -171,61 +141,70 @@ public class LauncherSubsystem extends SubsystemBase {
     }
 
     /**
-     * Spins the lower wheel backward for intake. Upper wheel off.
+     * Spins both feeders inward at intake RPM. Shooter off.
      *
-     * @return a command that runs the lower wheel for intake
+     * @return a command that runs the feeders for intake
      */
-    public Command intakeWheelCommand() {
+    public Command intakeCommand() {
         return startRun(
             () -> {
                 currentMode = "intake";
                 applyPIDGains();
             },
-            () -> driveWheels(intakeLowerRPM.getAsDouble(), -intakeUpperRPM.getAsDouble())
+            () -> {
+                double rpm = feederRPM.getAsDouble();
+                driveMotors(rpm, rpm, 0);
+            }
         ).finallyDo(interrupted -> cleanup());
     }
 
     /**
-     * Spins the lower wheel backward to push ball back out. Upper wheel off.
+     * Spins both feeders outward (reverse) to eject balls. Shooter off.
      *
-     * @return a command that runs the lower wheel for eject
+     * @return a command that runs the feeders in reverse for eject
      */
-    public Command ejectWheelCommand() {
+    public Command ejectCommand() {
         return startRun(
             () -> {
                 currentMode = "eject";
                 applyPIDGains();
             },
-            () -> driveWheels(-ejectSpeedRPM.getAsDouble(), 0)
+            () -> {
+                double rpm = feederRPM.getAsDouble();
+                driveMotors(-rpm, -rpm, 0);
+            }
         ).finallyDo(interrupted -> cleanup());
     }
 
     /**
-     * Spins both wheels at the preset RPMs. Runs continuously until
-     * interrupted — does NOT stop on its own.
+     * Spins feeders inward at feed RPM and shooter at shoot RPM.
+     * Runs continuously until interrupted.
      *
-     * @param preset the shot preset controlling wheel RPM targets
-     * @return a command that spins the wheels
+     * @return a command that runs all motors for shooting
      */
-    public Command spinUpCommand(ShotPreset preset) {
+    public Command shootCommand() {
         return startRun(
             () -> {
-                currentMode = "spin-up:" + preset.name();
+                currentMode = "shoot";
                 applyPIDGains();
             },
-            () -> driveWheels(preset.lowerRPM(), preset.upperRPM())
-        ); // .finallyDo(interrupted -> cleanup());
+            () -> {
+                double feed = feedShootRPM.getAsDouble();
+                double shoot = shooterRPM.getAsDouble();
+                driveMotors(feed, feed, shoot);
+            }
+        ).finallyDo(interrupted -> cleanup());
     }
 
     /**
-     * @return a command that immediately stops both wheels
+     * @return a command that immediately stops all motors
      */
     public Command stopCommand() {
         return runOnce(() -> cleanup());
     }
 
     /**
-     * Directly stops both wheels (for use outside command system).
+     * Directly stops all motors (for use outside command system).
      */
     public void stop() {
         cleanup();
