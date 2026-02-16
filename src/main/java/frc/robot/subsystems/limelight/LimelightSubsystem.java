@@ -19,7 +19,7 @@ import java.util.Objects;
 import static frc.robot.Config.Limelight.closeRange;
 import static frc.robot.Config.Limelight.enabled;
 import static frc.robot.Config.Limelight.limelightName;
-import static frc.robot.Config.Swerve.maxPoseJumpFeet;
+import static frc.robot.Config.Limelight.maxPoseJumpFeet;
 import static frc.robot.Config.Limelight.maxYawRate;
 
 /**

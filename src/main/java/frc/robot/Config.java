@@ -5,7 +5,6 @@ import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
-import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 
@@ -36,23 +35,6 @@ public interface Config {
         static boolean isEnabled(BooleanSupplier category) {
             return verboseEnabled.getAsBoolean() && category.getAsBoolean();
         }
-    }
-
-//endregion
-
-//region Swerve (General) ------------------------------------------------------
-
-    interface Swerve {
-
-        /** Enable cosine compensation - scales drive output by cos(angle error) */
-        BooleanSupplier cosineCompensation = pref("Swerve/CosineCompensation?", true);
-
-        /** Minimum speed (m/s) to command the angle motor - prevents jitter when stationary */
-        DoubleSupplier minSpeedForAngle = pref("Swerve/MinSpeedForAngle", 0.01);
-
-        /** Maximum pose jump (vision corrections larger than this are rejected) */
-        DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 2.0);
-
     }
 
 //endregion
@@ -163,6 +145,8 @@ public interface Config {
         Vector<N3> mediumConfidence = VecBuilder.fill(0.9, 0.9, 0.3);
         Vector<N3> highConfidence = VecBuilder.fill(0.5, 0.5, 0.1);
 
+        /** Maximum pose jump (vision corrections larger than this are rejected) */
+        DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 2.0);
     }
 
     interface LimelightSim {
@@ -204,23 +188,6 @@ public interface Config {
 
     }
 
-    /**
-     * Configuration for the QuestNav and pose estimation
-     */
-    interface QuestNav {
-
-        /** Master enable/disable for QuestNav */
-        BooleanSupplier enabled = pref("QuestNav/Enabled?", false);
-
-        /** Transformation based on mounting of camera on robot */
-        Transform3d robotToQuestTransform = new Transform3d();
-        Transform3d questToRobotTransform = robotToQuestTransform.inverse();
-
-        /** Confidence for position estimates */
-        Vector<N3> confidence = VecBuilder.fill(0.02, 0.02, 0.035);
-
-    }
-
 //endregion
 
 //region LED -------------------------------------------------------------------
@@ -229,61 +196,6 @@ public interface Config {
 
         /** PWM port for the REV Blinkin LED controller */
         int pwmPort = 0;
-
-    }
-
-//endregion
-
-//region Intake ----------------------------------------------------------------
-
-    interface IntakeFront {
-
-        /** CAN ID for the intake motor */
-        int MOTOR_CAN_ID = 20;
-
-        //=======================================================================
-        // Speed settings (in revolutions per second)
-        //=======================================================================
-
-        /** Target speed for intake (sucking in) in revolutions per second */
-        DoubleSupplier intakeSpeedRPS = pref("IntakeFront/IntakeSpeedRPS", 80.0);
-
-        /** Target speed for eject (spitting out) in revolutions per second */
-        DoubleSupplier ejectSpeedRPS = pref("IntakeFront/EjectSpeedRPS", 60.0);
-
-        /**
-         * Invert the motor direction.
-         * <p>
-         * Toggle this if the motor spins the wrong way (ejecting instead of intaking).
-         */
-        BooleanSupplier inverted = pref("IntakeFront/Inverted?", false);
-
-        //=======================================================================
-        // Closed-loop PID gains
-        //=======================================================================
-
-        /** Velocity feedforward gain (volts per rev/sec) */
-        DoubleSupplier kV = pref("IntakeFront/kV", 0.12);
-
-        /** Proportional gain for velocity control */
-        DoubleSupplier kP = pref("IntakeFront/kP", 0.1);
-
-        //=======================================================================
-        // Stall detection
-        //=======================================================================
-
-        /** Velocity threshold below which motor is considered stalled (RPM) */
-        DoubleSupplier stallThresholdRPM = pref("IntakeFront/StallThresholdRPM", 100.0);
-
-        /** Time motor must be stalled before triggering stall state (seconds) */
-        DoubleSupplier stallTimeSec = pref("IntakeFront/StallTimeSec", 0.25);
-
-        //=======================================================================
-        // Motor limits
-        //=======================================================================
-
-        /** Current limit for the intake motor in amps */
-        DoubleSupplier currentLimit = pref("IntakeFront/CurrentLimit", 40.0);
 
     }
 
