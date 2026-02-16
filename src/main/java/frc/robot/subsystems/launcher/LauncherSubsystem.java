@@ -196,7 +196,6 @@ public class LauncherSubsystem extends SubsystemBase {
             () -> {
                 double feed = feedShootRPM.getAsDouble();
                 double shoot = shooterRPM.getAsDouble();
-                System.out.printf("shoot target=%.0f feed target=%.0f%n", shoot, feed);
                 driveMotors(feed, feed, shoot);
             }
         ).finallyDo(interrupted -> cleanup());

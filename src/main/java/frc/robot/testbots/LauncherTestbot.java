@@ -1,5 +1,6 @@
 package frc.robot.testbots;
 
+import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -29,6 +30,9 @@ public class LauncherTestbot extends TimedRobot {
     @Override
     public void robotInit() {
         System.out.println(">>> LauncherTestbot starting...");
+
+        // clear stale Preferences so code defaults always win on deploy
+        Preferences.removeAll();
 
         boolean sim = isSimulation();
         launcher = new LauncherSubsystem(sim ? new LauncherHardwareSim() : new LauncherHardwareRev());

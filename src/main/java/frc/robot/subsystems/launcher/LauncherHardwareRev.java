@@ -72,7 +72,7 @@ public class LauncherHardwareRev implements LauncherHardware {
 
     private SparkMaxConfig createMotorConfig(boolean inverted, double kV, double kP) {
         SparkMaxConfig config = new SparkMaxConfig();
-        config.idleMode(IdleMode.kCoast);
+        config.idleMode(IdleMode.kBrake);
         config.inverted(inverted);
         config.smartCurrentLimit((int) currentLimit.getAsDouble());
         config.closedLoopRampRate(0.1);
