@@ -326,38 +326,38 @@ public interface Config {
         // Feeder Left velocity PID - closed loop (SparkMax onboard)
         //=======================================================================
 
-        DoubleSupplier feederLeftKV = pref("Launcher/FeederLeft/kV", 0.00017);
-        DoubleSupplier feederLeftKP = pref("Launcher/FeederLeft/kP", 0.0004);
+        double FEEDER_LEFT_KV = 0.00017;
+        double FEEDER_LEFT_KP = 0.0004;
 
         //=======================================================================
         // Feeder Right velocity PID - closed loop (SparkMax onboard)
         //=======================================================================
 
-        DoubleSupplier feederRightKV = pref("Launcher/FeederRight/kV", 0.000175);
-        DoubleSupplier feederRightKP = pref("Launcher/FeederRight/kP", 0.0004);
+        double FEEDER_RIGHT_KV = 0.000175;
+        double FEEDER_RIGHT_KP = 0.0004;
 
         //=======================================================================
         // Shooter velocity PID - closed loop (SparkMax onboard)
         //=======================================================================
 
-        DoubleSupplier shooterKV = pref("Launcher/Shooter/kV", 0.0002);
-        DoubleSupplier shooterKP = pref("Launcher/Shooter/kP", 0.0005);
+        double SHOOTER_KV = 0.0002;
+        double SHOOTER_KP = 0.0005;
 
         //=======================================================================
         // RPM targets
         //=======================================================================
 
         /** Feeder RPM for intake (pulling balls in) */
-        DoubleSupplier feederRPM = pref("Launcher/FeederRPM", 2000.0);
+        double FEEDER_RPM = 2000.0;
 
         /** Feeder RPM when feeding balls to shooter during a shot */
-        DoubleSupplier feedShootRPM = pref("Launcher/FeedShootRPM", 4000.0);
+        double FEED_SHOOT_RPM = 4000.0;
 
         /** Shooter RPM during intake (low speed, just enough to help pull balls in) */
-        DoubleSupplier shooterIntakeRPM = pref("Launcher/ShooterIntakeRPM", 1000.0);
+        double SHOOTER_INTAKE_RPM = 1000.0;
 
         /** Shooter RPM for shooting (much higher than feeders) */
-        DoubleSupplier shooterRPM = pref("Launcher/ShooterRPM", 3000.0);
+        double SHOOTER_RPM = 3000.0;
 
         //=======================================================================
         // Motor configuration
