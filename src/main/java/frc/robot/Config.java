@@ -192,6 +192,21 @@ public interface Config {
         // Motor configuration
         //=======================================================================
 
+        //=======================================================================
+        // Flapper velocity PID - closed loop (SparkMax onboard)
+        //=======================================================================
+
+        DoubleSupplier flapperKV = pref("Launcher/Flapper/kV", 0.00017);
+        DoubleSupplier flapperKP = pref("Launcher/Flapper/kP", 0.0004);
+        DoubleSupplier flapperKD = pref("Launcher/Flapper/kD", 0.0);
+
+        /** Flapper RPM during intake (keeps balls from re-entering through brushes) */
+        double FLAPPER_RPM = 2000.0;
+
+        //=======================================================================
+        // Motor configuration
+        //=======================================================================
+
         /** RPM tolerance for "at speed" check */
         DoubleSupplier tolerance = pref("Launcher/ToleranceRPM", 100.0);
 

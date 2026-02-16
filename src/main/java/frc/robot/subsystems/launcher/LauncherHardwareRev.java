@@ -24,37 +24,45 @@ public class LauncherHardwareRev implements LauncherHardware {
     public static final boolean FEEDER_LEFT_INVERTED = true;
     public static final boolean FEEDER_RIGHT_INVERTED = false;
     public static final boolean SHOOTER_INVERTED = false;
+    public static final boolean FLAPPER_INVERTED = false;
 
     public static final int CURRENT_LIMIT = 60;
 
     private final SparkMax feederLeftMotor;
     private final SparkMax feederRightMotor;
     private final SparkMax shooterMotor;
+    private final SparkMax flapperMotor;
 
     private final RelativeEncoder feederLeftEncoder;
     private final RelativeEncoder feederRightEncoder;
     private final RelativeEncoder shooterEncoder;
+    private final RelativeEncoder flapperEncoder;
 
     private final SparkClosedLoopController feederLeftController;
     private final SparkClosedLoopController feederRightController;
     private final SparkClosedLoopController shooterController;
+    private final SparkClosedLoopController flapperController;
 
     private final SparkMaxConfig feederLeftConfig;
     private final SparkMaxConfig feederRightConfig;
     private final SparkMaxConfig shooterConfig;
+    private final SparkMaxConfig flapperConfig;
 
-    public LauncherHardwareRev(int feederLeftCanId, int feederRightCanId, int shooterCanId) {
+    public LauncherHardwareRev(int feederLeftCanId, int feederRightCanId, int shooterCanId, int flapperCanId) {
         feederLeftMotor = new SparkMax(feederLeftCanId, MotorType.kBrushless);
         feederRightMotor = new SparkMax(feederRightCanId, MotorType.kBrushless);
         shooterMotor = new SparkMax(shooterCanId, MotorType.kBrushless);
+        flapperMotor = new SparkMax(flapperCanId, MotorType.kBrushless);
 
         feederLeftEncoder = feederLeftMotor.getEncoder();
         feederRightEncoder = feederRightMotor.getEncoder();
         shooterEncoder = shooterMotor.getEncoder();
+        flapperEncoder = flapperMotor.getEncoder();
 
         feederLeftController = feederLeftMotor.getClosedLoopController();
         feederRightController = feederRightMotor.getClosedLoopController();
         shooterController = shooterMotor.getClosedLoopController();
+        flapperController = flapperMotor.getClosedLoopController();
 
         // feeder motors get independent PID gains
         feederLeftConfig = createMotorConfig(FEEDER_LEFT_INVERTED,
@@ -73,6 +81,13 @@ public class LauncherHardwareRev implements LauncherHardware {
         shooterConfig = createMotorConfig(SHOOTER_INVERTED,
                 shooterKV.getAsDouble(), shooterKP.getAsDouble());
         shooterMotor.configure(shooterConfig,
+                ResetMode.kResetSafeParameters,
+                PersistMode.kPersistParameters);
+
+        // flapper has its own PID gains
+        flapperConfig = createMotorConfig(FLAPPER_INVERTED,
+                flapperKV.getAsDouble(), flapperKP.getAsDouble());
+        flapperMotor.configure(flapperConfig,
                 ResetMode.kResetSafeParameters,
                 PersistMode.kPersistParameters);
     }
@@ -141,6 +156,26 @@ public class LauncherHardwareRev implements LauncherHardware {
     @Override
     public double getShooterAmps() {
         return shooterMotor.getOutputCurrent();
+    }
+
+    @Override
+    public void setFlapperRPM(double rpm) {
+        setMotorRPM(flapperMotor, flapperController, rpm);
+    }
+
+    @Override
+    public double getFlapperRPM() {
+        return flapperEncoder.getVelocity();
+    }
+
+    @Override
+    public double getFlapperAmps() {
+        return flapperMotor.getOutputCurrent();
+    }
+
+    @Override
+    public void resetFlapperPID(double kV, double kP, double kI, double kD) {
+        applyPID(flapperConfig, flapperMotor, FLAPPER_INVERTED, kV, kP, kI, kD);
     }
 
     @Override

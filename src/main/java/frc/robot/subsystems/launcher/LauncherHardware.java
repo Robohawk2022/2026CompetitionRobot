@@ -65,10 +65,30 @@ public interface LauncherHardware {
      */
     void resetShooterPID(double kV, double kP, double kI, double kD);
 
-    /** Stops all three motors */
+    /**
+     * Sets the target RPM for the flapper using onboard velocity PID.
+     *
+     * @param rpm target RPM (positive = flap balls away from brushes)
+     */
+    void setFlapperRPM(double rpm);
+
+    /** @return flapper motor velocity in RPM */
+    double getFlapperRPM();
+
+    /** @return flapper motor current in amps */
+    double getFlapperAmps();
+
+    /**
+     * Resets/reconfigures the flapper onboard velocity PID.
+     * Call this when starting a command to pick up live-tuned values.
+     */
+    void resetFlapperPID(double kV, double kP, double kI, double kD);
+
+    /** Stops all motors */
     default void stopAll() {
         setFeederLeftRPM(0);
         setFeederRightRPM(0);
         setShooterRPM(0);
+        setFlapperRPM(0);
     }
 }

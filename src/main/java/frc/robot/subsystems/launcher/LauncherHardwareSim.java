@@ -13,6 +13,7 @@ public class LauncherHardwareSim implements LauncherHardware {
     private double feederLeftRPM, feederLeftTargetRPM;
     private double feederRightRPM, feederRightTargetRPM;
     private double shooterRPM, shooterTargetRPM;
+    private double flapperRPM, flapperTargetRPM;
 
     private double updateMotor(double current, double target) {
         double clamped = Math.max(-MAX_RPM, Math.min(MAX_RPM, target));
@@ -43,22 +44,33 @@ public class LauncherHardwareSim implements LauncherHardware {
         shooterRPM = updateMotor(shooterRPM, shooterTargetRPM);
     }
 
+    @Override
+    public void setFlapperRPM(double rpm) {
+        flapperTargetRPM = rpm;
+        flapperRPM = updateMotor(flapperRPM, flapperTargetRPM);
+    }
+
     @Override public void resetFeederLeftPID(double kV, double kP, double kI, double kD) { }
     @Override public void resetFeederRightPID(double kV, double kP, double kI, double kD) { }
     @Override public void resetShooterPID(double kV, double kP, double kI, double kD) { }
+    @Override public void resetFlapperPID(double kV, double kP, double kI, double kD) { }
 
     @Override public double getFeederLeftRPM() { return feederLeftRPM; }
     @Override public double getFeederRightRPM() { return feederRightRPM; }
     @Override public double getShooterRPM() { return shooterRPM; }
 
+    @Override public double getFlapperRPM() { return flapperRPM; }
+
     @Override public double getFeederLeftAmps() { return simulateAmps(feederLeftRPM, feederLeftTargetRPM); }
     @Override public double getFeederRightAmps() { return simulateAmps(feederRightRPM, feederRightTargetRPM); }
     @Override public double getShooterAmps() { return simulateAmps(shooterRPM, shooterTargetRPM); }
+    @Override public double getFlapperAmps() { return simulateAmps(flapperRPM, flapperTargetRPM); }
 
     @Override
     public void stopAll() {
         feederLeftTargetRPM = 0; feederLeftRPM *= 0.1;
         feederRightTargetRPM = 0; feederRightRPM *= 0.1;
         shooterTargetRPM = 0; shooterRPM *= 0.1;
+        flapperTargetRPM = 0; flapperRPM *= 0.1;
     }
 }

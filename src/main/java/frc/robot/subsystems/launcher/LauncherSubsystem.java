@@ -34,8 +34,8 @@ public class LauncherSubsystem extends SubsystemBase {
     final LauncherHardware hardware;
 
     String currentMode;
-    double feederLeftRPM, feederRightRPM, currentShooterRPM;
-    double feederLeftTarget, feederRightTarget, shooterTarget;
+    double feederLeftRPM, feederRightRPM, currentShooterRPM, flapperRPM;
+    double feederLeftTarget, feederRightTarget, shooterTarget, flapperTarget;
 
     /**
      * Creates a {@link LauncherSubsystem}.
@@ -56,11 +56,14 @@ public class LauncherSubsystem extends SubsystemBase {
             builder.addDoubleProperty("FeederRightTarget", () -> feederRightTarget, null);
             builder.addDoubleProperty("ShooterCurrent", () -> Util.chopDigits(currentShooterRPM), null);
             builder.addDoubleProperty("ShooterTarget", () -> shooterTarget, null);
+            builder.addDoubleProperty("FlapperCurrent", () -> Util.chopDigits(flapperRPM), null);
+            builder.addDoubleProperty("FlapperTarget", () -> flapperTarget, null);
 
             if (verboseLogging) {
                 builder.addDoubleProperty("FeederLeftAmps", hardware::getFeederLeftAmps, null);
                 builder.addDoubleProperty("FeederRightAmps", hardware::getFeederRightAmps, null);
                 builder.addDoubleProperty("ShooterAmps", hardware::getShooterAmps, null);
+                builder.addDoubleProperty("FlapperAmps", hardware::getFlapperAmps, null);
             }
         });
     }
@@ -70,6 +73,7 @@ public class LauncherSubsystem extends SubsystemBase {
         feederLeftRPM = hardware.getFeederLeftRPM();
         feederRightRPM = hardware.getFeederRightRPM();
         currentShooterRPM = hardware.getShooterRPM();
+        flapperRPM = hardware.getFlapperRPM();
     }
 
     /** @return the current command mode (e.g. "idle", "intake", "shoot") */
@@ -88,24 +92,29 @@ public class LauncherSubsystem extends SubsystemBase {
                 && Math.abs(feederRightRPM - feederRightTarget) <= tol);
         boolean shooterOk = shooterTarget == 0
             || Math.abs(currentShooterRPM - shooterTarget) <= tol;
+        boolean flapperOk = flapperTarget == 0
+            || Math.abs(flapperRPM - flapperTarget) <= tol;
         // at least one motor must be running
-        return (feederLeftTarget != 0 || shooterTarget != 0) && feedersOk && shooterOk;
+        return (feederLeftTarget != 0 || shooterTarget != 0 || flapperTarget != 0)
+            && feedersOk && shooterOk && flapperOk;
     }
 
     /** Maximum safe RPM for NEO motors (free speed is 5676) */
     static final double MAX_RPM = 5700;
 
     /**
-     * Sends RPM targets to all three motors via onboard PID.
+     * Sends RPM targets to all four motors via onboard PID.
      * Clamps values to NEO safe range.
      */
-    private void driveMotors(double feederLeft, double feederRight, double shooter) {
+    private void driveMotors(double feederLeft, double feederRight, double shooter, double flapper) {
         feederLeftTarget = MathUtil.clamp(feederLeft, -MAX_RPM, MAX_RPM);
         feederRightTarget = MathUtil.clamp(feederRight, -MAX_RPM, MAX_RPM);
         shooterTarget = MathUtil.clamp(shooter, -MAX_RPM, MAX_RPM);
+        flapperTarget = MathUtil.clamp(flapper, -MAX_RPM, MAX_RPM);
         hardware.setFeederLeftRPM(feederLeftTarget);
         hardware.setFeederRightRPM(feederRightTarget);
         hardware.setShooterRPM(shooterTarget);
+        hardware.setFlapperRPM(flapperTarget);
     }
 
     /**
@@ -118,6 +127,8 @@ public class LauncherSubsystem extends SubsystemBase {
             feederRightKV.getAsDouble(), feederRightKP.getAsDouble(), 0, feederRightKD.getAsDouble());
         hardware.resetShooterPID(
             shooterKV.getAsDouble(), shooterKP.getAsDouble(), 0, shooterKD.getAsDouble());
+        hardware.resetFlapperPID(
+            flapperKV.getAsDouble(), flapperKP.getAsDouble(), 0, flapperKD.getAsDouble());
     }
 
     private void cleanup() {
@@ -125,6 +136,7 @@ public class LauncherSubsystem extends SubsystemBase {
         feederLeftTarget = 0;
         feederRightTarget = 0;
         shooterTarget = 0;
+        flapperTarget = 0;
         currentMode = "idle";
     }
 
@@ -153,7 +165,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "intake";
                 applyPIDGains();
             },
-            () -> driveMotors(FEEDER_RPM, FEEDER_RPM, SHOOTER_INTAKE_RPM)
+            () -> driveMotors(FEEDER_RPM, FEEDER_RPM, SHOOTER_INTAKE_RPM, FLAPPER_RPM)
         ).finallyDo(interrupted -> cleanup());
     }
 
@@ -168,7 +180,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "eject";
                 applyPIDGains();
             },
-            () -> driveMotors(-FEEDER_RPM, -FEEDER_RPM, 0)
+            () -> driveMotors(-FEEDER_RPM, -FEEDER_RPM, 0, 0)
         ).finallyDo(interrupted -> cleanup());
     }
 
@@ -184,7 +196,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "shoot";
                 applyPIDGains();
             },
-            () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, shooterRPM.getAsDouble())
+            () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, shooterRPM.getAsDouble(), 0)
         ).finallyDo(interrupted -> cleanup());
     }
 

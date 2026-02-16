@@ -33,6 +33,7 @@ public class LauncherTestbot extends TimedRobot {
     public static final int FEEDER_LEFT_CAN_ID = 32;
     public static final int FEEDER_RIGHT_CAN_ID = 11;
     public static final int SHOOTER_CAN_ID = 60;
+    public static final int FLAPPER_CAN_ID = 30;
     public static final int LED_PWM_PORT = 0;
 
     private LauncherSubsystem launcher;
@@ -52,7 +53,8 @@ public class LauncherTestbot extends TimedRobot {
                 : new LauncherHardwareRev(
                         FEEDER_LEFT_CAN_ID,
                         FEEDER_RIGHT_CAN_ID,
-                        SHOOTER_CAN_ID));
+                        SHOOTER_CAN_ID,
+                        FLAPPER_CAN_ID));
         led = new LEDSubsystem(sim
                 ? new LEDHardwareSim()
                 : new LEDHardwareBlinkin(LED_PWM_PORT));
