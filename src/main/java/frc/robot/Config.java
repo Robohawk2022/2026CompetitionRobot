@@ -357,7 +357,7 @@ public interface Config {
         double SHOOTER_INTAKE_RPM = 1000.0;
 
         /** Shooter RPM for shooting (much higher than feeders) */
-        double SHOOTER_RPM = 2000.0;
+        DoubleSupplier shooterRPM = pref("Launcher/ShooterRPM", 2500.0);
 
         //=======================================================================
         // Motor configuration
@@ -368,7 +368,7 @@ public interface Config {
         boolean SHOOTER_INVERTED = false;
 
         /** Current limit for all launcher motors in amps */
-        DoubleSupplier currentLimit = pref("Launcher/CurrentLimit", 40.0);
+        DoubleSupplier currentLimit = pref("Launcher/CurrentLimit", 80.0);
 
         /** RPM tolerance for "at speed" check */
         DoubleSupplier tolerance = pref("Launcher/ToleranceRPM", 100.0);

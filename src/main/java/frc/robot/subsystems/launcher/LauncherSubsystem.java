@@ -179,7 +179,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "shoot";
                 applyPIDGains();
             },
-            () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, SHOOTER_RPM)
+            () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, shooterRPM.getAsDouble())
         ).finallyDo(interrupted -> cleanup());
     }
 
