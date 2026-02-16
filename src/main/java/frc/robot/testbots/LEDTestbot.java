@@ -106,7 +106,7 @@ public class LEDTestbot extends TimedRobot {
         System.out.println("    D-pad Down = Target Searching");
         System.out.println("    D-pad Left = Shoot Range Far");
         System.out.println("    D-pad Right = Shoot Range Close");
-        System.out.println("");
+        System.out.println();
         System.out.println(">>> Use Elastic 'LED/SignalChooser' to test any signal!");
     }
 

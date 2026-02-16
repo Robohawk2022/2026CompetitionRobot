@@ -234,30 +234,6 @@ public interface Config {
 
 //endregion
 
-//region Shooter ---------------------------------------------------------------
-
-    interface Shooter {
-
-        /** Physical properties of the mechanism */
-        double gearRatio = 1.0 / 3.0;
-        double wheelDiameter = 4.0 / 12.0;
-        double wheelCircumference = wheelDiameter * Math.PI;
-
-        /** Feedforward/feedback constants for speed */
-        DoubleSupplier p = pref("ShooterSubsystem/kP", 0.0);
-        DoubleSupplier d = pref("ShooterSubsystem/kD", 0.0);
-        DoubleSupplier v = pref("ShooterSubsystem/kV", 0.0);
-        DoubleSupplier tolerance = pref("ShooterSubsystem/Tolerance", 0.0);
-
-        /** Preset speeds in feet per seconds */
-        DoubleSupplier speed1 = pref("ShooterPresets/Speed1", 10.0);
-        DoubleSupplier speed2 = pref("ShooterPresets/Speed1", 20.0);
-        DoubleSupplier speed3 = pref("ShooterPresets/Speed3", 3.0);
-
-    }
-
-//endregion
-
 //region Intake ----------------------------------------------------------------
 
     interface IntakeFront {
@@ -313,57 +289,89 @@ public interface Config {
 
 //endregion
 
-//region HubberdShooter ---------------------------------------------------------
+//region Launcher --------------------------------------------------------------
 
     /**
-     * Configuration for the HubberdShooter subsystem.
+     * Configuration for the Launcher subsystem.
      * <p>
-     * Two Falcon 500 motors that can operate in four modes:
+     * Three NEO motors on SparkMax:
      * <ul>
-     *   <li>Off - Motors stopped</li>
-     *   <li>Intake - Both motors same direction at 20% power</li>
-     *   <li>Outtake - Both motors opposite direction at 20% power</li>
-     *   <li>Shooting - Motors counter-rotate at 600 RPM</li>
+     *   <li>2 feeder motors (bottom, facing each other) — spin inward to pull balls in</li>
+     *   <li>1 shooter motor (top) — flings balls out at high speed</li>
      * </ul>
+     * Feeders have ~3:1 gearboxes, shooter has no gearbox.
+     * All use closed-loop velocity control (SparkMax onboard PID).
      */
-    interface HubberdShooter {
-
-        /** CAN IDs for the shooter motors */
-        int MOTOR_1_CAN_ID = 51;
-        int MOTOR_2_CAN_ID = 52;
+    interface Launcher {
 
         //=======================================================================
-        // Power settings (percentage 0-100)
+        // CAN IDs
         //=======================================================================
 
-        /** Power for intake mode (both motors same direction) */
-        DoubleSupplier intakePower = pref("HubberdShooter/IntakePower%", 20.0);
+        int FEEDER_LEFT_CAN_ID = 32;
+        int FEEDER_RIGHT_CAN_ID = 11;
+        int SHOOTER_CAN_ID = 60;
 
-        /** Power for outtake mode (both motors same direction, reversed) */
-        DoubleSupplier outtakePower = pref("HubberdShooter/OuttakePower%", 20.0);
+        //=======================================================================
+        // Gear ratios (for reference)
+        //=======================================================================
 
-        /** Power for shooting mode (motors counter-rotate) */
-        DoubleSupplier shootingPower = pref("HubberdShooter/ShootingPower%", 50.0);
+        /** 4:1 * 3:1 = 12:1 total gear reduction per feeder */
+        double FEEDER_GEAR_RATIO = 12.0;
+
+        /** Shooter: dual NEO through 1:1 gearbox (no reduction) */
+        double SHOOTER_GEAR_RATIO = 1.0;
+
+        //=======================================================================
+        // Feeder Left velocity PID - closed loop (SparkMax onboard)
+        //=======================================================================
+
+        DoubleSupplier feederLeftKV = pref("Launcher/FeederLeft/kV", 0.00017);
+        DoubleSupplier feederLeftKP = pref("Launcher/FeederLeft/kP", 0.0004);
+
+        //=======================================================================
+        // Feeder Right velocity PID - closed loop (SparkMax onboard)
+        //=======================================================================
+
+        DoubleSupplier feederRightKV = pref("Launcher/FeederRight/kV", 0.000175);
+        DoubleSupplier feederRightKP = pref("Launcher/FeederRight/kP", 0.0004);
+
+        //=======================================================================
+        // Shooter velocity PID - closed loop (SparkMax onboard)
+        //=======================================================================
+
+        DoubleSupplier shooterKV = pref("Launcher/Shooter/kV", 0.0002);
+        DoubleSupplier shooterKP = pref("Launcher/Shooter/kP", 0.0005);
+
+        //=======================================================================
+        // RPM targets
+        //=======================================================================
+
+        /** Feeder RPM for intake (pulling balls in) */
+        double FEEDER_RPM = 2000.0;
+
+        /** Feeder RPM when feeding balls to shooter during a shot */
+        double FEED_SHOOT_RPM = 4000.0;
+
+        /** Shooter RPM during intake (low speed, just enough to help pull balls in) */
+        double SHOOTER_INTAKE_RPM = 1000.0;
+
+        /** Shooter RPM for shooting (much higher than feeders) */
+        DoubleSupplier shooterRPM = pref("Launcher/ShooterRPM", 2525.0);
 
         //=======================================================================
         // Motor configuration
         //=======================================================================
 
-        /** Invert motor 1 direction */
-        BooleanSupplier motor1Inverted = pref("HubberdShooter/Motor1Inverted?", false);
+        boolean FEEDER_LEFT_INVERTED = true;
+        boolean FEEDER_RIGHT_INVERTED = false;
+        boolean SHOOTER_INVERTED = false;
 
-        /** Invert motor 2 direction */
-        BooleanSupplier motor2Inverted = pref("HubberdShooter/Motor2Inverted?", false);
+        /** Current limit for all launcher motors in amps */
+        DoubleSupplier currentLimit = pref("Launcher/CurrentLimit", 80.0);
 
-        //=======================================================================
-        // Current limits
-        //=======================================================================
-
-        /** Stator current limit in amps */
-        DoubleSupplier statorCurrentLimit = pref("HubberdShooter/StatorCurrentLimit", 60.0);
-
-        /** Supply current limit in amps */
-        DoubleSupplier supplyCurrentLimit = pref("HubberdShooter/SupplyCurrentLimit", 40.0);
+        /** RPM tolerance for "at speed" check */
+        DoubleSupplier tolerance = pref("Launcher/ToleranceRPM", 100.0);
 
     }
 

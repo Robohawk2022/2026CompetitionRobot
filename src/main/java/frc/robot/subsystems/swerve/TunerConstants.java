@@ -85,6 +85,14 @@ public class TunerConstants {
     private static final Voltage kSteerFrictionVoltage = Volts.of(0.2);
     private static final Voltage kDriveFrictionVoltage = Volts.of(0.2);
 
+    // PathPlanner PID gains for path following (from CTRE example)
+    public static final double kPathTranslationP = 10.0;
+    public static final double kPathTranslationI = 0.0;
+    public static final double kPathTranslationD = 0.0;
+    public static final double kPathRotationP = 7.0;
+    public static final double kPathRotationI = 0.0;
+    public static final double kPathRotationD = 0.0;
+
     // Drivetrain constants
     public static final SwerveDrivetrainConstants DrivetrainConstants = new SwerveDrivetrainConstants()
             .withCANBusName(kCANBus.getName())

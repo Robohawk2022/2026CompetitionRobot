@@ -78,28 +78,13 @@ public class LimelightSim {
 
     /**
      * Represents a detected AprilTag with its metrics.
+     *
+     * @param tx   horizontal angle in degrees
+     * @param ty   vertical angle in degrees
+     * @param area area as percentage of image (0-100)
      */
-    private static class DetectedTag {
-        final int id;
-        final double distanceToCamera;
-        final double distanceToRobot;
-        final double tx;  // horizontal angle in degrees
-        final double ty;  // vertical angle in degrees
-        final double area; // area as percentage of image (0-100)
-        final double ambiguity;
-        final Pose3d tagPose;
-
-        DetectedTag(int id, double distanceToCamera, double distanceToRobot,
-                    double tx, double ty, double area, double ambiguity, Pose3d tagPose) {
-            this.id = id;
-            this.distanceToCamera = distanceToCamera;
-            this.distanceToRobot = distanceToRobot;
-            this.tx = tx;
-            this.ty = ty;
-            this.area = area;
-            this.ambiguity = ambiguity;
-            this.tagPose = tagPose;
-        }
+        private record DetectedTag(int id, double distanceToCamera, double distanceToRobot, double tx, double ty,
+                                   double area, double ambiguity, Pose3d tagPose) {
     }
 
     /**

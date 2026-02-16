@@ -57,6 +57,14 @@ public class Util {
 //region Miscellaneous math ----------------------------------------------------
 
     /**
+     * @param value an input value
+     * @return the value chopped to two decimal places
+     */
+    public static double chopDigits(double value) {
+        return Math.floor(value * 100.0) / 100.0;
+    }
+
+    /**
      * @param volts a voltage value
      * @return the supplied value, clamped to +/- 12 volts
      */

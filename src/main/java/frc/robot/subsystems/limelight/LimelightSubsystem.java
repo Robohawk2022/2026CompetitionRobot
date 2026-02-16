@@ -52,6 +52,15 @@ public class LimelightSubsystem extends SubsystemBase {
     Pose2d latestTagPose;
     Pose2d latestTargetPose;
     long restrictedTag;
+    long noEstimate;
+    long noTags;
+    long poseOutsideField;
+    long poseJumpTooBig;
+    long lowConfidenceCount;
+    long highConfidenceCount;
+    long mediumConfidenceCount;
+    boolean forceResetPose;
+    boolean estimateSuccessful;
     boolean resetPose;
 
     /**
@@ -66,13 +75,15 @@ public class LimelightSubsystem extends SubsystemBase {
         this.results = new LimelightResults();
         this.latestEstimate = null;
         this.latestTagPose = null;
+        this.forceResetPose = false;
+        this.estimateSuccessful = false;
 
         SmartDashboard.putData("LimelightSubsystem", builder -> {
             builder.addIntegerProperty("RestrictedTag", () -> restrictedTag, null);
             builder.addBooleanProperty("TooFast?", () -> spinningTooFast, null);
-            builder.addBooleanProperty("HasEstimate?", () -> results.validEstimate, null);
+            builder.addBooleanProperty("HasEstimate?", () -> estimateSuccessful, null);
             builder.addBooleanProperty("HasTarget?", latestTarget::isValid, null);
-            builder.addBooleanProperty("ResetPose?", () -> resetPose, val -> resetPose = val);
+            builder.addBooleanProperty("ResetPose?", () -> forceResetPose, val -> forceResetPose = val);
             if (verboseLogging) {
                 latestTarget.addToDashboard(builder);
                 results.addToDashboard(builder);
@@ -196,6 +207,7 @@ public class LimelightSubsystem extends SubsystemBase {
 
         latestEstimate = null;
         latestTagPose = null;
+        estimateSuccessful = false;
 
         // if we're spinning too fast, there's nothing to do
         if (spinningTooFast) {
@@ -216,12 +228,23 @@ public class LimelightSubsystem extends SubsystemBase {
             return;
         }
 
+        latestEstimate = estimate.pose;
+
         // if the pose is outside the field, there's no use dealing with it
         if (Field.isOutsideField(estimate.pose)) {
             results.poseOutsideField();
             return;
         }
 
+        // if we're resetting the robot's pose, we will do that now with the
+        // estimate we have
+        if (forceResetPose) {
+            swerve.resetPose(estimate.pose);
+            forceResetPose = false;
+        }
+
+        // if the pose is too far from the current pose, we don't submit it ...
+        // UNLESS a pose reset has been requested
         // we'll remember where the latest estimate and latest tag pose are
         latestEstimate = estimate.pose;
         latestTagPose = Field.getTagPose(estimate.rawFiducials[0].id);
@@ -264,6 +287,8 @@ public class LimelightSubsystem extends SubsystemBase {
 
         // we're good to go!
         swerve.submitVisionEstimate(estimate.pose, estimate.timestampSeconds, confidence);
+        estimateSuccessful = true;
+        latestTagPose = Field.getTagPose(estimate.rawFiducials[0].id);
     }
 
 //endregion
@@ -271,7 +296,7 @@ public class LimelightSubsystem extends SubsystemBase {
 //region Pose estimate ---------------------------------------------------------
 
     public Command resetPoseFromVisionCommand() {
-        return runOnce(() -> resetPose = true);
+        return runOnce(() -> forceResetPose = true);
     }
 
 //endregion
