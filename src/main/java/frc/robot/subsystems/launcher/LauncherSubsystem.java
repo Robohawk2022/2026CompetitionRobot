@@ -108,19 +108,11 @@ public class LauncherSubsystem extends SubsystemBase {
      */
     private void applyPIDGains() {
         hardware.resetFeederLeftPID(
-            feederLeftKV.getAsDouble(),
-            feederLeftKP.getAsDouble(),
-            0, 0);
-
+            feederLeftKV.getAsDouble(), feederLeftKP.getAsDouble(), 0, 0);
         hardware.resetFeederRightPID(
-            feederRightKV.getAsDouble(),
-            feederRightKP.getAsDouble(),
-            0, 0);
-
+            feederRightKV.getAsDouble(), feederRightKP.getAsDouble(), 0, 0);
         hardware.resetShooterPID(
-            shooterKV.getAsDouble(),
-            shooterKP.getAsDouble(),
-            0, 0);
+            shooterKV.getAsDouble(), shooterKP.getAsDouble(), 0, 0);
     }
 
     private void cleanup() {
@@ -156,10 +148,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "intake";
                 applyPIDGains();
             },
-            () -> {
-                double rpm = feederRPM.getAsDouble();
-                driveMotors(rpm, rpm, shooterIntakeRPM.getAsDouble());
-            }
+            () -> driveMotors(FEEDER_RPM, FEEDER_RPM, SHOOTER_INTAKE_RPM)
         ).finallyDo(interrupted -> cleanup());
     }
 
@@ -174,10 +163,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "eject";
                 applyPIDGains();
             },
-            () -> {
-                double rpm = feederRPM.getAsDouble();
-                driveMotors(-rpm, -rpm, 0);
-            }
+            () -> driveMotors(-FEEDER_RPM, -FEEDER_RPM, 0)
         ).finallyDo(interrupted -> cleanup());
     }
 
@@ -193,11 +179,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "shoot";
                 applyPIDGains();
             },
-            () -> {
-                double feed = feedShootRPM.getAsDouble();
-                double shoot = shooterRPM.getAsDouble();
-                driveMotors(feed, feed, shoot);
-            }
+            () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, SHOOTER_RPM)
         ).finallyDo(interrupted -> cleanup());
     }
 
