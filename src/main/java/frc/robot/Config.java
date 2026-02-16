@@ -319,6 +319,9 @@ public interface Config {
         /** 4:1 * 3:1 = 12:1 total gear reduction per feeder */
         double FEEDER_GEAR_RATIO = 12.0;
 
+        /** Shooter: dual NEO through 1:1 gearbox (no reduction) */
+        double SHOOTER_GEAR_RATIO = 1.0;
+
         //=======================================================================
         // Feeder Left velocity PID - closed loop (SparkMax onboard)
         //=======================================================================
