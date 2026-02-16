@@ -356,9 +356,9 @@ public interface Config {
         // Motor configuration
         //=======================================================================
 
-        BooleanSupplier feederLeftInverted = pref("Launcher/FeederLeftInverted?", true);
-        BooleanSupplier feederRightInverted = pref("Launcher/FeederRightInverted?", false);
-        BooleanSupplier shooterInverted = pref("Launcher/ShooterInverted?", false);
+        boolean FEEDER_LEFT_INVERTED = true;
+        boolean FEEDER_RIGHT_INVERTED = false;
+        boolean SHOOTER_INVERTED = false;
 
         /** Current limit for all launcher motors in amps */
         DoubleSupplier currentLimit = pref("Launcher/CurrentLimit", 40.0);

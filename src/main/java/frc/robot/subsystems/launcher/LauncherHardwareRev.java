@@ -50,20 +50,20 @@ public class LauncherHardwareRev implements LauncherHardware {
         shooterController = shooterMotor.getClosedLoopController();
 
         // feeder motors get independent PID gains
-        feederLeftConfig = createMotorConfig(feederLeftInverted.getAsBoolean(),
+        feederLeftConfig = createMotorConfig(FEEDER_LEFT_INVERTED,
                 feederLeftKV.getAsDouble(), feederLeftKP.getAsDouble());
         feederLeftMotor.configure(feederLeftConfig,
                 SparkBase.ResetMode.kResetSafeParameters,
                 SparkBase.PersistMode.kPersistParameters);
 
-        feederRightConfig = createMotorConfig(feederRightInverted.getAsBoolean(),
+        feederRightConfig = createMotorConfig(FEEDER_RIGHT_INVERTED,
                 feederRightKV.getAsDouble(), feederRightKP.getAsDouble());
         feederRightMotor.configure(feederRightConfig,
                 SparkBase.ResetMode.kResetSafeParameters,
                 SparkBase.PersistMode.kPersistParameters);
 
         // shooter has its own PID gains
-        shooterConfig = createMotorConfig(shooterInverted.getAsBoolean(),
+        shooterConfig = createMotorConfig(SHOOTER_INVERTED,
                 shooterKV.getAsDouble(), shooterKP.getAsDouble());
         shooterMotor.configure(shooterConfig,
                 SparkBase.ResetMode.kResetSafeParameters,
@@ -138,17 +138,17 @@ public class LauncherHardwareRev implements LauncherHardware {
 
     @Override
     public void resetFeederLeftPID(double kV, double kP, double kI, double kD) {
-        applyPID(feederLeftConfig, feederLeftMotor, feederLeftInverted.getAsBoolean(), kV, kP, kI, kD);
+        applyPID(feederLeftConfig, feederLeftMotor, FEEDER_LEFT_INVERTED, kV, kP, kI, kD);
     }
 
     @Override
     public void resetFeederRightPID(double kV, double kP, double kI, double kD) {
-        applyPID(feederRightConfig, feederRightMotor, feederRightInverted.getAsBoolean(), kV, kP, kI, kD);
+        applyPID(feederRightConfig, feederRightMotor, FEEDER_RIGHT_INVERTED, kV, kP, kI, kD);
     }
 
     @Override
     public void resetShooterPID(double kV, double kP, double kI, double kD) {
-        applyPID(shooterConfig, shooterMotor, shooterInverted.getAsBoolean(), kV, kP, kI, kD);
+        applyPID(shooterConfig, shooterMotor, SHOOTER_INVERTED, kV, kP, kI, kD);
     }
 
     private void applyPID(SparkMaxConfig config, SparkMax motor, boolean inverted,
