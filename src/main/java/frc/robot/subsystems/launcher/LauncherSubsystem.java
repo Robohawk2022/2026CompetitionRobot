@@ -5,7 +5,7 @@ import java.util.Objects;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
+import frc.robot.util.Util;
 import edu.wpi.first.math.MathUtil;
 
 import static frc.robot.Config.Launcher.*;
@@ -85,12 +85,12 @@ public class LauncherSubsystem extends SubsystemBase {
         SmartDashboard.putData(getName(), builder -> {
             builder.addStringProperty("Mode", () -> currentMode, null);
 
-            builder.addDoubleProperty("LowerWheelCurrent", () -> lowerWheelRPM, null);
+            builder.addDoubleProperty("LowerWheelCurrent", () -> Util.chopDigits(lowerWheelRPM), null);
             builder.addDoubleProperty("LowerWheelTarget", () -> lowerTargetRPM, null);
-            builder.addDoubleProperty("LowerWheelError", () -> lowerTargetRPM - lowerWheelRPM, null);
-            builder.addDoubleProperty("UpperWheelCurrent", () -> upperWheelRPM, null);
+            builder.addDoubleProperty("LowerWheelError", () -> Util.chopDigits(lowerTargetRPM - lowerWheelRPM), null);
+            builder.addDoubleProperty("UpperWheelCurrent", () -> Util.chopDigits(upperWheelRPM), null);
             builder.addDoubleProperty("UpperWheelTarget", () -> upperTargetRPM, null);
-            builder.addDoubleProperty("UpperWheelError", () -> upperTargetRPM - upperWheelRPM, null);
+            builder.addDoubleProperty("UpperWheelError", () -> Util.chopDigits(upperTargetRPM - upperWheelRPM), null);
 
             builder.addBooleanProperty("AtSpeed?", this::atSpeed, null);
 
