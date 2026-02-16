@@ -340,8 +340,8 @@ public interface Config {
         // Shooter velocity PID - closed loop (SparkMax onboard)
         //=======================================================================
 
-        DoubleSupplier shooterKV = pref("Launcher/Shooter/kV", 0.01);
-        DoubleSupplier shooterKP = pref("Launcher/Shooter/kP", 0.002);
+        DoubleSupplier shooterKV = pref("Launcher/Shooter/kV", 0.002);
+        DoubleSupplier shooterKP = pref("Launcher/Shooter/kP", 0.005);
 
         //=======================================================================
         // RPM targets
