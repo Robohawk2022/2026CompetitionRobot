@@ -48,10 +48,16 @@ public interface LauncherHardware {
     double getShooterAmps();
 
     /**
-     * Resets/reconfigures the feeder onboard velocity PID (both motors).
+     * Resets/reconfigures the left feeder onboard velocity PID.
      * Call this when starting a command to pick up live-tuned values.
      */
-    void resetFeederPID(double kV, double kP, double kI, double kD);
+    void resetFeederLeftPID(double kV, double kP, double kI, double kD);
+
+    /**
+     * Resets/reconfigures the right feeder onboard velocity PID.
+     * Call this when starting a command to pick up live-tuned values.
+     */
+    void resetFeederRightPID(double kV, double kP, double kI, double kD);
 
     /**
      * Resets/reconfigures the shooter onboard velocity PID.

@@ -319,19 +319,25 @@ public interface Config {
         double FEEDER_GEAR_RATIO = 3.0;
 
         //=======================================================================
-        // Feeder velocity PID - closed loop (SparkMax onboard)
-        // Shared gains for both feeder motors (same mechanism)
+        // Feeder Left velocity PID - closed loop (SparkMax onboard)
         //=======================================================================
 
-        DoubleSupplier feederKV = pref("Launcher/Feeder/kV", 0.00017);
-        DoubleSupplier feederKP = pref("Launcher/Feeder/kP", 0.0004);
+        DoubleSupplier feederLeftKV = pref("Launcher/FeederLeft/kV", 0.00017);
+        DoubleSupplier feederLeftKP = pref("Launcher/FeederLeft/kP", 0.0004);
+
+        //=======================================================================
+        // Feeder Right velocity PID - closed loop (SparkMax onboard)
+        //=======================================================================
+
+        DoubleSupplier feederRightKV = pref("Launcher/FeederRight/kV", 0.00017);
+        DoubleSupplier feederRightKP = pref("Launcher/FeederRight/kP", 0.0004);
 
         //=======================================================================
         // Shooter velocity PID - closed loop (SparkMax onboard)
         //=======================================================================
 
-        DoubleSupplier shooterKV = pref("Launcher/Shooter/kV", 0.00017);
-        DoubleSupplier shooterKP = pref("Launcher/Shooter/kP", 0.0004);
+        DoubleSupplier shooterKV = pref("Launcher/Shooter/kV", 0.00018);
+        DoubleSupplier shooterKP = pref("Launcher/Shooter/kP", 0.00035);
 
         //=======================================================================
         // RPM targets

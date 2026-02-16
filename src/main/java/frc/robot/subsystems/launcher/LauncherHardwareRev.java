@@ -49,15 +49,15 @@ public class LauncherHardwareRev implements LauncherHardware {
         feederRightController = feederRightMotor.getClosedLoopController();
         shooterController = shooterMotor.getClosedLoopController();
 
-        // feeder motors share PID gains
+        // feeder motors get independent PID gains
         feederLeftConfig = createMotorConfig(feederLeftInverted.getAsBoolean(),
-                feederKV.getAsDouble(), feederKP.getAsDouble());
+                feederLeftKV.getAsDouble(), feederLeftKP.getAsDouble());
         feederLeftMotor.configure(feederLeftConfig,
                 SparkBase.ResetMode.kResetSafeParameters,
                 SparkBase.PersistMode.kPersistParameters);
 
         feederRightConfig = createMotorConfig(feederRightInverted.getAsBoolean(),
-                feederKV.getAsDouble(), feederKP.getAsDouble());
+                feederRightKV.getAsDouble(), feederRightKP.getAsDouble());
         feederRightMotor.configure(feederRightConfig,
                 SparkBase.ResetMode.kResetSafeParameters,
                 SparkBase.PersistMode.kPersistParameters);
@@ -137,9 +137,12 @@ public class LauncherHardwareRev implements LauncherHardware {
     }
 
     @Override
-    public void resetFeederPID(double kV, double kP, double kI, double kD) {
-        // apply to both feeder motors
+    public void resetFeederLeftPID(double kV, double kP, double kI, double kD) {
         applyPID(feederLeftConfig, feederLeftMotor, feederLeftInverted.getAsBoolean(), kV, kP, kI, kD);
+    }
+
+    @Override
+    public void resetFeederRightPID(double kV, double kP, double kI, double kD) {
         applyPID(feederRightConfig, feederRightMotor, feederRightInverted.getAsBoolean(), kV, kP, kI, kD);
     }
 

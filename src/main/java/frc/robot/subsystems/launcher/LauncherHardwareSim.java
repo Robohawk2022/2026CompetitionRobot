@@ -43,7 +43,8 @@ public class LauncherHardwareSim implements LauncherHardware {
         shooterRPM = updateMotor(shooterRPM, shooterTargetRPM);
     }
 
-    @Override public void resetFeederPID(double kV, double kP, double kI, double kD) { }
+    @Override public void resetFeederLeftPID(double kV, double kP, double kI, double kD) { }
+    @Override public void resetFeederRightPID(double kV, double kP, double kI, double kD) { }
     @Override public void resetShooterPID(double kV, double kP, double kI, double kD) { }
 
     @Override public double getFeederLeftRPM() { return feederLeftRPM; }
