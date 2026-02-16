@@ -316,7 +316,8 @@ public interface Config {
         // Gear ratios (for reference)
         //=======================================================================
 
-        double FEEDER_GEAR_RATIO = 3.0;
+        /** 4:1 * 3:1 = 12:1 total gear reduction per feeder */
+        double FEEDER_GEAR_RATIO = 12.0;
 
         //=======================================================================
         // Feeder Left velocity PID - closed loop (SparkMax onboard)
@@ -347,7 +348,7 @@ public interface Config {
         DoubleSupplier feederRPM = pref("Launcher/FeederRPM", 2000.0);
 
         /** Feeder RPM when feeding balls to shooter during a shot */
-        DoubleSupplier feedShootRPM = pref("Launcher/FeedShootRPM", 3000.0);
+        DoubleSupplier feedShootRPM = pref("Launcher/FeedShootRPM", 4000.0);
 
         /** Shooter RPM during intake (low speed, just enough to help pull balls in) */
         DoubleSupplier shooterIntakeRPM = pref("Launcher/ShooterIntakeRPM", 1000.0);
