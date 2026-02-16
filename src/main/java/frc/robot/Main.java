@@ -6,7 +6,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
-import frc.robot.testbots.LauncherTestbot;
+import frc.robot.testbots.HubbardShooterTestbot;
 import frc.robot.testbots.LEDTestbot;
 import frc.robot.testbots.IntakeFrontTestbot;
 import frc.robot.testbots.SysIdTestbot;
@@ -27,7 +27,7 @@ public final class Main {
         // RobotBase.startRobot(SwerveTestbot::new);
         // RobotBase.startRobot(VisionSimTestbot::new);
         // RobotBase.startRobot(Robot::new);
-        RobotBase.startRobot(LauncherTestbot::new);
+        RobotBase.startRobot(HubbardShooterTestbot::new);
     }
 }
 

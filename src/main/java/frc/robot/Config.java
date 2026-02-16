@@ -289,110 +289,46 @@ public interface Config {
 
 //endregion
 
-//region Launcher --------------------------------------------------------------
+//region HubbardShooter --------------------------------------------------------
 
     /**
-     * Configuration for the Launcher subsystem.
+     * Configuration for the HubbardShooter subsystem.
      * <p>
-     * Three NEO motors: agitator, lower wheel, upper wheel.
-     * The lower wheel doubles as intake by spinning backward.
-     * Different upper/lower wheel speeds control ball arc via Magnus effect.
-     * Wheels use closed-loop velocity control (feedforward + PD feedback).
-     * Agitator uses open-loop voltage control.
+     * Two NEO motors (CAN 51, 52) with 12:1 gear reduction (3:1 * 4:1).
+     * Open-loop voltage control for intake, outtake, and shooting modes.
      */
-    interface Launcher {
+    interface HubbardShooter {
 
-        // TODO update CAN IDs once the build team wires the motors
-        int LOWER_WHEEL_CAN_ID = 9;
-        int UPPER_WHEEL_CAN_ID = 8;
-
-        /** RPM for lower wheel during intake (85% of NEO free speed) */
-        DoubleSupplier intakeLowerRPM = pref("Launcher/IntakeLowerRPM", 4825.0);
-
-        /** RPM for upper wheel during intake (28% of NEO free speed, code negates) */
-        DoubleSupplier intakeUpperRPM = pref("Launcher/IntakeUpperRPM", 1589.0);
-
-        /** RPM for lower wheel during eject */
-        DoubleSupplier ejectSpeedRPM = pref("Launcher/EjectSpeedRPM", 2000.0);
+        /** CAN IDs for the shooter motors */
+        int MOTOR_1_CAN_ID = 51;
+        int MOTOR_2_CAN_ID = 52;
 
         //=======================================================================
-        // Lower wheel velocity PID - closed loop (SparkMax onboard)
+        // Power settings (percentage 0-100)
         //=======================================================================
 
-        /** Lower wheel feedforward: volts per RPM. Start with 12.0 / 5676 = ~0.002 for NEO.
-         *  Uses SparkMax feedForward.kV() API. */
-        DoubleSupplier lowerKV = pref("Launcher/Lower/kV", 0.0002);
-        DoubleSupplier lowerKP = pref("Launcher/Lower/kP", 0.0003);
-        DoubleSupplier lowerKI = pref("Launcher/Lower/kI", 0.0);
-        DoubleSupplier lowerKD = pref("Launcher/Lower/kD", 0.0);
+        /** Power for intake mode (both motors same direction) */
+        DoubleSupplier intakePower = pref("HubbardShooter/IntakePower%", 20.0);
 
-        //=======================================================================
-        // Upper wheel velocity PID - closed loop (SparkMax onboard)
-        //=======================================================================
+        /** Power for outtake mode (both motors same direction, reversed) */
+        DoubleSupplier outtakePower = pref("HubbardShooter/OuttakePower%", 20.0);
 
-        /** Upper wheel feedforward: volts per RPM. Start with 12.0 / 5676 = ~0.002 for NEO.
-         *  Uses SparkMax feedForward.kV() API. */
-        DoubleSupplier upperKV = pref("Launcher/Upper/kV", 0.0002);
-
-        /** Upper wheel proportional: duty cycle per RPM of error.
-         *  Small values! 0.0001 is a reasonable start. */
-        DoubleSupplier upperKP = pref("Launcher/Upper/kP", 0.0003);
-        DoubleSupplier upperKI = pref("Launcher/Upper/kI", 0.0);
-        DoubleSupplier upperKD = pref("Launcher/Upper/kD", 0.0);
-
-        //=======================================================================
-
-        /** RPM tolerance for "at speed" check */
-        DoubleSupplier tolerance = pref("Launcher/Wheels/ToleranceRPM", 100.0);
-
-        //=======================================================================
-        // Shot presets - target RPMs for lower/upper wheels
-        //=======================================================================
-
-        /** High arc: upper faster = backspin = more lift */
-        DoubleSupplier highArcLowerRPM = pref("Launcher/HighArc/LowerRPM", 2000.0);
-        DoubleSupplier highArcUpperRPM = pref("Launcher/HighArc/UpperRPM", 2000.0);
-
-        /** Flat shot: lower faster = topspin = flatter trajectory */
-        DoubleSupplier flatLowerRPM = pref("Launcher/Flat/LowerRPM", 2000.0);
-        DoubleSupplier flatUpperRPM = pref("Launcher/Flat/UpperRPM", 2000.0);
-
-        /** Neutral shot: 100% lower, 25% upper */
-        DoubleSupplier neutralLowerRPM = pref("Launcher/Neutral/LowerRPM", 2400.0);
-        DoubleSupplier neutralUpperRPM = pref("Launcher/Neutral/UpperRPM", 533.0);
+        /** Power for shooting mode (motors counter-rotate) */
+        DoubleSupplier shootingPower = pref("HubbardShooter/ShootingPower%", 50.0);
 
         //=======================================================================
         // Motor configuration
         //=======================================================================
 
-        BooleanSupplier lowerWheelInverted = pref("Launcher/LowerWheelInverted?", false);
-        BooleanSupplier upperWheelInverted = pref("Launcher/UpperWheelInverted?", false);
+        /** Invert motor 1 direction */
+        BooleanSupplier motor1Inverted = pref("HubbardShooter/Motor1Inverted?", false);
 
-        /** Current limit for wheel motors in amps */
-        DoubleSupplier currentLimit = pref("Launcher/CurrentLimit", 40.0);
-
-    }
-
-    /**
-     * Configuration for the Agitator subsystem.
-     * <p>
-     * Single NEO motor that feeds balls toward or away from the launcher wheels.
-     * Open-loop voltage control.
-     */
-    interface Agitator {
-
-        int CAN_ID = 2;
-
-        /** Power for agitator when feeding balls toward wheels (0-100%) */
-        DoubleSupplier forwardPower = pref("Agitator/ForwardPower%", 80.0);
-
-        /** Power for agitator when feeding a shot (0-100%, code negates direction) */
-        DoubleSupplier feedPower = pref("Agitator/FeedPower%", 100.0);
-
-        BooleanSupplier inverted = pref("Agitator/Inverted?", false);
+        /** Invert motor 2 direction */
+        BooleanSupplier motor2Inverted = pref("HubbardShooter/Motor2Inverted?", false);
 
         /** Current limit in amps */
-        DoubleSupplier currentLimit = pref("Agitator/CurrentLimit", 40.0);
+        DoubleSupplier currentLimit = pref("HubbardShooter/CurrentLimit", 40.0);
+
     }
 
 //endregion
