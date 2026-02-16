@@ -43,10 +43,10 @@ public class LauncherHardwareRev implements LauncherHardware {
     private final SparkMaxConfig feederRightConfig;
     private final SparkMaxConfig shooterConfig;
 
-    public LauncherHardwareRev() {
-        feederLeftMotor = new SparkMax(FEEDER_LEFT_CAN_ID, MotorType.kBrushless);
-        feederRightMotor = new SparkMax(FEEDER_RIGHT_CAN_ID, MotorType.kBrushless);
-        shooterMotor = new SparkMax(SHOOTER_CAN_ID, MotorType.kBrushless);
+    public LauncherHardwareRev(int feederLeftCanId, int feederRightCanId, int shooterCanId) {
+        feederLeftMotor = new SparkMax(feederLeftCanId, MotorType.kBrushless);
+        feederRightMotor = new SparkMax(feederRightCanId, MotorType.kBrushless);
+        shooterMotor = new SparkMax(shooterCanId, MotorType.kBrushless);
 
         feederLeftEncoder = feederLeftMotor.getEncoder();
         feederRightEncoder = feederRightMotor.getEncoder();

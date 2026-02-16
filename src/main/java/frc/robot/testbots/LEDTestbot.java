@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.GameController;
+import frc.robot.RobotContainer;
 import frc.robot.subsystems.led.LEDHardwareBlinkin;
 import frc.robot.subsystems.led.LEDHardwareSim;
 import frc.robot.subsystems.led.LEDSignal;
@@ -41,6 +42,8 @@ import frc.robot.subsystems.led.LEDSubsystem;
  */
 public class LEDTestbot extends TimedRobot {
 
+    public static final int LED_PWM_PORT = 0;
+
     private LEDSubsystem led;
     private GameController controller;
     private SendableChooser<LEDSignal> signalChooser;
@@ -51,8 +54,9 @@ public class LEDTestbot extends TimedRobot {
         System.out.println(">>> LEDTestbot starting...");
 
         // Use appropriate hardware based on environment
-        led = new LEDSubsystem(
-                isSimulation() ? new LEDHardwareSim() : new LEDHardwareBlinkin());
+        led = new LEDSubsystem(isSimulation()
+                ? new LEDHardwareSim()
+                : new LEDHardwareBlinkin(LED_PWM_PORT));
         controller = new GameController(0);
 
         // Create signal chooser for Elastic

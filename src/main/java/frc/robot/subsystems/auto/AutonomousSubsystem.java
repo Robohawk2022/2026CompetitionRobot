@@ -32,6 +32,8 @@ import java.util.function.BiConsumer;
 
 import static frc.robot.Config.PathPlanner.debugLogging;
 import static frc.robot.Config.PathPlanner.maxSpeed;
+import static frc.robot.Config.PathPlanner.rotationP;
+import static frc.robot.Config.PathPlanner.translationP;
 
 /**
  * Subsystem that manages a set of declared autonomous programs and allows
@@ -120,9 +122,8 @@ public class AutonomousSubsystem extends SubsystemBase {
         // supplied course; if the robot isn't moving accurately, start
         // debugging here
         PathFollowingController controller = new PPHolonomicDriveController(
-                new PIDConstants(TunerConstants.kPathTranslationP, TunerConstants.kPathTranslationI, TunerConstants.kPathTranslationD),
-                new PIDConstants(TunerConstants.kPathRotationP, TunerConstants.kPathRotationI, TunerConstants.kPathRotationD)
-        );
+                new PIDConstants(translationP.getAsDouble(), 0.0, 0.0),
+                new PIDConstants(rotationP.getAsDouble(), 0.0, 0.0));
 
         Util.log("[auto] configuring AutoBuilder");
         AutoBuilder.configure(
