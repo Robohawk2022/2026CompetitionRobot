@@ -349,6 +349,9 @@ public interface Config {
         /** Feeder RPM when feeding balls to shooter during a shot */
         DoubleSupplier feedShootRPM = pref("Launcher/FeedShootRPM", 3000.0);
 
+        /** Shooter RPM during intake (low speed, just enough to help pull balls in) */
+        DoubleSupplier shooterIntakeRPM = pref("Launcher/ShooterIntakeRPM", 1000.0);
+
         /** Shooter RPM for shooting (much higher than feeders) */
         DoubleSupplier shooterRPM = pref("Launcher/ShooterRPM", 5000.0);
 
