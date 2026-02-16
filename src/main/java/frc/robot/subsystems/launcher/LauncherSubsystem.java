@@ -72,6 +72,11 @@ public class LauncherSubsystem extends SubsystemBase {
         currentShooterRPM = hardware.getShooterRPM();
     }
 
+    /** @return the current command mode (e.g. "idle", "intake", "shoot") */
+    public String getCurrentMode() {
+        return currentMode;
+    }
+
     /**
      * @return true if all active motors are within tolerance of their target RPM
      */

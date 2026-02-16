@@ -4,17 +4,18 @@
 
 ## Summary
 
-Rebuilt the launcher subsystem from a 2-wheel + agitator design to a new 3-motor design: 2 feeder motors (bottom, facing each other) + 1 shooter motor (top). Deleted the agitator subsystem entirely.
+Rebuilt the launcher subsystem from a 2-wheel + agitator design to a new 3-motor design: 2 feeder motors (bottom, facing each other, 12:1 gearbox each) + 1 shooter motor (top, 1:1 gearbox, single NEO). Deleted the agitator subsystem. Extensively PID-tuned all 3 motors. Added LED integration to testbot. Another dev merged cleanup changes mid-session.
 
 ## Changes Made
 
 ### Files Modified
-- `src/main/java/frc/robot/Config.java` — Replaced `Launcher` interface (removed shot presets, upper/lower wheel config; added feeder/shooter CAN IDs, shared feeder PID, separate shooter PID, RPM targets). Removed `Agitator` interface entirely.
-- `src/main/java/frc/robot/subsystems/launcher/LauncherHardware.java` — Rewritten for 3 motors: `setFeederLeftRPM`, `setFeederRightRPM`, `setShooterRPM` + getters + PID reset methods.
-- `src/main/java/frc/robot/subsystems/launcher/LauncherHardwareRev.java` — 3 SparkMax motors (CAN 32=feeder left, CAN 11=feeder right, CAN 60=shooter). Shared PID for feeders, separate PID for shooter.
+- `src/main/java/frc/robot/Config.java` — Replaced `Launcher` interface. Removed shot presets, upper/lower wheel config, Agitator interface. Added separate PID for each feeder + shooter, RPM constants, and tunable shooterRPM.
+- `src/main/java/frc/robot/subsystems/launcher/LauncherHardware.java` — Rewritten for 3 motors: `setFeederLeftRPM`, `setFeederRightRPM`, `setShooterRPM` + getters + separate PID reset methods per motor.
+- `src/main/java/frc/robot/subsystems/launcher/LauncherHardwareRev.java` — 3 SparkMax motors (CAN 32=feeder left, CAN 11=feeder right, CAN 60=shooter). Another dev refactored: CAN IDs as constructor params, inversion/current limit as class constants, coast mode, updated REV API.
 - `src/main/java/frc/robot/subsystems/launcher/LauncherHardwareSim.java` — 3 simulated flywheels with first-order dynamics.
-- `src/main/java/frc/robot/subsystems/launcher/LauncherSubsystem.java` — Removed `ShotPreset` enum. New commands: `intakeCommand()`, `ejectCommand()`, `shootCommand()`, `idleCommand()`, `stopCommand()`.
-- `src/main/java/frc/robot/testbots/LauncherTestbot.java` — Simplified to single subsystem, removed agitator references.
+- `src/main/java/frc/robot/subsystems/launcher/LauncherSubsystem.java` — Removed `ShotPreset` enum. New commands: `intakeCommand()`, `ejectCommand()`, `shootCommand()`, `idleCommand()`, `stopCommand()`. Added `getCurrentMode()` getter for cross-package access. Field renamed to `currentShooterRPM` to avoid collision with Config supplier.
+- `src/main/java/frc/robot/testbots/LauncherTestbot.java` — Simplified to single subsystem. Added `Preferences.removeAll()` on startup. Added LED integration (green=atSpeed, flashing green=intaking, orange=otherwise).
+- `src/main/java/frc/robot/subsystems/led/LEDSignal.java` — Added `INTAKING_ACTIVE(BlinkinCode.SINELON_FOREST)` signal for flashing green during intake.
 
 ### Files Deleted
 - `src/main/java/frc/robot/subsystems/agitator/AgitatorSubsystem.java`
@@ -22,52 +23,68 @@ Rebuilt the launcher subsystem from a 2-wheel + agitator design to a new 3-motor
 - `src/main/java/frc/robot/subsystems/agitator/AgitatorHardwareRev.java`
 - `src/main/java/frc/robot/subsystems/agitator/AgitatorHardwareSim.java`
 
-## Config Changes
+## Current Config State (Launcher)
 
-### Removed
-- All `Launcher/Lower/*`, `Launcher/Upper/*` PID params
-- All shot preset RPMs (`Launcher/HighArc/*`, `Launcher/Flat/*`, `Launcher/Neutral/*`)
-- `Launcher/IntakeLowerRPM`, `Launcher/IntakeUpperRPM`, `Launcher/EjectSpeedRPM`
-- `Launcher/LowerWheelInverted?`, `Launcher/UpperWheelInverted?`
-- Entire `Agitator/*` config
+```java
+interface Launcher {
+    // Separate PID per feeder
+    DoubleSupplier feederLeftKV = pref("Launcher/FeederLeft/kV", 0.00017);
+    DoubleSupplier feederLeftKP = pref("Launcher/FeederLeft/kP", 0.0004);
+    DoubleSupplier feederLeftKD = pref("Launcher/FeederLeft/kD", 0.0);
+    DoubleSupplier feederRightKV = pref("Launcher/FeederRight/kV", 0.000175);
+    DoubleSupplier feederRightKP = pref("Launcher/FeederRight/kP", 0.0004);
+    DoubleSupplier feederRightKD = pref("Launcher/FeederRight/kD", 0.0);
+    DoubleSupplier shooterKV = pref("Launcher/Shooter/kV", 0.0002);
+    DoubleSupplier shooterKP = pref("Launcher/Shooter/kP", 0.0005);
+    DoubleSupplier shooterKD = pref("Launcher/Shooter/kD", 0.0);
 
-### Added
-- CAN IDs: `FEEDER_LEFT_CAN_ID = 32`, `FEEDER_RIGHT_CAN_ID = 11`, `SHOOTER_CAN_ID = 60`
-- `FEEDER_GEAR_RATIO = 3.0`
-- `Launcher/Feeder/kV` (default 0.00017), `Launcher/Feeder/kP` (default 0.0004)
-- `Launcher/Shooter/kV` (default 0.00017), `Launcher/Shooter/kP` (default 0.0004)
-- `Launcher/FeederRPM` (default 2000), `Launcher/FeedShootRPM` (default 3000), `Launcher/ShooterRPM` (default 4500)
-- `Launcher/FeederLeftInverted?` (default false), `Launcher/FeederRightInverted?` (default true), `Launcher/ShooterInverted?` (default false)
-- `Launcher/ToleranceRPM` (default 100)
+    // RPM targets (constants to avoid Preferences override issues)
+    double FEEDER_RPM = 2000.0;
+    double FEED_SHOOT_RPM = 4000.0;
+    double SHOOTER_INTAKE_RPM = 1000.0;
 
-## Commands Added/Modified
+    // Shooter RPM is a Preference for live tuning in Elastic
+    DoubleSupplier shooterRPM = pref("Launcher/ShooterRPM", 2525.0);
+    DoubleSupplier tolerance = pref("Launcher/ToleranceRPM", 100.0);
+}
+```
 
-| Command | Subsystem | Description |
-|---------|-----------|-------------|
-| `idleCommand()` | LauncherSubsystem | Stops all 3 motors (default) |
-| `intakeCommand()` | LauncherSubsystem | Feeders spin inward at intake RPM, shooter off |
-| `ejectCommand()` | LauncherSubsystem | Feeders spin outward (reverse), shooter off |
-| `shootCommand()` | LauncherSubsystem | Feeders at feed RPM + shooter at shoot RPM |
-| `stopCommand()` | LauncherSubsystem | Immediate stop |
+## Hardware Details
+
+- **Feeder gearboxes**: 4:1 * 3:1 = 12:1 total per feeder
+- **Shooter**: Single NEO, 1:1 gearbox (dual motor gearbox but only one NEO)
+- **Inversion**: Left feeder inverted=true, right feeder inverted=false, shooter inverted=false (hardcoded in LauncherHardwareRev)
+- **Current limit**: 60A (set in hardware class)
+- **Idle mode**: Coast
+
+## Tuned PID Values
+
+| Motor | kV | kP | kD |
+|-------|-----|-----|-----|
+| Feeder Left | 0.00017 | 0.0004 | 0.0 |
+| Feeder Right | 0.000175 | 0.0004 | 0.0 |
+| Shooter | 0.0002 | 0.0005 | 0.0 |
+
+Shooter RPM sweet spot: **2525 RPM**
 
 ## Testing Done
 
-- [x] `./gradlew build` — passed (all tests green)
-- [x] No remaining agitator references in Java code
-- [ ] Simulation tested — not yet run
-- [ ] Real hardware — not tested yet
+- [x] `./gradlew build` — passed
+- [x] Extensive PID tuning on real hardware
+- [x] LED integration tested in build
+- [x] No remaining agitator references
 
-## Known Issues / TODO
+## Key Lessons Learned
 
-- [ ] PID gains are placeholder defaults — need tuning on real hardware
-- [ ] RPM targets are placeholder — need tuning
-- [ ] Feeder inversion flags need verification on real robot (left=false, right=true assumes right needs inverting to spin inward)
-- [ ] Shooter inversion needs verification
-- [ ] Launcher not yet wired into RobotContainer (still only in testbot)
+1. **Preferences persistence**: `Preferences.initDouble()` only sets if key doesn't exist. Old values on roboRIO override new code defaults. Elastic caches and re-publishes values, defeating `Preferences.removeAll()`. Solution: use hardcoded constants for values that must be controlled by code; only use Preferences for values you actively want to tune live.
+2. **NEO kV calculation**: Theoretical kV = 12V / 5676 RPM ≈ 0.00211 V/RPM. But with gearboxes and real-world conditions, actual kV values are much lower (0.00017-0.0002).
+3. **High kV causes runaway RPM**: With kV=0.01, a 1000 RPM target produces 10V feedforward (nearly full power), causing motors to vastly overshoot.
 
 ## Notes for Next Session
 
-- CAN IDs: Feeder Left = 32, Feeder Right = 11 (same side as shooter, spins inward), Shooter = 60
-- Feeder right is on the same side as the shooter motor
-- Both feeders use shared PID gains since they're the same mechanism
-- The `atSpeed()` check only validates motors with non-zero targets
+- CAN IDs: Feeder Left = 32, Feeder Right = 11 (same side as shooter), Shooter = 60
+- PID gains apply on command start (must release and re-press button to pick up new values)
+- RPM targets for feeders read every 20ms from constants
+- Shooter RPM reads from Preferences every 20ms (tunable in Elastic as "Launcher/ShooterRPM")
+- Multi-ball shooting may need higher current limit or different approach for sustained power
+- Launcher not yet wired into RobotContainer (still only in testbot)

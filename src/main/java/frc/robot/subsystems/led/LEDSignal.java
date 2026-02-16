@@ -75,6 +75,9 @@ public enum LEDSignal {
     /** Celebration / scoring confirmed */
     CELEBRATION(BlinkinCode.RAINBOW_PARTY),
 
+    /** Intaking actively (flashing green) */
+    INTAKING_ACTIVE(BlinkinCode.SINELON_FOREST),
+
     /** All LEDs off */
     OFF(BlinkinCode.SOLID_BLACK);
 
