@@ -210,6 +210,22 @@ public interface Config {
         /** RPM tolerance for "at speed" check */
         DoubleSupplier tolerance = pref("Launcher/ToleranceRPM", 100.0);
 
+        //=======================================================================
+        // Distance-based shooting
+        //=======================================================================
+
+        /** Known data point: distance in feet */
+        double CLOSE_DISTANCE_FEET = 2.5;
+
+        /** Known data point: RPM at close distance */
+        double CLOSE_RPM = 2525.0;
+
+        /** Distance threshold for "close" LED signal (feet) */
+        DoubleSupplier closeRangeFeet = pref("Launcher/CloseRangeFeet", 5.0);
+
+        /** Distance threshold for "medium" LED signal (feet) */
+        DoubleSupplier mediumRangeFeet = pref("Launcher/MediumRangeFeet", 10.0);
+
     }
 
 //endregion

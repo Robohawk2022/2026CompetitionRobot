@@ -1,29 +1,32 @@
 package frc.robot.subsystems.launcher;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.util.Field;
 import frc.robot.util.Util;
-import edu.wpi.first.math.MathUtil;
 
 import static frc.robot.Config.Launcher.*;
 
 /**
- * Subsystem for the launcher: 2 feeder motors + 1 shooter motor.
+ * Subsystem for the launcher: 2 feeder motors + 1 shooter motor + 1 flapper.
  * <p>
  * <b>Motors:</b>
  * <ul>
  *   <li>Feeder Left - bottom left (onboard velocity PID), spins inward</li>
  *   <li>Feeder Right - bottom right (onboard velocity PID), spins inward</li>
  *   <li>Shooter - top flywheel (onboard velocity PID), flings balls out</li>
+ *   <li>Flapper - keeps balls from re-entering during intake</li>
  * </ul>
  * <p>
- * <b>Intake:</b> Both feeders spin inward at intake RPM to pull balls in.
- * <p>
- * <b>Shooting:</b> Feeders spin inward at feed RPM while shooter spins at
- * shoot RPM. All three must reach target before feeding begins.
+ * Supports distance-based shooter RPM via an interpolation table when a
+ * pose supplier is provided.
  */
 public class LauncherSubsystem extends SubsystemBase {
 
@@ -32,23 +35,35 @@ public class LauncherSubsystem extends SubsystemBase {
 //region Implementation --------------------------------------------------------
 
     final LauncherHardware hardware;
+    final Supplier<Pose2d> poseSupplier;
+    final InterpolatingDoubleTreeMap distanceToRPM;
 
     String currentMode;
     double feederLeftRPM, feederRightRPM, currentShooterRPM, flapperRPM;
     double feederLeftTarget, feederRightTarget, shooterTarget, flapperTarget;
+    double distanceToHopper;
 
     /**
      * Creates a {@link LauncherSubsystem}.
      *
      * @param hardware the hardware interface (required)
+     * @param poseSupplier supplier for robot pose (null if no pose available)
      */
-    public LauncherSubsystem(LauncherHardware hardware) {
+    public LauncherSubsystem(LauncherHardware hardware, Supplier<Pose2d> poseSupplier) {
         this.hardware = Objects.requireNonNull(hardware);
+        this.poseSupplier = poseSupplier;
         this.currentMode = "idle";
+        this.distanceToHopper = -1;
+
+        // distance (feet) -> shooter RPM interpolation table
+        distanceToRPM = new InterpolatingDoubleTreeMap();
+        distanceToRPM.put(CLOSE_DISTANCE_FEET, CLOSE_RPM);
 
         SmartDashboard.putData(getName(), builder -> {
             builder.addStringProperty("Mode", () -> currentMode, null);
             builder.addBooleanProperty("AtSpeed?", this::atSpeed, null);
+
+            builder.addDoubleProperty("DistanceToHopper", () -> Util.chopDigits(distanceToHopper), null);
 
             builder.addDoubleProperty("FeederLeftCurrent", () -> Util.chopDigits(feederLeftRPM), null);
             builder.addDoubleProperty("FeederLeftTarget", () -> feederLeftTarget, null);
@@ -68,12 +83,26 @@ public class LauncherSubsystem extends SubsystemBase {
         });
     }
 
+    /**
+     * Creates a {@link LauncherSubsystem} without pose awareness.
+     *
+     * @param hardware the hardware interface (required)
+     */
+    public LauncherSubsystem(LauncherHardware hardware) {
+        this(hardware, null);
+    }
+
     @Override
     public void periodic() {
         feederLeftRPM = hardware.getFeederLeftRPM();
         feederRightRPM = hardware.getFeederRightRPM();
         currentShooterRPM = hardware.getShooterRPM();
         flapperRPM = hardware.getFlapperRPM();
+
+        if (poseSupplier != null) {
+            Pose2d pose = poseSupplier.get();
+            distanceToHopper = Util.feetBetween(pose, Field.getHubCenter());
+        }
     }
 
     /** @return the current command mode (e.g. "idle", "intake", "shoot") */
@@ -197,6 +226,43 @@ public class LauncherSubsystem extends SubsystemBase {
                 applyPIDGains();
             },
             () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, shooterRPM.getAsDouble(), 0)
+        ).finallyDo(interrupted -> cleanup());
+    }
+
+    /**
+     * @return the current distance to the hopper in feet, or -1 if no pose available
+     */
+    public double getDistanceToHopper() {
+        return distanceToHopper;
+    }
+
+    /**
+     * @param distanceFeet distance to hopper in feet
+     * @return the interpolated shooter RPM for the given distance
+     */
+    public double getTargetRPMForDistance(double distanceFeet) {
+        return distanceToRPM.get(distanceFeet);
+    }
+
+    /**
+     * Like {@link #shootCommand()} but uses distance-based RPM from the
+     * interpolation table instead of the fixed Config value.
+     * Falls back to Config shooterRPM if no pose supplier is available.
+     *
+     * @return a command that shoots with distance-based RPM
+     */
+    public Command autoShootCommand() {
+        return startRun(
+            () -> {
+                currentMode = "autoShoot";
+                applyPIDGains();
+            },
+            () -> {
+                double rpm = (poseSupplier != null && distanceToHopper >= 0)
+                    ? distanceToRPM.get(distanceToHopper)
+                    : shooterRPM.getAsDouble();
+                driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, rpm, 0);
+            }
         ).finallyDo(interrupted -> cleanup());
     }
 
