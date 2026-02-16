@@ -203,17 +203,6 @@ public interface Config {
 
 //region Launcher --------------------------------------------------------------
 
-    /**
-     * Configuration for the Launcher subsystem.
-     * <p>
-     * Three NEO motors on SparkMax:
-     * <ul>
-     *   <li>2 feeder motors (bottom, facing each other) — spin inward to pull balls in</li>
-     *   <li>1 shooter motor (top) — flings balls out at high speed</li>
-     * </ul>
-     * Feeders have ~3:1 gearboxes, shooter has no gearbox.
-     * All use closed-loop velocity control (SparkMax onboard PID).
-     */
     interface Launcher {
 
         //=======================================================================
@@ -225,21 +214,12 @@ public interface Config {
         int SHOOTER_CAN_ID = 60;
 
         //=======================================================================
-        // Gear ratios (for reference)
-        //=======================================================================
-
-        /** 4:1 * 3:1 = 12:1 total gear reduction per feeder */
-        double FEEDER_GEAR_RATIO = 12.0;
-
-        /** Shooter: dual NEO through 1:1 gearbox (no reduction) */
-        double SHOOTER_GEAR_RATIO = 1.0;
-
-        //=======================================================================
         // Feeder Left velocity PID - closed loop (SparkMax onboard)
         //=======================================================================
 
         DoubleSupplier feederLeftKV = pref("Launcher/FeederLeft/kV", 0.00017);
         DoubleSupplier feederLeftKP = pref("Launcher/FeederLeft/kP", 0.0004);
+        DoubleSupplier feederLeftKD = pref("Launcher/FeederLeft/kD", 0.0);
 
         //=======================================================================
         // Feeder Right velocity PID - closed loop (SparkMax onboard)
@@ -247,6 +227,7 @@ public interface Config {
 
         DoubleSupplier feederRightKV = pref("Launcher/FeederRight/kV", 0.000175);
         DoubleSupplier feederRightKP = pref("Launcher/FeederRight/kP", 0.0004);
+        DoubleSupplier feederRightKD = pref("Launcher/FeederRight/kD", 0.0);
 
         //=======================================================================
         // Shooter velocity PID - closed loop (SparkMax onboard)
@@ -254,6 +235,7 @@ public interface Config {
 
         DoubleSupplier shooterKV = pref("Launcher/Shooter/kV", 0.0002);
         DoubleSupplier shooterKP = pref("Launcher/Shooter/kP", 0.0005);
+        DoubleSupplier shooterKD = pref("Launcher/Shooter/kD", 0.0);
 
         //=======================================================================
         // RPM targets
@@ -274,13 +256,6 @@ public interface Config {
         //=======================================================================
         // Motor configuration
         //=======================================================================
-
-        boolean FEEDER_LEFT_INVERTED = true;
-        boolean FEEDER_RIGHT_INVERTED = false;
-        boolean SHOOTER_INVERTED = false;
-
-        /** Current limit for all launcher motors in amps */
-        DoubleSupplier currentLimit = pref("Launcher/CurrentLimit", 80.0);
 
         /** RPM tolerance for "at speed" check */
         DoubleSupplier tolerance = pref("Launcher/ToleranceRPM", 100.0);

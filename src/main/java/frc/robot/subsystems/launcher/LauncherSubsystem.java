@@ -108,11 +108,11 @@ public class LauncherSubsystem extends SubsystemBase {
      */
     private void applyPIDGains() {
         hardware.resetFeederLeftPID(
-            feederLeftKV.getAsDouble(), feederLeftKP.getAsDouble(), 0, 0);
+            feederLeftKV.getAsDouble(), feederLeftKP.getAsDouble(), 0, feederLeftKD.getAsDouble());
         hardware.resetFeederRightPID(
-            feederRightKV.getAsDouble(), feederRightKP.getAsDouble(), 0, 0);
+            feederRightKV.getAsDouble(), feederRightKP.getAsDouble(), 0, feederRightKD.getAsDouble());
         hardware.resetShooterPID(
-            shooterKV.getAsDouble(), shooterKP.getAsDouble(), 0, 0);
+            shooterKV.getAsDouble(), shooterKP.getAsDouble(), 0, shooterKD.getAsDouble());
     }
 
     private void cleanup() {
@@ -187,7 +187,7 @@ public class LauncherSubsystem extends SubsystemBase {
      * @return a command that immediately stops all motors
      */
     public Command stopCommand() {
-        return runOnce(() -> cleanup());
+        return runOnce(this::cleanup);
     }
 
     /**
