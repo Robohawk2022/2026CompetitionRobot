@@ -35,7 +35,7 @@ public class LauncherSubsystem extends SubsystemBase {
     final LauncherHardware hardware;
 
     String currentMode;
-    double feederLeftRPM, feederRightRPM, currentShooterRPM, shooterIntakeRPM;
+    double feederLeftRPM, feederRightRPM, currentShooterRPM, currentShooterIntakeRPM;
     double feederLeftTarget, feederRightTarget, shooterTarget, shooterIntakeTarget;
 
     /**
@@ -57,7 +57,7 @@ public class LauncherSubsystem extends SubsystemBase {
             builder.addDoubleProperty("FeederRightTarget", () -> feederRightTarget, null);
             builder.addDoubleProperty("ShooterCurrent", () -> Util.chopDigits(currentShooterRPM), null);
             builder.addDoubleProperty("ShooterTarget", () -> shooterTarget, null);
-            builder.addDoubleProperty("ShooterIntakeCurrent", () -> Util.chopDigits(shooterIntakeRPM), null);
+            builder.addDoubleProperty("ShooterIntakeCurrent", () -> Util.chopDigits(currentShooterIntakeRPM), null);
             builder.addDoubleProperty("ShooterIntakeTarget", () -> shooterIntakeTarget, null);
 
             if (verboseLogging) {
@@ -74,7 +74,7 @@ public class LauncherSubsystem extends SubsystemBase {
         feederLeftRPM = hardware.getFeederLeftRPM();
         feederRightRPM = hardware.getFeederRightRPM();
         currentShooterRPM = hardware.getShooterRPM();
-        shooterIntakeRPM = hardware.getShooterIntakeRPM();
+        currentShooterIntakeRPM = hardware.getShooterIntakeRPM();
     }
 
     /**
@@ -197,7 +197,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "shoot";
                 applyPIDGains();
             },
-            () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, shooterRPM.getAsDouble(), shooterIntakeRPM.getAsDouble())
+            () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, shooterRPM.getAsDouble(), currentShooterIntakeRPM.getAsDouble())
         ).finallyDo(interrupted -> cleanup());
     }
 
@@ -215,7 +215,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "shoot";
                 applyPIDGains();
             },
-            () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, rpm.getAsDouble(), shooterIntakeRPM.getAsDouble())
+            () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, rpm.getAsDouble(), currentShooterIntakeRPM.getAsDouble())
         ).finallyDo(interrupted -> cleanup());
     }
 
