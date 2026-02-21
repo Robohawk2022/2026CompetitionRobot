@@ -35,8 +35,8 @@ public class LauncherSubsystem extends SubsystemBase {
     final LauncherHardware hardware;
 
     String currentMode;
-    double feederLeftRPM, feederRightRPM, currentShooterRPM;
-    double feederLeftTarget, feederRightTarget, shooterTarget;
+    double feederLeftRPM, feederRightRPM, currentShooterRPM, shooterIntakeRPM;
+    double feederLeftTarget, feederRightTarget, shooterTarget, shooterIntakeTarget;
 
     /**
      * Creates a {@link LauncherSubsystem}.
@@ -57,11 +57,14 @@ public class LauncherSubsystem extends SubsystemBase {
             builder.addDoubleProperty("FeederRightTarget", () -> feederRightTarget, null);
             builder.addDoubleProperty("ShooterCurrent", () -> Util.chopDigits(currentShooterRPM), null);
             builder.addDoubleProperty("ShooterTarget", () -> shooterTarget, null);
+            builder.addDoubleProperty("ShooterIntakeCurrent", () -> Util.chopDigits(shooterIntakeRPM), null);
+            builder.addDoubleProperty("ShooterIntakeTarget", () -> shooterIntakeTarget, null);
 
             if (verboseLogging) {
                 builder.addDoubleProperty("FeederLeftAmps", hardware::getFeederLeftAmps, null);
                 builder.addDoubleProperty("FeederRightAmps", hardware::getFeederRightAmps, null);
                 builder.addDoubleProperty("ShooterAmps", hardware::getShooterAmps, null);
+                builder.addDoubleProperty("ShooterIntakeAmps", hardware::getShooterIntakeAmps, null);
             }
         });
     }
@@ -71,6 +74,7 @@ public class LauncherSubsystem extends SubsystemBase {
         feederLeftRPM = hardware.getFeederLeftRPM();
         feederRightRPM = hardware.getFeederRightRPM();
         currentShooterRPM = hardware.getShooterRPM();
+        shooterIntakeRPM = hardware.getShooterIntakeRPM();
     }
 
     /**
@@ -92,16 +96,26 @@ public class LauncherSubsystem extends SubsystemBase {
     static final double MAX_RPM = 5700;
 
     /**
-     * Sends RPM targets to all three motors via onboard PID.
-     * Clamps values to NEO safe range.
+     * Sends RPM targets to all motors via onboard PID.
+     * Clamps values to NEO safe range. Shooter intake is off (0).
      */
     private void driveMotors(double feederLeft, double feederRight, double shooter) {
+        driveMotors(feederLeft, feederRight, shooter, 0);
+    }
+
+    /**
+     * Sends RPM targets to all motors via onboard PID.
+     * Clamps values to NEO safe range.
+     */
+    private void driveMotors(double feederLeft, double feederRight, double shooter, double shooterIntake) {
         feederLeftTarget = MathUtil.clamp(feederLeft, -MAX_RPM, MAX_RPM);
         feederRightTarget = MathUtil.clamp(feederRight, -MAX_RPM, MAX_RPM);
         shooterTarget = MathUtil.clamp(shooter, -MAX_RPM, MAX_RPM);
+        shooterIntakeTarget = MathUtil.clamp(shooterIntake, -MAX_RPM, MAX_RPM);
         hardware.setFeederLeftRPM(feederLeftTarget);
         hardware.setFeederRightRPM(feederRightTarget);
         hardware.setShooterRPM(shooterTarget);
+        hardware.setShooterIntakeRPM(shooterIntakeTarget);
     }
 
     /**
@@ -114,6 +128,8 @@ public class LauncherSubsystem extends SubsystemBase {
             feederRightKV.getAsDouble(), feederRightKP.getAsDouble(), 0, 0);
         hardware.resetShooterPID(
             shooterKV.getAsDouble(), shooterKP.getAsDouble(), 0, 0);
+        hardware.resetShooterIntakePID(
+            shooterIntakeKV.getAsDouble(), shooterIntakeKP.getAsDouble(), 0, 0);
     }
 
     private void cleanup() {
@@ -121,6 +137,7 @@ public class LauncherSubsystem extends SubsystemBase {
         feederLeftTarget = 0;
         feederRightTarget = 0;
         shooterTarget = 0;
+        shooterIntakeTarget = 0;
         currentMode = "idle";
     }
 
@@ -180,12 +197,13 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "shoot";
                 applyPIDGains();
             },
-            () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, shooterRPM.getAsDouble())
+            () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, shooterRPM.getAsDouble(), shooterIntakeRPM.getAsDouble())
         ).finallyDo(interrupted -> cleanup());
     }
 
     /**
      * Spins feeders inward at feed RPM and shooter at the specified RPM.
+     * Shooter intake also runs during shooting.
      * Runs continuously until interrupted.
      *
      * @param rpm supplier for the shooter RPM target
@@ -197,7 +215,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "shoot";
                 applyPIDGains();
             },
-            () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, rpm.getAsDouble())
+            () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, rpm.getAsDouble(), shooterIntakeRPM.getAsDouble())
         ).finallyDo(interrupted -> cleanup());
     }
 

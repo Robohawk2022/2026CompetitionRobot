@@ -374,6 +374,7 @@ public interface Config {
         int FEEDER_LEFT_CAN_ID = 32;
         int FEEDER_RIGHT_CAN_ID = 11;
         int SHOOTER_CAN_ID = 60;
+        int SHOOTER_INTAKE_CAN_ID = 15;
 
         //=======================================================================
         // Gear ratios (for reference)
@@ -407,6 +408,13 @@ public interface Config {
         DoubleSupplier shooterKP = pref("Launcher/Shooter/kP", 0.0005);
 
         //=======================================================================
+        // Shooter Intake velocity PID - closed loop (SparkMax onboard)
+        //=======================================================================
+
+        DoubleSupplier shooterIntakeKV = pref("Launcher/ShooterIntake/kV", 0.0002);
+        DoubleSupplier shooterIntakeKP = pref("Launcher/ShooterIntake/kP", 0.0005);
+
+        //=======================================================================
         // RPM targets
         //=======================================================================
 
@@ -422,6 +430,9 @@ public interface Config {
         /** Shooter RPM for shooting (much higher than feeders) */
         DoubleSupplier shooterRPM = pref("Launcher/ShooterRPM", 2525.0);
 
+        /** Shooter intake RPM during shooting (same side as shooter, feeds into it) */
+        DoubleSupplier shooterIntakeRPM = pref("Launcher/ShooterIntakeRPM", 2525.0);
+
         //=======================================================================
         // Motor configuration
         //=======================================================================
@@ -429,6 +440,7 @@ public interface Config {
         boolean FEEDER_LEFT_INVERTED = true;
         boolean FEEDER_RIGHT_INVERTED = false;
         boolean SHOOTER_INVERTED = false;
+        boolean SHOOTER_INTAKE_INVERTED = false;
 
         /** Current limit for all launcher motors in amps */
         DoubleSupplier currentLimit = pref("Launcher/CurrentLimit", 80.0);
