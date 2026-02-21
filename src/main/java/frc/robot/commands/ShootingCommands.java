@@ -1,45 +1,69 @@
 package frc.robot.commands;
 
-import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.RobotContainer;
+import java.util.Set;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.subsystems.launcher.LauncherSubsystem;
+import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.util.Field;
+
+import static frc.robot.Config.Shooting.*;
+
+/**
+ * Factory methods for shooting command sequences.
+ */
 public class ShootingCommands {
 
     /**
-     * Represents a type of shot, which corresponds to a specific distance
-     * from the center of the hub
+     * Creates a command that drives to the far shooting distance from the hub
+     * and fires. The robot drives along the line from its current position
+     * toward the hub, stopping at the configured distance, then shoots.
+     *
+     * @param swerve the swerve subsystem
+     * @param launcher the launcher subsystem
+     * @return a command that drives to shooting position and shoots
      */
-    public enum ShotType {
+    public static Command driveAndShootCommand(SwerveSubsystem swerve, LauncherSubsystem launcher) {
+        return Commands.defer(() -> {
 
-        POINT_BLANK,
-        CLOSE_RANGE,
-        LONG_RANGE;
+            // compute target pose: farDistance feet from hub, on the line
+            // between robot and hub, facing the hub
+            Pose2d hubCenter = Field.getHubCenter();
+            Pose2d robotPose = swerve.getPose();
 
-        /**
-         * @return the distance in feet from the hub center for this type of shot
-         */
-        public double distance() {
-            throw new UnsupportedOperationException();
-        }
-    }
+            // direction from hub toward robot (unit vector)
+            Translation2d hubToRobot = robotPose.getTranslation().minus(hubCenter.getTranslation());
+            double distMeters = hubToRobot.getNorm();
 
-    /**
-     * @param robot the robot
-     * @param shotType the type of shot
-     * @return a command that will run the shooter until interrupted, to
-     * unload all fuel in the hopper
-     */
-    public static Command vomitCommand(RobotContainer robot, ShotType shotType) {
-        throw new UnsupportedOperationException();
-    }
+            Translation2d direction;
+            if (distMeters > 0.01) {
+                direction = hubToRobot.div(distMeters);
+            } else {
+                // robot is on top of hub, pick an arbitrary direction
+                direction = new Translation2d(1.0, 0.0);
+            }
 
-    /**
-     * @param robot the robot
-     * @param shotType the type of shot
-     * @return a command that will drive to the shooting position and unload
-     * all fuel in the hopper
-     */
-    public static Command makeShotCommand(RobotContainer robot, ShotType shotType) {
-        throw new UnsupportedOperationException();
+            // target position: hub center + direction * farDistance
+            double farDistMeters = Units.feetToMeters(farDistance.getAsDouble());
+            Translation2d targetTranslation = hubCenter.getTranslation()
+                    .plus(direction.times(farDistMeters));
+
+            // target heading: face the hub (opposite of direction from hub)
+            Rotation2d targetHeading = direction.times(-1.0).getAngle();
+
+            Pose2d targetPose = new Pose2d(targetTranslation, targetHeading);
+
+            return Commands.sequence(
+                    swerve.driveToPoseCommand(targetPose),
+                    launcher.shootAtRPMCommand(farRPM).withTimeout(3.0)
+            );
+
+        }, Set.of(swerve, launcher));
     }
 }

@@ -338,6 +338,20 @@ public interface Config {
 
 //endregion
 
+//region Alliance --------------------------------------------------------------
+
+    interface Alliance {
+
+        /** Enable the alliance color override (use when practicing without FMS) */
+        BooleanSupplier overrideEnabled = pref("Alliance/OverrideEnabled?", false);
+
+        /** When override is enabled, true = Red alliance, false = Blue alliance */
+        BooleanSupplier isRed = pref("Alliance/IsRed?", true);
+
+    }
+
+//endregion
+
 //region Launcher --------------------------------------------------------------
 
     /**

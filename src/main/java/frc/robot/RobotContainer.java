@@ -5,7 +5,14 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.commands.ShootingCommands;
 import frc.robot.subsystems.auto.AutonomousSubsystem;
+import frc.robot.subsystems.intakefront.IntakeFrontHardwareSim;
+import frc.robot.subsystems.intakefront.IntakeFrontHardwareSparkMax;
+import frc.robot.subsystems.intakefront.IntakeFrontSubsystem;
+import frc.robot.subsystems.launcher.LauncherHardwareRev;
+import frc.robot.subsystems.launcher.LauncherHardwareSim;
+import frc.robot.subsystems.launcher.LauncherSubsystem;
 import frc.robot.subsystems.led.LEDHardwareBlinkin;
 import frc.robot.subsystems.led.LEDHardwareSim;
 import frc.robot.subsystems.led.LEDSignal;
@@ -14,7 +21,6 @@ import frc.robot.subsystems.limelight.LimelightSubsystem;
 import frc.robot.subsystems.swerve.CommandSwerveDrivetrain;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.TunerConstants;
-import frc.robot.subsystems.launcher.LauncherSubsystem;
 import frc.robot.util.CommandLogger;
 import frc.robot.util.Field;
 import frc.robot.util.Util;
@@ -29,7 +35,8 @@ public class RobotContainer {
   final LimelightSubsystem limelight;
   final AutonomousSubsystem auto;
   final LEDSubsystem led;
-  LauncherSubsystem launcher;
+  final LauncherSubsystem launcher;
+  final IntakeFrontSubsystem intake;
 
   public RobotContainer() {
 
@@ -46,13 +53,21 @@ public class RobotContainer {
             ? new LEDHardwareSim()
             : new LEDHardwareBlinkin());
 
+    launcher = new LauncherSubsystem(Robot.isSimulation()
+            ? new LauncherHardwareSim()
+            : new LauncherHardwareRev());
+
+    intake = new IntakeFrontSubsystem(Robot.isSimulation()
+            ? new IntakeFrontHardwareSim()
+            : new IntakeFrontHardwareSparkMax());
+
     // LED always shows distance to hub using odometry
     led.setDistanceSupplier(() -> Util.feetBetween(swerve.getPose(), Field.getHubCenter()));
 
-    // TODO: when intake is wired up, flash orange on intake full:
-    // intake.setStallCallback(stalled -> {
-    //     if (stalled) led.flash(LEDSignal.INTAKE_FULL, 2.0);
-    // });
+    // flash orange when intake stalls (hopper full)
+    intake.setStallCallback(stalled -> {
+        if (stalled) led.flash(LEDSignal.INTAKE_FULL, 2.0);
+    });
 
     // configure driver controls
     configureBindings();
@@ -70,6 +85,9 @@ public class RobotContainer {
     // hold right bumper to aim at hub (auto-rotate to face hub, driver translates)
     driver.rightBumper()
         .whileTrue(swerve.aimAtHubCommand(driver));
+
+    // Y button: drive to shooting distance and shoot
+    driver.y().onTrue(ShootingCommands.driveAndShootCommand(swerve, launcher));
 
     // zero pose on left click, accept vision pose on right click
     driver.leftStick().onTrue(swerve.zeroPoseCommand());

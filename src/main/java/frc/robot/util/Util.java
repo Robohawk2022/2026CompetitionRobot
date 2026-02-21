@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.Config;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -182,9 +183,18 @@ public class Util {
      * game. In simulation, we want to fetch it from the dashboard; in the
      * real game we'll talk to the driver station.
      *
+     * <p>When {@link Config.Alliance#overrideEnabled} is true, the value of
+     * {@link Config.Alliance#isRed} is returned instead. This lets teams set
+     * their alliance color in Elastic during practice without an FMS.</p>
+     *
      * @return true if we are on the red alliance?
      */
     public static boolean isRedAlliance() {
+        // check override first - useful at practice fields without FMS
+        if (Config.Alliance.overrideEnabled.getAsBoolean()) {
+            return Config.Alliance.isRed.getAsBoolean();
+        }
+
         if (RobotBase.isSimulation()) {
             if (isRedAlliance == null) {
                 isRedAlliance = NetworkTableInstance.getDefault()

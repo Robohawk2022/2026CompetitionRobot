@@ -1,6 +1,7 @@
 package frc.robot.subsystems.launcher;
 
 import java.util.Objects;
+import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -180,6 +181,23 @@ public class LauncherSubsystem extends SubsystemBase {
                 applyPIDGains();
             },
             () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, shooterRPM.getAsDouble())
+        ).finallyDo(interrupted -> cleanup());
+    }
+
+    /**
+     * Spins feeders inward at feed RPM and shooter at the specified RPM.
+     * Runs continuously until interrupted.
+     *
+     * @param rpm supplier for the shooter RPM target
+     * @return a command that runs all motors for shooting at a specific RPM
+     */
+    public Command shootAtRPMCommand(DoubleSupplier rpm) {
+        return startRun(
+            () -> {
+                currentMode = "shoot";
+                applyPIDGains();
+            },
+            () -> driveMotors(FEED_SHOOT_RPM, FEED_SHOOT_RPM, rpm.getAsDouble())
         ).finallyDo(interrupted -> cleanup());
     }
 
