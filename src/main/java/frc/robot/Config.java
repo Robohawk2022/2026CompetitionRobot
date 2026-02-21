@@ -415,23 +415,27 @@ public interface Config {
         DoubleSupplier shooterIntakeKP = pref("Launcher/ShooterIntake/kP", 0.0005);
 
         //=======================================================================
-        // RPM targets
+        // RPM targets — intake mode
         //=======================================================================
 
-        /** Feeder RPM for intake (pulling balls in) */
-        double FEEDER_RPM = 2000.0;
+        /** Feeder Left and Right RPM during intake */
+        DoubleSupplier feederRPM = pref("Launcher/FeederRPM", 2000.0);
+
+        /** Intake motor (CAN 15) RPM during intake — matches feeder RPM by default */
+        DoubleSupplier intakeRPM = pref("Launcher/IntakeRPM", 2000.0);
+
+        //=======================================================================
+        // RPM targets — shoot mode
+        //=======================================================================
 
         /** Feeder RPM when feeding balls to shooter during a shot */
-        double FEED_SHOOT_RPM = 4000.0;
+        DoubleSupplier feedShootRPM = pref("Launcher/FeedShootRPM", 4000.0);
 
-        /** Shooter RPM during intake (low speed, just enough to help pull balls in) */
-        double SHOOTER_INTAKE_RPM = 1000.0;
-
-        /** Shooter RPM for shooting (much higher than feeders) */
+        /** Shooter (main flywheel) RPM during shooting */
         DoubleSupplier shooterRPM = pref("Launcher/ShooterRPM", 2525.0);
 
-        /** Shooter intake RPM during shooting (same side as shooter, feeds into it) */
-        DoubleSupplier shooterIntakeRPM = pref("Launcher/ShooterIntakeRPM", 2525.0);
+        /** Intake motor (CAN 15) RPM during shooting (feeds ball into shooter) */
+        DoubleSupplier shooterIntakeRPM = pref("Launcher/ShooterIntakeRPM", 1000.0);
 
         //=======================================================================
         // Motor configuration
