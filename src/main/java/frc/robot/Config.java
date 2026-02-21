@@ -411,8 +411,8 @@ public interface Config {
         // Shooter Intake velocity PID - closed loop (SparkMax onboard)
         //=======================================================================
 
-        DoubleSupplier shooterIntakeKV = pref("Launcher/ShooterIntake/kV", 0.0004);
-        DoubleSupplier shooterIntakeKP = pref("Launcher/ShooterIntake/kP", 0.00017);
+        DoubleSupplier shooterIntakeKV = pref("Launcher/ShooterIntake/kV", 0.0002);
+        DoubleSupplier shooterIntakeKP = pref("Launcher/ShooterIntake/kP", 0.0005);
 
         //=======================================================================
         // RPM targets — intake mode

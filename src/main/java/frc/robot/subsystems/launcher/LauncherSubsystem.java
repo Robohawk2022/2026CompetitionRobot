@@ -156,7 +156,7 @@ public class LauncherSubsystem extends SubsystemBase {
     }
 
     /**
-     * Spins both feeders inward at intake RPM. Shooter off.
+     * Spins both feeders at intake RPM (same direction as shoot). Shooter off.
      *
      * @return a command that runs the feeders for intake
      */
