@@ -265,7 +265,7 @@ public interface Config {
     interface Shooting {
 
         /** Close shooting distance in feet */
-        DoubleSupplier closeDistance = pref("Shooting/CloseDistanceFt", 2.5);
+        DoubleSupplier closeDistance = pref("Shooting/CloseDistanceFt", 3.0);
 
         /** Shooter RPM for close distance */
         DoubleSupplier closeRPM = pref("Shooting/CloseRPM", 2525.0);
@@ -419,7 +419,7 @@ public interface Config {
         //=======================================================================
 
         /** Feeder Left and Right RPM during intake (intake motor off during intake) */
-        DoubleSupplier feederRPM = pref("Launcher/FeederRPM", 2000.0);
+        DoubleSupplier feederRPM = pref("Launcher/FeederRPM", 2500.0);
 
         //=======================================================================
         // RPM targets — shoot mode
