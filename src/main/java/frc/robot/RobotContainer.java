@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.auto.AutonomousSubsystem;
 import frc.robot.subsystems.led.LEDHardwareBlinkin;
 import frc.robot.subsystems.led.LEDHardwareSim;
+import frc.robot.subsystems.led.LEDSignal;
 import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.limelight.LimelightSubsystem;
 import frc.robot.subsystems.swerve.CommandSwerveDrivetrain;
@@ -15,6 +16,8 @@ import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.TunerConstants;
 import frc.robot.subsystems.launcher.LauncherSubsystem;
 import frc.robot.util.CommandLogger;
+import frc.robot.util.Field;
+import frc.robot.util.Util;
 
 public class RobotContainer {
 
@@ -43,6 +46,14 @@ public class RobotContainer {
             ? new LEDHardwareSim()
             : new LEDHardwareBlinkin());
 
+    // LED always shows distance to hub using odometry
+    led.setDistanceSupplier(() -> Util.feetBetween(swerve.getPose(), Field.getHubCenter()));
+
+    // TODO: when intake is wired up, flash orange on intake full:
+    // intake.setStallCallback(stalled -> {
+    //     if (stalled) led.flash(LEDSignal.INTAKE_FULL, 2.0);
+    // });
+
     // configure driver controls
     configureBindings();
   }
@@ -57,9 +68,8 @@ public class RobotContainer {
         .whileTrue(swerve.orbitCommand(driver));
 
     // hold right bumper to aim at hub (auto-rotate to face hub, driver translates)
-    // LEDs turn green when in shooting range, red when out of range
     driver.rightBumper()
-        .whileTrue(swerve.aimAtHubCommand(led, driver));
+        .whileTrue(swerve.aimAtHubCommand(driver));
 
     // zero pose on left click, accept vision pose on right click
     driver.leftStick().onTrue(swerve.zeroPoseCommand());

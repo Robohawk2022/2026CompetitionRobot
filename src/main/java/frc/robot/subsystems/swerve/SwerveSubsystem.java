@@ -23,7 +23,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.GameController;
 import frc.robot.commands.swerve.SwerveAimAtHubCommand;
-import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.commands.swerve.SwerveOrbitCommand;
 import frc.robot.commands.swerve.SwerveTeleopCommand;
 import frc.robot.commands.swerve.SwerveToHeadingCommand;
@@ -417,13 +416,12 @@ public class SwerveSubsystem extends SubsystemBase {
      * the driver to translate freely with the left stick. Hold a button to aim,
      * release to return to normal teleop.
      *
-     * @param led the LED subsystem for distance feedback (nullable)
      * @param controller the game controller for driver input
      * @return the aim-at-hub command
      * @see SwerveAimAtHubCommand
      */
-    public Command aimAtHubCommand(LEDSubsystem led, GameController controller) {
-        return new SwerveAimAtHubCommand(this, led, controller);
+    public Command aimAtHubCommand(GameController controller) {
+        return new SwerveAimAtHubCommand(this, controller);
     }
 
     /**

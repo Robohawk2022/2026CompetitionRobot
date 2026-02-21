@@ -1,36 +1,48 @@
 package frc.robot.subsystems.led;
 
 import java.util.Objects;
+import java.util.function.DoubleSupplier;
 
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.util.Util;
+
+import static frc.robot.Config.Shooting.*;
 
 /**
  * Subsystem for controlling LEDs via the REV Blinkin controller.
  * <p>
- * Uses {@link LEDSignal} to map robot states (like "intake full") to
- * LED colors/patterns. This provides a clean abstraction between robot
- * logic and LED display.
+ * LED priority (highest to lowest):
+ * <ol>
+ *   <li>Timed flash (alliance change, intake full, etc.)</li>
+ *   <li>Distance-to-hub indicator (green = in range, red = out of range)</li>
+ * </ol>
  * <p>
- * Example usage:
- * <pre>
- * // In RobotContainer, wire intake stall to LED signal
- * intake.setStallCallback(stalled -> {
- *     if (stalled) {
- *         led.setSignal(LEDSignal.INTAKE_FULL);
- *     } else {
- *         led.setSignal(LEDSignal.IDLE);
- *     }
- * });
- * </pre>
+ * Use {@link #flash(LEDSignal, double)} to temporarily override the distance
+ * display with a higher-priority signal.
  */
 public class LEDSubsystem extends SubsystemBase {
 
     //region Implementation --------------------------------------------------------
 
+    /** How long to flash alliance color in seconds */
+    static final double ALLIANCE_FLASH_DURATION = 3.0;
+
     private final LEDHardware hardware;
+    private DoubleSupplier distanceSupplier;
     private LEDSignal currentSignal = LEDSignal.OFF;
+    private String shotZone = "none";
+
+    // flash tracking (alliance flash, intake full, etc.)
+    private final Timer flashTimer = new Timer();
+    private LEDSignal flashSignal = LEDSignal.OFF;
+    private double flashDuration = 0;
+    private boolean flashing = false;
+
+    // alliance change detection
+    private boolean lastAllianceWasRed;
 
     /**
      * Creates a {@link LEDSubsystem}.
@@ -40,16 +52,94 @@ public class LEDSubsystem extends SubsystemBase {
     public LEDSubsystem(LEDHardware hardware) {
         this.hardware = Objects.requireNonNull(hardware);
 
+        // flash alliance color on startup
+        lastAllianceWasRed = Util.isRedAlliance();
+        flash(lastAllianceWasRed ? LEDSignal.ALLIANCE_RED : LEDSignal.ALLIANCE_BLUE,
+                ALLIANCE_FLASH_DURATION);
+
         // Dashboard telemetry
         SmartDashboard.putData(getName(), builder -> {
             builder.addStringProperty("Signal", () -> currentSignal.name(), null);
+            builder.addStringProperty("ShotZone", () -> shotZone, null);
+            builder.addBooleanProperty("Flashing?", () -> flashing, null);
             builder.addDoubleProperty("BlinkinCode", () -> currentSignal.getBlinkinCode(), null);
         });
     }
 
+    /**
+     * Sets a supplier that provides the distance to the hub in feet.
+     * When set, the LED will automatically show green when in a shooting
+     * zone and red when out of range.
+     *
+     * @param distanceSupplier supplies distance to hub in feet
+     */
+    public void setDistanceSupplier(DoubleSupplier distanceSupplier) {
+        this.distanceSupplier = distanceSupplier;
+    }
+
+    /**
+     * Temporarily flashes a signal, overriding the distance display.
+     * After the duration expires, the LED returns to showing distance.
+     *
+     * @param signal the signal to flash
+     * @param durationSeconds how long to flash
+     */
+    public void flash(LEDSignal signal, double durationSeconds) {
+        flashSignal = signal;
+        flashDuration = durationSeconds;
+        flashing = true;
+        flashTimer.restart();
+        Util.log("[led] flash: %s for %.1f sec", signal.name(), durationSeconds);
+    }
+
     @Override
     public void periodic() {
-        // LED state is maintained by the Blinkin, no periodic updates needed
+
+        // check if alliance changed
+        boolean currentlyRed = Util.isRedAlliance();
+        if (currentlyRed != lastAllianceWasRed) {
+            lastAllianceWasRed = currentlyRed;
+            flash(currentlyRed ? LEDSignal.ALLIANCE_RED : LEDSignal.ALLIANCE_BLUE,
+                    ALLIANCE_FLASH_DURATION);
+        }
+
+        // priority 1: timed flash
+        if (flashing) {
+            if (flashTimer.get() < flashDuration) {
+                setSignal(flashSignal);
+                return;
+            }
+            flashing = false;
+            flashTimer.stop();
+        }
+
+        // priority 2: distance to hub
+        if (distanceSupplier != null) {
+            updateDistanceSignal();
+        }
+    }
+
+    private void updateDistanceSignal() {
+        double distance = distanceSupplier.getAsDouble();
+        double tol = distanceTolerance.getAsDouble();
+
+        if (Math.abs(distance - closeDistance.getAsDouble()) <= tol) {
+            shotZone = "close";
+            setSignal(LEDSignal.SHOOT_RANGE_CLOSE);
+        } else if (Math.abs(distance - farDistance.getAsDouble()) <= tol) {
+            shotZone = "far";
+            setSignal(LEDSignal.SHOOT_RANGE_CLOSE);
+        } else {
+            shotZone = "none";
+            setSignal(LEDSignal.SHOOT_RANGE_FAR);
+        }
+    }
+
+    /**
+     * @return the current shot zone ("close", "far", or "none")
+     */
+    public String getShotZone() {
+        return shotZone;
     }
 
     /**
