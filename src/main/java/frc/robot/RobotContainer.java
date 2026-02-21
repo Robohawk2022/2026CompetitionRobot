@@ -21,6 +21,7 @@ public class RobotContainer {
   final SwerveSubsystem swerve;
   final LimelightSubsystem limelight;
   final AutonomousSubsystem auto;
+  final LauncherSubsystem launcher;
 
   public RobotContainer() {
 

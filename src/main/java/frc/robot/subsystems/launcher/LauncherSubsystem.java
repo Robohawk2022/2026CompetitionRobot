@@ -184,6 +184,21 @@ public class LauncherSubsystem extends SubsystemBase {
     }
 
     /**
+     * Spins the shooter motor in reverse. Feeders off.
+     *
+     * @return a command that runs the shooter in reverse
+     */
+    public Command reverseShooterCommand() {
+        return startRun(
+            () -> {
+                currentMode = "reverse-shooter";
+                applyPIDGains();
+            },
+            () -> driveMotors(0, 0, -shooterRPM.getAsDouble())
+        ).finallyDo(interrupted -> cleanup());
+    }
+
+    /**
      * @return a command that immediately stops all motors
      */
     public Command stopCommand() {

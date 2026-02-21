@@ -52,11 +52,15 @@ public class LauncherTestbot extends TimedRobot {
         // stop all
         controller.y().onTrue(launcher.stopCommand());
 
+        // reverse shooter
+        controller.povDown().whileTrue(launcher.reverseShooterCommand());
+
         System.out.println(">>> Button mappings:");
         System.out.println("    A (hold) = Intake (feeders inward)");
         System.out.println("    B (hold) = Eject (feeders outward)");
         System.out.println("    X (hold) = Shoot (feeders + shooter)");
         System.out.println("    Y (press) = Stop all");
+        System.out.println("    D-pad Down (hold) = Reverse shooter");
     }
 
     @Override
