@@ -118,7 +118,7 @@ public class SwerveAimAtHubCommand extends Command {
         updateShotZone();
 
         // PD feedback on heading error
-        omegaDps = headingPid.calculate(0.0, -headingErrorDeg);
+        omegaDps = headingPid.calculate(0.0, headingErrorDeg);
 
         // clamp rotation speed
         double maxOmega = maxRotateDps.getAsDouble();
