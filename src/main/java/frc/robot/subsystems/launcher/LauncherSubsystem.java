@@ -166,7 +166,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "intake";
                 applyPIDGains();
             },
-            () -> driveMotors(feederRPM.getAsDouble(), feederRPM.getAsDouble(), 0, intakeRPM.getAsDouble())
+            () -> driveMotors(feederRPM.getAsDouble(), feederRPM.getAsDouble(), 0)
         ).finallyDo(interrupted -> cleanup());
     }
 
