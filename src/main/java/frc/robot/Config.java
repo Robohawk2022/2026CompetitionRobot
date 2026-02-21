@@ -85,6 +85,26 @@ public interface Config {
 
 //endregion
 
+//region Swerve (Aim at Hub) ---------------------------------------------------
+
+    interface SwerveAim {
+
+        /** Proportional gain for heading correction (degrees/sec per degree of error) */
+        DoubleSupplier kP = pref("SwerveAim/kP", 4.0);
+
+        /** Derivative gain for heading correction */
+        DoubleSupplier kD = pref("SwerveAim/kD", 0.0);
+
+        /** Heading tolerance in degrees (for "at goal" check) */
+        DoubleSupplier headingTolerance = pref("SwerveAim/HeadingToleranceDeg", 2.0);
+
+        /** Maximum rotation speed while aiming in degrees per second */
+        DoubleSupplier maxRotateDps = pref("SwerveAim/MaxRotateDPS", 180.0);
+
+    }
+
+//endregion
+
 //region Swerve (Auto) ---------------------------------------------------------
 
     interface SwerveAuto {
@@ -229,6 +249,35 @@ public interface Config {
 
         /** PWM port for the REV Blinkin LED controller */
         int pwmPort = 0;
+
+    }
+
+//endregion
+
+//region Shooting --------------------------------------------------------------
+
+    /**
+     * Configuration for shooting distance presets.
+     * <p>
+     * Each distance has a target RPM for the shooter. The robot LED turns
+     * green when within tolerance of a shooting distance, red otherwise.
+     */
+    interface Shooting {
+
+        /** Close shooting distance in feet */
+        DoubleSupplier closeDistance = pref("Shooting/CloseDistanceFt", 2.5);
+
+        /** Shooter RPM for close distance */
+        DoubleSupplier closeRPM = pref("Shooting/CloseRPM", 2525.0);
+
+        /** Far shooting distance in feet */
+        DoubleSupplier farDistance = pref("Shooting/FarDistanceFt", 3.5);
+
+        /** Shooter RPM for far distance */
+        DoubleSupplier farRPM = pref("Shooting/FarRPM", 3200.0);
+
+        /** How close to the target distance we need to be (in feet) */
+        DoubleSupplier distanceTolerance = pref("Shooting/DistanceToleranceFt", 0.5);
 
     }
 

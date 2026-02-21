@@ -6,10 +6,14 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.auto.AutonomousSubsystem;
+import frc.robot.subsystems.led.LEDHardwareBlinkin;
+import frc.robot.subsystems.led.LEDHardwareSim;
+import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.limelight.LimelightSubsystem;
 import frc.robot.subsystems.swerve.CommandSwerveDrivetrain;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.TunerConstants;
+import frc.robot.subsystems.launcher.LauncherSubsystem;
 import frc.robot.util.CommandLogger;
 
 public class RobotContainer {
@@ -21,7 +25,8 @@ public class RobotContainer {
   final SwerveSubsystem swerve;
   final LimelightSubsystem limelight;
   final AutonomousSubsystem auto;
-  final LauncherSubsystem launcher;
+  final LEDSubsystem led;
+  LauncherSubsystem launcher;
 
   public RobotContainer() {
 
@@ -34,6 +39,9 @@ public class RobotContainer {
     swerve = new SwerveSubsystem(drivetrain);
     limelight = new LimelightSubsystem(swerve);
     auto = new AutonomousSubsystem(swerve);
+    led = new LEDSubsystem(Robot.isSimulation()
+            ? new LEDHardwareSim()
+            : new LEDHardwareBlinkin());
 
     // configure driver controls
     configureBindings();
@@ -47,6 +55,11 @@ public class RobotContainer {
     // hold left bumper for orbit mode (face and orbit around target)
     driver.leftBumper()
         .whileTrue(swerve.orbitCommand(driver));
+
+    // hold right bumper to aim at hub (auto-rotate to face hub, driver translates)
+    // LEDs turn green when in shooting range, red when out of range
+    driver.rightBumper()
+        .whileTrue(swerve.aimAtHubCommand(led, driver));
 
     // zero pose on left click, accept vision pose on right click
     driver.leftStick().onTrue(swerve.zeroPoseCommand());
