@@ -44,19 +44,23 @@ public class RobotContainer {
     CommandLogger.addController("Driver", driver);
     CommandLogger.addController("Operator", operator);
 
-    // create CTRE drivetrain and wrap it in SwerveSubsystem
+    System.out.println(">>> Creating drivetrain...");
     drivetrain = TunerConstants.createDrivetrain();
+    System.out.println(">>> Creating swerve...");
     swerve = new SwerveSubsystem(drivetrain);
+    System.out.println(">>> Creating limelight...");
     limelight = new LimelightSubsystem(swerve);
+    System.out.println(">>> Creating auto...");
     auto = new AutonomousSubsystem(swerve);
+    System.out.println(">>> Creating LED...");
     led = new LEDSubsystem(Robot.isSimulation()
             ? new LEDHardwareSim()
             : new LEDHardwareBlinkin());
-
+    System.out.println(">>> Creating launcher...");
     launcher = new LauncherSubsystem(Robot.isSimulation()
             ? new LauncherHardwareSim()
             : new LauncherHardwareRev());
-
+    System.out.println(">>> Creating intake...");
     intake = new IntakeFrontSubsystem(Robot.isSimulation()
             ? new IntakeFrontHardwareSim()
             : new IntakeFrontHardwareSparkMax());
@@ -75,13 +79,8 @@ public class RobotContainer {
     // configure driver controls
     configureBindings();
 
-    System.out.println(">>> RobotContainer initialized");
-    System.out.println(">>> Button bindings:");
-    System.out.println("    Left bumper (hold)  = Orbit mode");
-    System.out.println("    Right bumper (hold) = Aim at hub");
-    System.out.println("    Y (press)           = Drive to hub + shoot");
-    System.out.println("    Left stick click    = Zero pose");
-    System.out.println("    Right stick click   = Reset from vision");
+    System.out.println(">>> RobotContainer initialized successfully");
+    System.out.println(">>> Y=4 RightBumper=6 LeftBumper=5 (Xbox sim buttons)");
   }
 
   private void configureBindings() {
