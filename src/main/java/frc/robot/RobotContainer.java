@@ -69,8 +69,19 @@ public class RobotContainer {
         if (stalled) led.flash(LEDSignal.INTAKE_FULL, 2.0);
     });
 
+    // default commands
+    launcher.setDefaultCommand(launcher.idleCommand());
+
     // configure driver controls
     configureBindings();
+
+    System.out.println(">>> RobotContainer initialized");
+    System.out.println(">>> Button bindings:");
+    System.out.println("    Left bumper (hold)  = Orbit mode");
+    System.out.println("    Right bumper (hold) = Aim at hub");
+    System.out.println("    Y (press)           = Drive to hub + shoot");
+    System.out.println("    Left stick click    = Zero pose");
+    System.out.println("    Right stick click   = Reset from vision");
   }
 
   private void configureBindings() {

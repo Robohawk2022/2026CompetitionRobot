@@ -74,8 +74,9 @@ public class SwerveSubsystem extends SubsystemBase {
         this.field2d = new Field2d();
         SmartDashboard.putData("Field", field2d);
 
-        // zero the gyro heading and go through the motions of pose reset
-        resetPose(Pose2d.kZero);
+        // reset pose to a reasonable starting position on the field
+        // (center-field, facing toward the red alliance wall)
+        resetPose(new Pose2d(8.27, 4.01, Rotation2d.kZero));
 
         // dashboard telemetry
         SmartDashboard.putData(getName(), builder -> {
