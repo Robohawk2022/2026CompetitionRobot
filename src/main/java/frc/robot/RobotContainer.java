@@ -6,7 +6,6 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.ShootingCommands;
-import frc.robot.subsystems.auto.AutonomousSubsystem;
 import frc.robot.subsystems.intakefront.IntakeFrontHardwareSim;
 import frc.robot.subsystems.intakefront.IntakeFrontHardwareSparkMax;
 import frc.robot.subsystems.intakefront.IntakeFrontSubsystem;
@@ -30,13 +29,18 @@ public class RobotContainer {
   final GameController driver = new GameController(0);
   final GameController operator = new GameController(1);
 
-  final CommandSwerveDrivetrain drivetrain;
-  final SwerveSubsystem swerve;
-  final LimelightSubsystem limelight;
-  final AutonomousSubsystem auto;
-  final LEDSubsystem led;
-  final LauncherSubsystem launcher;
-  final IntakeFrontSubsystem intake;
+  // core subsystems (same as SwerveTestbot)
+  final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+  final SwerveSubsystem swerve = new SwerveSubsystem(drivetrain);
+  final LimelightSubsystem limelight = new LimelightSubsystem(swerve);
+
+  // launcher + intake + LED
+  final LauncherSubsystem launcher = new LauncherSubsystem(Robot.isSimulation()
+          ? new LauncherHardwareSim() : new LauncherHardwareRev());
+  final IntakeFrontSubsystem intake = new IntakeFrontSubsystem(Robot.isSimulation()
+          ? new IntakeFrontHardwareSim() : new IntakeFrontHardwareSparkMax());
+  final LEDSubsystem led = new LEDSubsystem(Robot.isSimulation()
+          ? new LEDHardwareSim() : new LEDHardwareBlinkin());
 
   public RobotContainer() {
 
@@ -44,67 +48,25 @@ public class RobotContainer {
     CommandLogger.addController("Driver", driver);
     CommandLogger.addController("Operator", operator);
 
-    System.out.println(">>> Creating drivetrain...");
-    drivetrain = TunerConstants.createDrivetrain();
-    System.out.println(">>> Creating swerve...");
-    swerve = new SwerveSubsystem(drivetrain);
-    System.out.println(">>> Creating limelight...");
-    limelight = new LimelightSubsystem(swerve);
-    System.out.println(">>> Creating auto...");
-    auto = new AutonomousSubsystem(swerve);
-    System.out.println(">>> Creating LED...");
-    led = new LEDSubsystem(Robot.isSimulation()
-            ? new LEDHardwareSim()
-            : new LEDHardwareBlinkin());
-    System.out.println(">>> Creating launcher...");
-    launcher = new LauncherSubsystem(Robot.isSimulation()
-            ? new LauncherHardwareSim()
-            : new LauncherHardwareRev());
-    System.out.println(">>> Creating intake...");
-    intake = new IntakeFrontSubsystem(Robot.isSimulation()
-            ? new IntakeFrontHardwareSim()
-            : new IntakeFrontHardwareSparkMax());
+    // default commands
+    swerve.setDefaultCommand(swerve.driveCommand(driver));
+    launcher.setDefaultCommand(launcher.idleCommand());
 
-    // LED always shows distance to hub using odometry
+    // LED distance to hub
     led.setDistanceSupplier(() -> Util.feetBetween(swerve.getPose(), Field.getHubCenter()));
-
-    // flash orange when intake stalls (hopper full)
     intake.setStallCallback(stalled -> {
         if (stalled) led.flash(LEDSignal.INTAKE_FULL, 2.0);
     });
 
-    // default commands
-    launcher.setDefaultCommand(launcher.idleCommand());
-
-    // configure driver controls
-    configureBindings();
-
-    System.out.println(">>> RobotContainer initialized successfully");
-    System.out.println(">>> Y=4 RightBumper=6 LeftBumper=5 (Xbox sim buttons)");
-  }
-
-  private void configureBindings() {
-
-    // default command: normal teleop drive
-    swerve.setDefaultCommand(swerve.driveCommand(driver));
-
-    // hold left bumper for orbit mode (face and orbit around target)
-    driver.leftBumper()
-        .whileTrue(swerve.orbitCommand(driver));
-
-    // hold right bumper to aim at hub (auto-rotate to face hub, driver translates)
-    driver.rightBumper()
-        .whileTrue(swerve.aimAtHubCommand(driver));
-
-    // Y button: drive to shooting distance and shoot
+    // driver bindings
+    driver.leftBumper().whileTrue(swerve.orbitCommand(driver));
+    driver.rightBumper().whileTrue(swerve.aimAtHubCommand(driver));
     driver.y().onTrue(ShootingCommands.driveAndShootCommand(swerve, launcher));
-
-    // zero pose on left click, accept vision pose on right click
     driver.leftStick().onTrue(swerve.zeroPoseCommand());
     driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
   }
 
   public Command getAutonomousCommand() {
-    return auto.generateCommand();
+    return null;
   }
 }
