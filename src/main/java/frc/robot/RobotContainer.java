@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.ShootingCommands;
 import frc.robot.subsystems.intakefront.IntakeFrontHardwareSim;
 import frc.robot.subsystems.intakefront.IntakeFrontHardwareSparkMax;
@@ -64,6 +65,12 @@ public class RobotContainer {
     driver.y().onTrue(ShootingCommands.driveAndShootCommand(swerve, launcher));
     driver.leftStick().onTrue(swerve.zeroPoseCommand());
     driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
+
+    // operator bindings
+    operator.a().whileTrue(Commands.parallel(
+        launcher.intakeCommand(),
+        intake.intakeCommand()));
+    operator.b().whileTrue(launcher.shootCommand());
   }
 
   public Command getAutonomousCommand() {

@@ -374,7 +374,7 @@ public interface Config {
         int FEEDER_LEFT_CAN_ID = 32;
         int FEEDER_RIGHT_CAN_ID = 11;
         int SHOOTER_CAN_ID = 60;
-        int SHOOTER_INTAKE_CAN_ID = 15;
+        int SHOOTER_INTAKE_CAN_ID = 9;
 
         //=======================================================================
         // Gear ratios (for reference)
@@ -441,7 +441,7 @@ public interface Config {
         boolean FEEDER_LEFT_INVERTED = true;
         boolean FEEDER_RIGHT_INVERTED = false;
         boolean SHOOTER_INVERTED = false;
-        boolean SHOOTER_INTAKE_INVERTED = false;
+        boolean SHOOTER_INTAKE_INVERTED = true;
 
         /** Current limit for all launcher motors in amps */
         DoubleSupplier currentLimit = pref("Launcher/CurrentLimit", 80.0);
