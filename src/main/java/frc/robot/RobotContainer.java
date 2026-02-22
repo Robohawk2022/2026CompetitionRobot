@@ -27,13 +27,14 @@ import frc.robot.util.Util;
 
 public class RobotContainer {
 
-  final GameController driver = new GameController(0);
-  final GameController operator = new GameController(1);
+    final GameController driver = new GameController(0);
+    final GameController operator = new GameController(1);
 
   // core subsystems (same as SwerveTestbot)
   final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
   final SwerveSubsystem swerve = new SwerveSubsystem(drivetrain);
   final LimelightSubsystem limelight = new LimelightSubsystem(swerve);
+    final AutonomousSubsystem auto;
 
   // launcher + intake + LED
   final LauncherSubsystem launcher = new LauncherSubsystem(Robot.isSimulation()
@@ -45,19 +46,28 @@ public class RobotContainer {
 
   public RobotContainer() {
 
-    CommandLogger.enable();
-    CommandLogger.addController("Driver", driver);
-    CommandLogger.addController("Operator", operator);
+        CommandLogger.enable();
+        CommandLogger.addController("Driver", driver);
+        CommandLogger.addController("Operator", operator);
 
+        auto = new AutonomousSubsystem(swerve);
+        configureBindings();
     // default commands
     swerve.setDefaultCommand(swerve.driveCommand(driver));
     launcher.setDefaultCommand(launcher.idleCommand());
+    private void configureBindings() {
+
+        // default command: normal teleop drive
+        swerve.setDefaultCommand(swerve.driveCommand(driver));
 
     // LED distance to hub
     led.setDistanceSupplier(() -> Util.feetBetween(swerve.getPose(), Field.getHubCenter()));
     intake.setStallCallback(stalled -> {
         if (stalled) led.flash(LEDSignal.INTAKE_FULL, 2.0);
     });
+        // hold left bumper for orbit mode (face and orbit around target)
+        driver.leftBumper()
+                .whileTrue(swerve.orbitCommand(driver));
 
     // driver bindings
     driver.leftBumper().whileTrue(swerve.orbitCommand(driver));
@@ -73,8 +83,12 @@ public class RobotContainer {
         intake.intakeCommand()));
     operator.b().whileTrue(launcher.shootCommand());
   }
+        // zero pose on left click, accept vision pose on right click
+        driver.leftStick().onTrue(swerve.zeroPoseCommand());
+        driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
+    }
 
-  public Command getAutonomousCommand() {
-    return null;
-  }
+    public Command getAutonomousCommand() {
+        return auto.generateCommand();
+    }
 }

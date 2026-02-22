@@ -25,21 +25,6 @@ import java.util.List;
 import java.util.Random;
 
 import static frc.robot.Config.Limelight.limelightName;
-import static frc.robot.Config.LimelightSim.tagSize;
-import static frc.robot.Config.LimelightSim.cameraForwardOffset;
-import static frc.robot.Config.LimelightSim.cameraHeight;
-import static frc.robot.Config.LimelightSim.cameraPitch;
-import static frc.robot.Config.LimelightSim.cameraSideOffset;
-import static frc.robot.Config.LimelightSim.enabled;
-import static frc.robot.Config.LimelightSim.frameDropProbability;
-import static frc.robot.Config.LimelightSim.horizontalFov;
-import static frc.robot.Config.LimelightSim.maxDetectionDistance;
-import static frc.robot.Config.LimelightSim.maxTagAngle;
-import static frc.robot.Config.LimelightSim.minDetectionDistance;
-import static frc.robot.Config.LimelightSim.pipelineLatency;
-import static frc.robot.Config.LimelightSim.positionNoiseStdDev;
-import static frc.robot.Config.LimelightSim.rotationNoiseStdDev;
-import static frc.robot.Config.LimelightSim.verticalFov;
 
 /**
  * Simulates a Limelight camera for AprilTag detection. This class simulates
@@ -56,6 +41,41 @@ public class LimelightSim {
 
     /** Enable verbose logging */
     private static final boolean verboseLogging = false;
+
+    /** Offsets from robot center to camera (meters) */
+    static final double CAMERA_FORWARD_OFFSET = Units.inchesToMeters(4.0);
+    static final double CAMERA_SIDE_OFFSET = Units.inchesToMeters(0.0);
+    static final double CAMERA_HEIGHT = Units.inchesToMeters(24.0);
+    static final double CAMERA_PITCH = Math.toRadians(20.0);
+
+    /** Horizontal/vertical field of view (degrees) */
+    static final double HORIZONTAL_FOV = 63.3;
+    static final double VERTICAL_FOV = 50.0;
+
+    /** Min/max distance to detect tags (meters) */
+    static final double MAX_DETECTION_DISTANCE = 5.0;
+    static final double MIN_DETECTION_DISTANCE = 0.3;
+
+    /** Maximum angle between camera and tag normal for detection (degrees) */
+    static final double MAX_TAG_ANGLE = 60.0;
+
+    /** Standard deviation for position noise (meters) */
+    static final double POSITION_NOISE_STD_DEV = 0.02;
+
+    /** Standard deviation for rotation noise (degrees) */
+    static final double ROTATION_NOISE_STD_DEV = 1.0;
+
+    /** Simulated pipeline latency (milliseconds) */
+    static final double PIPELINE_LATENCY = 25.0;
+
+    /** Probability of dropping a frame (0.0-1.0) */
+    static final double FRAME_DROP_PROBABILITY = 0.05;
+
+    /** Enable/disable the Limelight simulation */
+    static final boolean ENABLED = true;
+
+    /** AprilTag size (meters) */
+    static final double TAG_SIZE = Units.inchesToMeters(6.5);
 
     /** Random number generator for noise simulation */
     private final Random random = new Random();
@@ -116,13 +136,13 @@ public class LimelightSim {
      * @param robotPose the current robot pose (from odometry or ground truth)
      */
     public void update(Pose2d robotPose) {
-        if (!enabled.getAsBoolean()) {
+        if (!ENABLED) {
             publishNoTargets();
             return;
         }
 
         // simulate frame drops
-        if (random.nextDouble() < frameDropProbability.getAsDouble()) {
+        if (random.nextDouble() < FRAME_DROP_PROBABILITY) {
             if (verboseLogging) {
                 Util.log("LimelightHardwareSim: frame dropped");
             }
@@ -171,8 +191,8 @@ public class LimelightSim {
     private Pose3d calculateCameraPose(Pose2d robotPose) {
 
         // transform from robot to camera
-        Translation3d cameraTranslation = new Translation3d(cameraForwardOffset, cameraSideOffset, cameraHeight);
-        Rotation3d cameraRotation = new Rotation3d(0, Units.degreesToRadians(-cameraPitch), 0);
+        Translation3d cameraTranslation = new Translation3d(CAMERA_FORWARD_OFFSET, CAMERA_SIDE_OFFSET, CAMERA_HEIGHT);
+        Rotation3d cameraRotation = new Rotation3d(0, Units.degreesToRadians(-CAMERA_PITCH), 0);
         Transform3d robotToCamera = new Transform3d(cameraTranslation, cameraRotation);
 
         // robot pose in 3D (on ground plane)
@@ -191,11 +211,11 @@ public class LimelightSim {
     private List<DetectedTag> findVisibleTags(Pose3d cameraPose, Pose2d robotPose) {
         List<DetectedTag> visible = new ArrayList<>();
 
-        double maxDist = maxDetectionDistance.getAsDouble();
-        double minDist = minDetectionDistance.getAsDouble();
-        double hFov = horizontalFov / 2.0;  // half angle
-        double vFov = verticalFov / 2.0;
-        double maxAngle = maxTagAngle.getAsDouble();
+        double maxDist = MAX_DETECTION_DISTANCE;
+        double minDist = MIN_DETECTION_DISTANCE;
+        double hFov = HORIZONTAL_FOV / 2.0;  // half angle
+        double vFov = VERTICAL_FOV / 2.0;
+        double maxAngle = MAX_TAG_ANGLE;
 
         for (AprilTag tag : fieldLayout.getTags()) {
             Pose3d tagPose3d = tag.pose;
@@ -246,7 +266,7 @@ public class LimelightSim {
             }
 
             // calculate area (simplified model based on distance and angle)
-            double apparentSize = tagSize / distToCamera;
+            double apparentSize = TAG_SIZE / distToCamera;
             double area = 100.0 * apparentSize * apparentSize * 50.0 * Math.abs(dot);
             area = Math.min(100.0, Math.max(0.0, area));
 
@@ -273,8 +293,8 @@ public class LimelightSim {
      * Adds Gaussian noise to the pose estimate.
      */
     private Pose2d addNoise(Pose2d pose) {
-        double posNoise = positionNoiseStdDev.getAsDouble();
-        double rotNoise = Units.degreesToRadians(rotationNoiseStdDev.getAsDouble());
+        double posNoise = POSITION_NOISE_STD_DEV;
+        double rotNoise = Units.degreesToRadians(ROTATION_NOISE_STD_DEV);
 
         double noiseX = random.nextGaussian() * posNoise;
         double noiseY = random.nextGaussian() * posNoise;
@@ -292,7 +312,7 @@ public class LimelightSim {
      * Array format: [x, y, z, roll, pitch, yaw, latency, tagCount, tagSpan, avgDist, avgArea, ...fiducials]
      */
     private void publishClassicPose(Pose2d pose, List<DetectedTag> tags) {
-        double latency = pipelineLatency.getAsDouble();
+        double latency = PIPELINE_LATENCY;
 
         // calculate aggregate metrics
         double avgDist = tags.stream().mapToDouble(t -> t.distanceToCamera).average().orElse(0);
@@ -338,7 +358,7 @@ public class LimelightSim {
      * MegaTag2 uses the robot's gyro heading, so it should be more accurate.
      */
     private void publishMegaTag2Pose(Pose2d pose, List<DetectedTag> tags) {
-        double latency = pipelineLatency.getAsDouble();
+        double latency = PIPELINE_LATENCY;
 
         // calculate aggregate metrics
         double avgDist = tags.stream().mapToDouble(t -> t.distanceToCamera).average().orElse(0);

@@ -2,8 +2,6 @@ package frc.robot.subsystems.led;
 
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 
-import static frc.robot.Config.LED.*;
-
 /**
  * Implements {@link LEDHardware} using the REV Blinkin LED controller.
  * <p>
@@ -18,9 +16,10 @@ public class LEDHardwareBlinkin implements LEDHardware {
     private LEDSignal currentSignal = LEDSignal.OFF;
 
     /**
-     * Creates the Blinkin hardware on the configured PWM port.
+     * Creates the Blinkin hardware on the specified PWM port.
+     * @param pwmPort the PWM port number
      */
-    public LEDHardwareBlinkin() {
+    public LEDHardwareBlinkin(int pwmPort) {
         blinkin = new Spark(pwmPort);
         blinkin.setSafetyEnabled(false);
     }

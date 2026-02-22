@@ -1,8 +1,9 @@
 package frc.robot.subsystems.launcher;
 
+import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
-import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -19,6 +20,12 @@ import static frc.robot.Config.Launcher.*;
  * Feeder Left (CAN 1), Feeder Right (CAN 2), Shooter (CAN 3).
  */
 public class LauncherHardwareRev implements LauncherHardware {
+
+    public static final boolean FEEDER_LEFT_INVERTED = true;
+    public static final boolean FEEDER_RIGHT_INVERTED = false;
+    public static final boolean SHOOTER_INVERTED = false;
+
+    public static final int CURRENT_LIMIT = 60;
 
     private final SparkMax feederLeftMotor;
     private final SparkMax feederRightMotor;
@@ -60,14 +67,14 @@ public class LauncherHardwareRev implements LauncherHardware {
         feederLeftConfig = createMotorConfig(FEEDER_LEFT_INVERTED,
                 feederLeftKV.getAsDouble(), feederLeftKP.getAsDouble());
         feederLeftMotor.configure(feederLeftConfig,
-                SparkBase.ResetMode.kResetSafeParameters,
-                SparkBase.PersistMode.kPersistParameters);
+                ResetMode.kResetSafeParameters,
+                PersistMode.kPersistParameters);
 
         feederRightConfig = createMotorConfig(FEEDER_RIGHT_INVERTED,
                 feederRightKV.getAsDouble(), feederRightKP.getAsDouble());
         feederRightMotor.configure(feederRightConfig,
-                SparkBase.ResetMode.kResetSafeParameters,
-                SparkBase.PersistMode.kPersistParameters);
+                ResetMode.kResetSafeParameters,
+                PersistMode.kPersistParameters);
 
         // shooter has its own PID gains
         shooterConfig = createMotorConfig(SHOOTER_INVERTED,
@@ -86,9 +93,9 @@ public class LauncherHardwareRev implements LauncherHardware {
 
     private SparkMaxConfig createMotorConfig(boolean inverted, double kV, double kP) {
         SparkMaxConfig config = new SparkMaxConfig();
-        config.idleMode(IdleMode.kBrake);
+        config.idleMode(IdleMode.kCoast);
         config.inverted(inverted);
-        config.smartCurrentLimit((int) currentLimit.getAsDouble());
+        config.smartCurrentLimit(CURRENT_LIMIT);
         config.closedLoopRampRate(0.1);
 
         config.closedLoop.p(kP);
@@ -101,7 +108,7 @@ public class LauncherHardwareRev implements LauncherHardware {
         if (rpm == 0) {
             motor.set(0);
         } else {
-            controller.setReference(rpm, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
+            controller.setSetpoint(rpm, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
         }
     }
 
@@ -193,7 +200,7 @@ public class LauncherHardwareRev implements LauncherHardware {
         config.closedLoop.d(kD);
         config.closedLoop.feedForward.kV(kV);
         motor.configure(config,
-                SparkBase.ResetMode.kNoResetSafeParameters,
-                SparkBase.PersistMode.kNoPersistParameters);
+                ResetMode.kNoResetSafeParameters,
+                PersistMode.kNoPersistParameters);
     }
 }

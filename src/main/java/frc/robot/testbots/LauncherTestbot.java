@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.GameController;
+import frc.robot.RobotContainer;
 import frc.robot.subsystems.launcher.LauncherHardwareRev;
 import frc.robot.subsystems.launcher.LauncherHardwareSim;
 import frc.robot.subsystems.launcher.LauncherSubsystem;
@@ -24,6 +25,10 @@ import frc.robot.subsystems.launcher.LauncherSubsystem;
  */
 public class LauncherTestbot extends TimedRobot {
 
+    public static final int FEEDER_LEFT_CAN_ID = 32;
+    public static final int FEEDER_RIGHT_CAN_ID = 11;
+    public static final int SHOOTER_CAN_ID = 60;
+
     private LauncherSubsystem launcher;
     private GameController controller;
 
@@ -35,7 +40,12 @@ public class LauncherTestbot extends TimedRobot {
         Preferences.removeAll();
 
         boolean sim = isSimulation();
-        launcher = new LauncherSubsystem(sim ? new LauncherHardwareSim() : new LauncherHardwareRev());
+        launcher = new LauncherSubsystem(sim
+                ? new LauncherHardwareSim()
+                : new LauncherHardwareRev(
+                        FEEDER_LEFT_CAN_ID,
+                        FEEDER_RIGHT_CAN_ID,
+                        SHOOTER_CAN_ID));
         controller = new GameController(0);
 
         launcher.setDefaultCommand(launcher.idleCommand());

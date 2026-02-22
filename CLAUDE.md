@@ -63,20 +63,18 @@ This is an **FRC robot codebase** - software for controlling a competition robot
 ├── claude-docs/              # AI session logs (REQUIRED - log every session here)
 │   └── YYYY-MM-DD-description.md
 ├── src/main/java/frc/robot/
-│   ├── Config.java           # ALL tunable parameters (use Preferences)
+│   ├── Config.java           # Software-tunable parameters (PID gains, speeds)
 │   ├── Robot.java            # Minimal lifecycle hooks
 │   ├── RobotContainer.java   # Wiring: creates subsystems, binds commands
 │   ├── GameController.java   # Controller abstraction (Xbox/8BitDo/Logitech)
 │   ├── subsystems/
 │   │   ├── swerve/           # Swerve drive (CTRE TalonFX)
 │   │   ├── limelight/        # Limelight vision (AprilTag pose estimation)
-│   │   ├── questnav/         # QuestNav headset (dead-reckoning pose estimation)
-│   │   ├── shooter/          # Shooter mechanism
-│   │   ├── intakefront/      # Front intake with velocity control
+│   │   ├── launcher/          # Launcher (feeders + shooter)
 │   │   └── led/              # LED signaling via REV Blinkin
 │   ├── commands/
 │   │   └── swerve/           # Standalone swerve commands (teleop, orbit)
-│   ├── util/                 # Reusable utilities (Util, PDController, Trapezoid)
+│   ├── util/                 # Reusable utilities (Util, Trapezoid)
 │   └── testbots/             # Standalone test programs
 ```
 
@@ -108,10 +106,14 @@ public class ArmSubsystem extends SubsystemBase {
 
 ### 2. Centralized Configuration
 
-All tunable values live in `Config.java` as `DoubleSupplier`/`BooleanSupplier`:
+`Config.java` is for **software-only tunable values** — things that can be changed at runtime
+via Preferences (PID gains, max speeds, tolerances). Hardware-specific constants belong elsewhere:
+
+- **Motor inversion, current limits, gear ratios** → constants in the relevant hardware class
+- **CAN and PWM IDs** → constants in the class that creates the hardware (`RobotContainer` for the competition robot, the testbot class for testbots)
 
 ```java
-// In Config.java
+// In Config.java — software-tunable values only
 interface Arm {
     DoubleSupplier kP = pref("Arm/kP", 0.1);
     DoubleSupplier kD = pref("Arm/kD", 0.01);
@@ -120,12 +122,24 @@ interface Arm {
 
     // Derived values use lambdas
     DoubleSupplier halfMax = () -> maxAngle.getAsDouble() / 2.0;
-
-    // Static constants for non-tunable values
-    double GEAR_RATIO = 1.0 / 50.0;
 }
 
-// In the subsystem - use static imports
+// In the hardware class — hardware-specific constants
+public class ArmHardwareRev implements ArmHardware {
+    static final boolean INVERTED = false;
+    static final int CURRENT_LIMIT = 40;
+    static final double GEAR_RATIO = 1.0 / 50.0;
+}
+
+// CAN/PWM IDs live where hardware is instantiated
+public class RobotContainer {
+    static final int ARM_CAN_ID = 10;  // for competition robot
+}
+public class ArmTestbot extends TimedRobot {
+    static final int ARM_CAN_ID = 10;  // for standalone testing
+}
+
+// In the subsystem — use static imports for Config values
 import static frc.robot.Config.Arm.*;
 
 double p = kP.getAsDouble();
@@ -295,7 +309,7 @@ public class XxxSubsystem extends SubsystemBase {
 //region Implementation --------------------------------------------------------
 
     final XxxHardware hardware;
-    final PDController pid;
+    final PIDController pid;
     String currentMode;
     double currentValue;
 
@@ -305,7 +319,7 @@ public class XxxSubsystem extends SubsystemBase {
      */
     public XxxSubsystem(XxxHardware hardware) {
         this.hardware = Objects.requireNonNull(hardware);
-        this.pid = new PDController(kP, kD, tolerance);
+        this.pid = new PIDController(kP.getAsDouble(), 0, kD.getAsDouble());
         this.currentMode = "idle";
 
         // Dashboard publishing
@@ -392,6 +406,8 @@ public interface XxxHardware {
  */
 public class XxxHardwareSim implements XxxHardware {
 
+    static final double GEAR_RATIO = 1.0 / 50.0;
+
     final SomeWPILibSim sim;
     final DoubleConsumer widget;
 
@@ -399,7 +415,7 @@ public class XxxHardwareSim implements XxxHardware {
         this.sim = new SomeWPILibSim(
             DCMotor.getNEO(1),
             GEAR_RATIO,
-            // ... parameters from Config
+            // ... hardware-specific parameters as constants in this class
         );
         this.widget = createWidget();
     }
@@ -838,20 +854,6 @@ Util.NAN_POSE         // Pose2d with NaN values
 Util.ZERO_SPEED       // ChassisSpeeds with 0 values
 ```
 
-### PDController
-
-Use `PDController` instead of WPILib's PIDController to avoid integral windup:
-
-```java
-final PDController pid = new PDController(kP, kD, tolerance);
-
-// In command initialize()
-pid.reset();
-
-// In command execute()
-double feedback = pid.calculate(current, target);
-```
-
 ### Trapezoid
 
 Use for smooth motion profiles:
@@ -876,7 +878,9 @@ double velocity = state.velocity;
 - **Check for existing code** - Search before creating new classes/utilities
 - **Check before creating subsystems** - Read `claude-docs/` to see if a subsystem was started or discussed previously
 - **Ask if duplicate found** - If something similar exists, ask the user before proceeding
-- **Use Config.java** for all tunable values with `Util.pref()`
+- **Use Config.java** for software-tunable values (PID gains, speeds, tolerances)
+- **Put CAN/PWM IDs** where hardware is created (`RobotContainer` or testbot class)
+- **Put hardware constants** (motor inversion, current limits, gear ratios) in the hardware class
 - **Clamp voltages** with `Util.clampVolts()` before sending to hardware
 - **Reset PID** in command `initialize()`, not constructor
 - **Call `addRequirements()`** in all commands
@@ -887,7 +891,8 @@ double velocity = state.velocity;
 ### Must Not
 
 - **Don't hardcode** tunable values in subsystem code
-- **Don't use I term** in PID - causes integral windup, use `PDController`
+- **Don't put hardware constants** (CAN IDs, motor inversion, current limits) in Config.java
+- **Don't use I term** in PID - causes integral windup
 - **Don't allocate objects** in `periodic()` - causes GC pauses
 - **Don't access hardware** directly from commands - go through subsystem
 - **Don't mix units** - convert at boundaries, be consistent internally
@@ -899,12 +904,14 @@ double velocity = state.velocity;
 
 When reading existing code, watch for these issues:
 
-1. **Hardcoded magic numbers** - Should be in Config.java
-2. **Missing voltage clamp** - Check `applyVolts` calls
-3. **PID reset in constructor** - Should be in `initialize()`
-4. **Missing `addRequirements`** - Commands must declare subsystem dependencies
-5. **Hardware access in commands** - Should go through subsystem methods
-6. **I term in PID tuning** - Suggests potential windup issues
+1. **Hardcoded tunable values** - PID gains, speeds, tolerances should be in Config.java
+2. **CAN/PWM IDs in Config** - Should be constants where hardware is created
+3. **Hardware constants in Config** - Motor inversion, current limits belong in the hardware class
+4. **Missing voltage clamp** - Check `applyVolts` calls
+5. **PID reset in constructor** - Should be in `initialize()`
+6. **Missing `addRequirements`** - Commands must declare subsystem dependencies
+7. **Hardware access in commands** - Should go through subsystem methods
+8. **I term in PID tuning** - Suggests potential windup issues
 
 ---
 
@@ -1097,18 +1104,20 @@ Use descriptive names that sort chronologically:
 ## New Subsystem Checklist
 
 1. [ ] Create package `frc.robot.subsystems.xxx`
-2. [ ] Add config interface in `Config.java`
+2. [ ] Add config interface in `Config.java` (software-tunable values only)
 3. [ ] Create `XxxHardware.java` interface
 4. [ ] Create `XxxSubsystem.java` with command factories
 5. [ ] Create `XxxHardwareSim.java` for simulation
 6. [ ] Create `XxxTestbot.java` for testing
-7. [ ] Wire up in `RobotContainer.java`
-8. [ ] Commands reset PID in `initialize()`
-9. [ ] Commands set `currentMode` for debugging
-10. [ ] Voltages clamped before hardware
-11. [ ] Dashboard telemetry added
-12. [ ] `Objects.requireNonNull()` for constructor params
-13. [ ] **Log session to `claude-docs/`**
+7. [ ] Wire up in `RobotContainer.java` (CAN/PWM IDs as constants here)
+8. [ ] CAN/PWM IDs as constants in testbot class too
+9. [ ] Hardware constants (inversion, current limits) in hardware class
+10. [ ] Commands reset PID in `initialize()`
+11. [ ] Commands set `currentMode` for debugging
+12. [ ] Voltages clamped before hardware
+13. [ ] Dashboard telemetry added
+14. [ ] `Objects.requireNonNull()` for constructor params
+15. [ ] **Log session to `claude-docs/`**
 
 ---
 
@@ -1183,11 +1192,10 @@ The `claude-docs/` folder contains session logs with implementation details. Key
 ### Controller / Input
 - [Extract GameController Class](claude-docs/2026-01-26-extract-gamecontroller-class.md) - Controller abstraction for 8BitDo, Xbox, and Logitech
 
-### Shooter
-- [Add Shooter Motors Testbot](claude-docs/2026-01-24-add-shooter-motors-testbot.md) - Testbot for shooter hardware
-
-### Intake
-- [Add IntakeFront Subsystem](claude-docs/2026-01-25-add-intake-front-subsystem.md) - Front intake with velocity control
+### Launcher
+- [Add Launcher Subsystem](claude-docs/2026-02-07-add-launcher-subsystem.md) - Initial launcher subsystem
+- [Update Launcher 3-Motor](claude-docs/2026-02-08-update-launcher-3-motor.md) - 3-motor launcher design
+- [Rebuild Launcher 3-Motor](claude-docs/2026-02-16-rebuild-launcher-3-motor.md) - Launcher rebuild with updated CAN IDs
 
 ### LED
 - [Add LED Subsystem](claude-docs/2026-01-25-add-led-subsystem.md) - LED control subsystem
