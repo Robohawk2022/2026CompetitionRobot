@@ -166,7 +166,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "intake";
                 applyPIDGains();
             },
-            () -> driveMotors(feederRPM.getAsDouble(), feederRPM.getAsDouble(), shooterIntakeRPM.getAsDouble(), 0)
+            () -> driveMotors(feederRPM.getAsDouble(), feederRPM.getAsDouble(), shooterIntakingRPM.getAsDouble(), 0)
         ).finallyDo(interrupted -> cleanup());
     }
 
@@ -197,7 +197,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "shoot";
                 applyPIDGains();
             },
-            () -> driveMotors(feedShootRPM.getAsDouble(), feedShootRPM.getAsDouble(), shooterRPM.getAsDouble(), shooterIntakeRPM.getAsDouble())
+            () -> driveMotors(feedShootRPM.getAsDouble(), feedShootRPM.getAsDouble(), shooterRPM.getAsDouble(), intakeRPM.getAsDouble())
         ).finallyDo(interrupted -> cleanup());
     }
 
@@ -215,7 +215,7 @@ public class LauncherSubsystem extends SubsystemBase {
                 currentMode = "shoot";
                 applyPIDGains();
             },
-            () -> driveMotors(feedShootRPM.getAsDouble(), feedShootRPM.getAsDouble(), rpm.getAsDouble(), shooterIntakeRPM.getAsDouble())
+            () -> driveMotors(feedShootRPM.getAsDouble(), feedShootRPM.getAsDouble(), rpm.getAsDouble(), intakeRPM.getAsDouble())
         ).finallyDo(interrupted -> cleanup());
     }
 

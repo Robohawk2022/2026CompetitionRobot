@@ -430,9 +430,10 @@ public interface Config {
 
         /** Shooter (main flywheel) RPM during shooting */
         DoubleSupplier shooterRPM = pref("Launcher/ShooterRPM", 2525.0);
+        DoubleSupplier shooterIntakingRPM = pref("Launcher/ShooterIntakingRPM", 1000.0);
 
-        /** Intake motor (CAN 15) RPM during shooting (feeds ball into shooter) */
-        DoubleSupplier shooterIntakeRPM = pref("Launcher/ShooterIntakeRPM", 1000.0);
+        /** Intake motor (CAN 9) RPM during shooting (feeds ball into shooter) */
+        DoubleSupplier intakeRPM = pref("Launcher/IntakeRPM", 2000.0);
 
         //=======================================================================
         // Motor configuration
