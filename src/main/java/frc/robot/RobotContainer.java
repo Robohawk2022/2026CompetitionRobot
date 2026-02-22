@@ -7,6 +7,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.ShootingCommands;
+import frc.robot.subsystems.auto.AutonomousSubsystem;
 import frc.robot.subsystems.intakefront.IntakeFrontHardwareSim;
 import frc.robot.subsystems.intakefront.IntakeFrontHardwareSparkMax;
 import frc.robot.subsystems.intakefront.IntakeFrontSubsystem;
@@ -41,8 +42,9 @@ public class RobotContainer {
           ? new LauncherHardwareSim() : new LauncherHardwareRev());
   final IntakeFrontSubsystem intake = new IntakeFrontSubsystem(Robot.isSimulation()
           ? new IntakeFrontHardwareSim() : new IntakeFrontHardwareSparkMax());
+  static final int LED_PWM_PORT = 0;
   final LEDSubsystem led = new LEDSubsystem(Robot.isSimulation()
-          ? new LEDHardwareSim() : new LEDHardwareBlinkin());
+          ? new LEDHardwareSim() : new LEDHardwareBlinkin(LED_PWM_PORT));
 
   public RobotContainer() {
 

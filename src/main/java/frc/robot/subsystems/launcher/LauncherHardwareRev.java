@@ -80,15 +80,15 @@ public class LauncherHardwareRev implements LauncherHardware {
         shooterConfig = createMotorConfig(SHOOTER_INVERTED,
                 shooterKV.getAsDouble(), shooterKP.getAsDouble());
         shooterMotor.configure(shooterConfig,
-                SparkBase.ResetMode.kResetSafeParameters,
-                SparkBase.PersistMode.kPersistParameters);
+                ResetMode.kResetSafeParameters,
+                PersistMode.kPersistParameters);
 
         // shooter intake - same side as shooter, feeds into it
         shooterIntakeConfig = createMotorConfig(SHOOTER_INTAKE_INVERTED,
                 shooterIntakeKV.getAsDouble(), shooterIntakeKP.getAsDouble());
         shooterIntakeMotor.configure(shooterIntakeConfig,
-                SparkBase.ResetMode.kResetSafeParameters,
-                SparkBase.PersistMode.kPersistParameters);
+                ResetMode.kResetSafeParameters,
+                PersistMode.kPersistParameters);
     }
 
     private SparkMaxConfig createMotorConfig(boolean inverted, double kV, double kP) {
