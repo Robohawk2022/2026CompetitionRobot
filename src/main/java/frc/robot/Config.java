@@ -271,10 +271,10 @@ public interface Config {
         DoubleSupplier closeRPM = pref("Shooting/CloseRPM", 2525.0);
 
         /** Far shooting distance in feet */
-        DoubleSupplier farDistance = pref("Shooting/FarDistanceFt", 3.5);
+        DoubleSupplier farDistance = pref("Shooting/FarDistanceFt", 4.5);
 
         /** Shooter RPM for far distance */
-        DoubleSupplier farRPM = pref("Shooting/FarRPM", 3200.0);
+        DoubleSupplier farRPM = pref("Shooting/FarRPM", 3225.0);
 
         /** How close to the target distance we need to be (in feet) */
         DoubleSupplier distanceTolerance = pref("Shooting/DistanceToleranceFt", 0.5);
