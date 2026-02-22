@@ -12,6 +12,7 @@ import edu.wpi.first.networktables.BooleanEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Preferences;
 
 import java.util.HashMap;
@@ -176,19 +177,19 @@ public class Util {
     static BooleanEntry isRedAlliance = null;
 
     /**
-     * Returns the current alliance color from {@code FMSInfo/IsRedAlliance}.
+     * Returns the current alliance color.
      * <p>
-     * This NetworkTables entry is the single source of truth for alliance
-     * color. It is set automatically by the Driver Station software (both
-     * in simulation and on a real field), so third-party libraries
-     * (PathPlanner, Limelight, etc.) will all agree with our code.
-     * <p>
-     * To change your alliance in simulation or practice, use the Driver
-     * Station software or set the value in SmartDashboard / Elastic.
+     * When connected to FMS (competition), uses {@link DriverStation#getAlliance()}
+     * which is authoritative. When no FMS is attached (practice / simulation),
+     * reads {@code FMSInfo/IsRedAlliance} from NetworkTables so the alliance
+     * can be changed from SmartDashboard, Elastic, or the Driver Station app.
      *
      * @return true if we are on the red alliance
      */
     public static boolean isRedAlliance() {
+        if (DriverStation.isFMSAttached()) {
+            return DriverStation.getAlliance().orElse(Alliance.Red) == Alliance.Red;
+        }
         if (isRedAlliance == null) {
             isRedAlliance = NetworkTableInstance.getDefault()
                     .getTable("FMSInfo")
