@@ -5,6 +5,7 @@ import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.Util;
 import edu.wpi.first.math.MathUtil;
@@ -90,6 +91,14 @@ public class LauncherSubsystem extends SubsystemBase {
             || Math.abs(currentShooterRPM - shooterTarget) <= tol;
         // at least one motor must be running
         return (feederLeftTarget != 0 || shooterTarget != 0) && feedersOk && shooterOk;
+    }
+
+    /**
+     * @return true if the shooter motor is within tolerance of its target RPM
+     */
+    public boolean shooterAtSpeed() {
+        return shooterTarget != 0
+            && Math.abs(currentShooterRPM - shooterTarget) <= tolerance.getAsDouble();
     }
 
     /** Maximum safe RPM for NEO motors (free speed is 5676) */
@@ -186,36 +195,52 @@ public class LauncherSubsystem extends SubsystemBase {
     }
 
     /**
-     * Spins feeders inward at feed RPM and shooter at shoot RPM.
-     * Runs continuously until interrupted.
+     * Spins up the shooter first, waits for it to reach speed, then starts
+     * feeders and shooter intake. Runs continuously until interrupted.
      *
-     * @return a command that runs all motors for shooting
+     * @return a command that spins up then feeds for shooting
      */
     public Command shootCommand() {
-        return startRun(
-            () -> {
-                currentMode = "shoot";
-                applyPIDGains();
-            },
-            () -> driveMotors(feedShootRPM.getAsDouble(), feedShootRPM.getAsDouble(), shooterRPM.getAsDouble(), intakeRPM.getAsDouble())
+        return Commands.sequence(
+            // phase 1: spin up shooter only
+            startRun(
+                () -> {
+                    currentMode = "spin-up";
+                    applyPIDGains();
+                },
+                () -> driveMotors(0, 0, shooterRPM.getAsDouble(), 0)
+            ).until(this::shooterAtSpeed),
+            // phase 2: shooter at speed, start feeders and shooter intake
+            startRun(
+                () -> currentMode = "shoot",
+                () -> driveMotors(feedShootRPM.getAsDouble(), feedShootRPM.getAsDouble(), shooterRPM.getAsDouble(), intakeRPM.getAsDouble())
+            )
         ).finallyDo(interrupted -> cleanup());
     }
 
     /**
-     * Spins feeders inward at feed RPM and shooter at the specified RPM.
-     * Shooter intake also runs during shooting.
+     * Spins up the shooter to the specified RPM first, waits for it to reach
+     * speed, then starts feeders and shooter intake.
      * Runs continuously until interrupted.
      *
      * @param rpm supplier for the shooter RPM target
-     * @return a command that runs all motors for shooting at a specific RPM
+     * @return a command that spins up then feeds for shooting at a specific RPM
      */
     public Command shootAtRPMCommand(DoubleSupplier rpm) {
-        return startRun(
-            () -> {
-                currentMode = "shoot";
-                applyPIDGains();
-            },
-            () -> driveMotors(feedShootRPM.getAsDouble(), feedShootRPM.getAsDouble(), rpm.getAsDouble(), intakeRPM.getAsDouble())
+        return Commands.sequence(
+            // phase 1: spin up shooter only
+            startRun(
+                () -> {
+                    currentMode = "spin-up";
+                    applyPIDGains();
+                },
+                () -> driveMotors(0, 0, rpm.getAsDouble(), 0)
+            ).until(this::shooterAtSpeed),
+            // phase 2: shooter at speed, start feeders and shooter intake
+            startRun(
+                () -> currentMode = "shoot",
+                () -> driveMotors(feedShootRPM.getAsDouble(), feedShootRPM.getAsDouble(), rpm.getAsDouble(), intakeRPM.getAsDouble())
+            )
         ).finallyDo(interrupted -> cleanup());
     }
 

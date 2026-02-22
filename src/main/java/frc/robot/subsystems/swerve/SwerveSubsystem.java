@@ -426,6 +426,29 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
+     * Rapidly oscillates the robot left and right (robot-relative) to
+     * dislodge stuck balls. Hold trigger to jiggle, release to stop.
+     *
+     * @return the jiggle command
+     */
+    public Command jiggleCommand() {
+        // ~1-2 inches of travel at ~6 Hz oscillation
+        double speedMps = Units.feetToMeters(2.0); // 2 ft/s sideways
+        double periodSec = 0.16; // full cycle = 0.16s (~6 Hz)
+        double halfPeriod = periodSec / 2.0;
+        edu.wpi.first.wpilibj.Timer timer = new edu.wpi.first.wpilibj.Timer();
+        return startRun(
+            () -> timer.restart(),
+            () -> {
+                // alternate left/right each half-period
+                double t = timer.get() % periodSec;
+                double vy = (t < halfPeriod) ? speedMps : -speedMps;
+                driveRobotRelative("jiggle", new ChassisSpeeds(0, vy, 0));
+            }
+        );
+    }
+
+    /**
      * Creates a command that rotates to face the specified heading.
      *
      * @param heading the target heading
