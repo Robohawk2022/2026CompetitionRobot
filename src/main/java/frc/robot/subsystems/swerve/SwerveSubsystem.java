@@ -22,7 +22,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.GameController;
-import frc.robot.commands.swerve.SwerveAimAtHubCommand;
 import frc.robot.commands.swerve.SwerveOrbitCommand;
 import frc.robot.commands.swerve.SwerveTeleopCommand;
 import frc.robot.commands.swerve.SwerveToHeadingCommand;
@@ -413,16 +412,28 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Creates a command that auto-aims the robot to face the hub while allowing
-     * the driver to translate freely with the left stick. Hold a button to aim,
-     * release to return to normal teleop.
+     * Creates a command that rotates to face the hub center. Uses a deferred
+     * command so the heading is calculated just before the command runs.
+     * <p>
+     * Reuses {@link SwerveToHeadingCommand} so there is only one set of
+     * rotation PID parameters to tune.
      *
-     * @param controller the game controller for driver input
      * @return the aim-at-hub command
-     * @see SwerveAimAtHubCommand
+     * @see SwerveToHeadingCommand
      */
-    public Command aimAtHubCommand(GameController controller) {
-        return new SwerveAimAtHubCommand(this, controller);
+    public Command aimAtHubCommand() {
+        return defer(() -> {
+            Pose2d currentPose = getPose();
+            Pose2d hubCenter = Field.getHubCenter();
+
+            // angle from robot to hub center
+            Rotation2d angleToHub = hubCenter.getTranslation()
+                    .minus(currentPose.getTranslation())
+                    .getAngle();
+
+            Util.log("[swerve] aim at hub: heading %.1f deg", angleToHub.getDegrees());
+            return new SwerveToHeadingCommand(this, angleToHub);
+        });
     }
 
     /**

@@ -76,7 +76,7 @@ public class RobotContainer {
 
         // driver bindings
         driver.leftBumper().whileTrue(swerve.orbitCommand(driver));
-        driver.rightBumper().whileTrue(swerve.aimAtHubCommand(driver));
+        driver.rightBumper().whileTrue(swerve.aimAtHubCommand());
         driver.y().onTrue(ShootingCommands.driveAndShootCommand(swerve, launcher));
         driver.leftTrigger().whileTrue(swerve.jiggleCommand());
         driver.leftStick().onTrue(swerve.zeroPoseCommand());

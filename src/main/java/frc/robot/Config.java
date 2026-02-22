@@ -66,26 +66,6 @@ public interface Config {
 
 //endregion
 
-//region Swerve (Aim at Hub) ---------------------------------------------------
-
-    interface SwerveAim {
-
-        /** Proportional gain for heading correction (degrees/sec per degree of error) */
-        DoubleSupplier kP = pref("SwerveAim/kP", 4.0);
-
-        /** Derivative gain for heading correction */
-        DoubleSupplier kD = pref("SwerveAim/kD", 0.0);
-
-        /** Heading tolerance in degrees (for "at goal" check) */
-        DoubleSupplier headingTolerance = pref("SwerveAim/HeadingToleranceDeg", 2.0);
-
-        /** Maximum rotation speed while aiming in degrees per second */
-        DoubleSupplier maxRotateDps = pref("SwerveAim/MaxRotateDPS", 180.0);
-
-    }
-
-//endregion
-
 //region Swerve (Auto) ---------------------------------------------------------
 
     interface SwerveAuto {
