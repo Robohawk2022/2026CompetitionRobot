@@ -28,72 +28,64 @@ import frc.robot.util.Util;
 
 public class RobotContainer {
 
+    static final int LED_PWM_PORT = 0;
+
     final GameController driver = new GameController(0);
     final GameController operator = new GameController(1);
 
-  // core subsystems (same as SwerveTestbot)
-  final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-  final SwerveSubsystem swerve = new SwerveSubsystem(drivetrain);
-  final LimelightSubsystem limelight = new LimelightSubsystem(swerve);
-  final AutonomousSubsystem auto;
+    // core subsystems
+    final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    final SwerveSubsystem swerve = new SwerveSubsystem(drivetrain);
+    final LimelightSubsystem limelight = new LimelightSubsystem(swerve);
+    final AutonomousSubsystem auto;
 
-  // launcher + intake + LED
-  final LauncherSubsystem launcher = new LauncherSubsystem(Robot.isSimulation()
-          ? new LauncherHardwareSim() : new LauncherHardwareRev());
-  final IntakeFrontSubsystem intake = new IntakeFrontSubsystem(Robot.isSimulation()
-          ? new IntakeFrontHardwareSim() : new IntakeFrontHardwareSparkMax());
-  static final int LED_PWM_PORT = 0;
-  final LEDSubsystem led = new LEDSubsystem(Robot.isSimulation()
-          ? new LEDHardwareSim() : new LEDHardwareBlinkin(LED_PWM_PORT));
+    // launcher + intake + LED
+    final LauncherSubsystem launcher = new LauncherSubsystem(Robot.isSimulation()
+            ? new LauncherHardwareSim() : new LauncherHardwareRev());
+    final IntakeFrontSubsystem intake = new IntakeFrontSubsystem(Robot.isSimulation()
+            ? new IntakeFrontHardwareSim() : new IntakeFrontHardwareSparkMax());
+    final LEDSubsystem led = new LEDSubsystem(Robot.isSimulation()
+            ? new LEDHardwareSim() : new LEDHardwareBlinkin(LED_PWM_PORT));
 
-  public RobotContainer() {
+    public RobotContainer() {
 
         CommandLogger.enable();
         CommandLogger.addController("Driver", driver);
         CommandLogger.addController("Operator", operator);
 
         auto = new AutonomousSubsystem(swerve);
-        configureBindings();
-    // default commands
-    swerve.setDefaultCommand(swerve.driveCommand(driver));
-    launcher.setDefaultCommand(launcher.idleCommand());
 
-    // LED distance to hub
-    led.setDistanceSupplier(() -> Util.feetBetween(swerve.getPose(), Field.getHubCenter()));
-    intake.setStallCallback(stalled -> {
-        if (stalled) led.flash(LEDSignal.INTAKE_FULL, 2.0);
-    });
-    
-    
-        // zero pose on left click, accept vision pose on right click
-        driver.leftStick().onTrue(swerve.zeroPoseCommand());
-        driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
+        // default commands
+        swerve.setDefaultCommand(swerve.driveCommand(driver));
+        launcher.setDefaultCommand(launcher.idleCommand());
+
+        // LED distance to hub
+        led.setDistanceSupplier(() -> Util.feetBetween(swerve.getPose(), Field.getHubCenter()));
+        intake.setStallCallback(stalled -> {
+            if (stalled) led.flash(LEDSignal.INTAKE_FULL, 2.0);
+        });
+
+        configureBindings();
     }
 
     public Command getAutonomousCommand() {
         return auto.generateCommand();
     }
+
     private void configureBindings() {
 
-        // default command: normal teleop drive
-        swerve.setDefaultCommand(swerve.driveCommand(driver));
+        // driver bindings
+        driver.leftBumper().whileTrue(swerve.orbitCommand(driver));
+        driver.rightBumper().whileTrue(swerve.aimAtHubCommand(driver));
+        driver.y().onTrue(ShootingCommands.driveAndShootCommand(swerve, launcher));
+        driver.leftTrigger().whileTrue(swerve.jiggleCommand());
+        driver.leftStick().onTrue(swerve.zeroPoseCommand());
+        driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
 
-        // hold left bumper for orbit mode (face and orbit around target)
-        driver.leftBumper()
-                .whileTrue(swerve.orbitCommand(driver));
-
-    // driver bindings
-    driver.leftBumper().whileTrue(swerve.orbitCommand(driver));
-    driver.rightBumper().whileTrue(swerve.aimAtHubCommand(driver));
-    driver.y().onTrue(ShootingCommands.driveAndShootCommand(swerve, launcher));
-    driver.leftTrigger().whileTrue(swerve.jiggleCommand());
-    driver.leftStick().onTrue(swerve.zeroPoseCommand());
-    driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
-
-    // operator bindings
-    operator.a().whileTrue(Commands.parallel(
-        launcher.intakeCommand(),
-        intake.intakeCommand()));
-    operator.b().whileTrue(launcher.shootCommand());
-  }
+        // operator bindings
+        operator.a().whileTrue(Commands.parallel(
+                launcher.intakeCommand(),
+                intake.intakeCommand()));
+        operator.b().whileTrue(launcher.shootCommand());
+    }
 }

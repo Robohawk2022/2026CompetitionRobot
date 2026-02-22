@@ -21,12 +21,6 @@ import static frc.robot.Config.Launcher.*;
  */
 public class LauncherHardwareRev implements LauncherHardware {
 
-    public static final boolean FEEDER_LEFT_INVERTED = true;
-    public static final boolean FEEDER_RIGHT_INVERTED = false;
-    public static final boolean SHOOTER_INVERTED = false;
-
-    public static final int CURRENT_LIMIT = 60;
-
     private final SparkMax feederLeftMotor;
     private final SparkMax feederRightMotor;
     private final SparkMax shooterMotor;
@@ -95,7 +89,7 @@ public class LauncherHardwareRev implements LauncherHardware {
         SparkMaxConfig config = new SparkMaxConfig();
         config.idleMode(IdleMode.kCoast);
         config.inverted(inverted);
-        config.smartCurrentLimit(CURRENT_LIMIT);
+        config.smartCurrentLimit((int) currentLimit.getAsDouble());
         config.closedLoopRampRate(0.1);
 
         config.closedLoop.p(kP);

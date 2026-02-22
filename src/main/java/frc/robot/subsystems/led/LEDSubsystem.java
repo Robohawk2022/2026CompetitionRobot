@@ -128,10 +128,10 @@ public class LEDSubsystem extends SubsystemBase {
             setSignal(LEDSignal.SHOOT_RANGE_CLOSE);
         } else if (Math.abs(distance - farDistance.getAsDouble()) <= tol) {
             shotZone = "far";
-            setSignal(LEDSignal.SHOOT_RANGE_CLOSE);
+            setSignal(LEDSignal.SHOOT_RANGE_FAR);
         } else {
             shotZone = "none";
-            setSignal(LEDSignal.SHOOT_RANGE_FAR);
+            setSignal(LEDSignal.SHOOT_RANGE_MEDIUM);
         }
     }
 
