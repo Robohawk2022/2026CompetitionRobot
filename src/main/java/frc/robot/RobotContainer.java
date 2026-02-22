@@ -34,7 +34,7 @@ public class RobotContainer {
   final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
   final SwerveSubsystem swerve = new SwerveSubsystem(drivetrain);
   final LimelightSubsystem limelight = new LimelightSubsystem(swerve);
-    final AutonomousSubsystem auto;
+  final AutonomousSubsystem auto;
 
   // launcher + intake + LED
   final LauncherSubsystem launcher = new LauncherSubsystem(Robot.isSimulation()
@@ -55,16 +55,27 @@ public class RobotContainer {
     // default commands
     swerve.setDefaultCommand(swerve.driveCommand(driver));
     launcher.setDefaultCommand(launcher.idleCommand());
-    private void configureBindings() {
-
-        // default command: normal teleop drive
-        swerve.setDefaultCommand(swerve.driveCommand(driver));
 
     // LED distance to hub
     led.setDistanceSupplier(() -> Util.feetBetween(swerve.getPose(), Field.getHubCenter()));
     intake.setStallCallback(stalled -> {
         if (stalled) led.flash(LEDSignal.INTAKE_FULL, 2.0);
     });
+    
+    
+        // zero pose on left click, accept vision pose on right click
+        driver.leftStick().onTrue(swerve.zeroPoseCommand());
+        driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
+    }
+
+    public Command getAutonomousCommand() {
+        return auto.generateCommand();
+    }
+    private void configureBindings() {
+
+        // default command: normal teleop drive
+        swerve.setDefaultCommand(swerve.driveCommand(driver));
+
         // hold left bumper for orbit mode (face and orbit around target)
         driver.leftBumper()
                 .whileTrue(swerve.orbitCommand(driver));
@@ -83,12 +94,4 @@ public class RobotContainer {
         intake.intakeCommand()));
     operator.b().whileTrue(launcher.shootCommand());
   }
-        // zero pose on left click, accept vision pose on right click
-        driver.leftStick().onTrue(swerve.zeroPoseCommand());
-        driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
-    }
-
-    public Command getAutonomousCommand() {
-        return auto.generateCommand();
-    }
 }
