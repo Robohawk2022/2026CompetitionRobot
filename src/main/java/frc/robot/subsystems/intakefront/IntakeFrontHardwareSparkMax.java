@@ -66,4 +66,9 @@ public class IntakeFrontHardwareSparkMax implements IntakeFrontHardware {
     public double getMotorAmps() {
         return motor.getOutputCurrent();
     }
+
+    @Override
+    public void stop() {
+        motor.stopMotor();
+    }
 }

@@ -164,17 +164,6 @@ public interface Config {
 
 //endregion
 
-//region LED -------------------------------------------------------------------
-
-    interface LED {
-
-        /** PWM port for the REV Blinkin LED controller */
-        int pwmPort = 0;
-
-    }
-
-//endregion
-
 //region Shooting --------------------------------------------------------------
 
     /**
@@ -254,20 +243,6 @@ public interface Config {
 
         /** Current limit for the intake motor in amps */
         DoubleSupplier currentLimit = pref("IntakeFront/CurrentLimit", 40.0);
-
-    }
-
-//endregion
-
-//region Alliance --------------------------------------------------------------
-
-    interface Alliance {
-
-        /** Enable the alliance color override (use when practicing without FMS) */
-        BooleanSupplier overrideEnabled = pref("Alliance/OverrideEnabled?", false);
-
-        /** When override is enabled, true = Red alliance, false = Blue alliance */
-        BooleanSupplier isRed = pref("Alliance/IsRed?", true);
 
     }
 
@@ -357,8 +332,8 @@ public interface Config {
         boolean SHOOTER_INVERTED = false;
         boolean SHOOTER_INTAKE_INVERTED = true;
 
-        /** Current limit for all launcher motors in amps */
-        DoubleSupplier currentLimit = pref("Launcher/CurrentLimit", 80.0);
+        /** Current limit for all launcher motors in amps (NEO safe range: 40-60A) */
+        DoubleSupplier currentLimit = pref("Launcher/CurrentLimit", 60.0);
 
         /** RPM tolerance for "at speed" check */
         DoubleSupplier tolerance = pref("Launcher/ToleranceRPM", 100.0);

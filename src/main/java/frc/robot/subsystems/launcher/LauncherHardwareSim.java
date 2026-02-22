@@ -3,7 +3,7 @@ package frc.robot.subsystems.launcher;
 /**
  * Implements {@link LauncherHardware} for simulation.
  * <p>
- * Simulates three NEO motors with first-order dynamics.
+ * Simulates four NEO motors with first-order dynamics.
  */
 public class LauncherHardwareSim implements LauncherHardware {
 

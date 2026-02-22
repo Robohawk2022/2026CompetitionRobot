@@ -14,10 +14,10 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import static frc.robot.Config.Launcher.*;
 
 /**
- * Implements {@link LauncherHardware} using 3 REV SparkMax motors (NEO)
+ * Implements {@link LauncherHardware} using 4 REV SparkMax motors (NEO)
  * with onboard closed-loop velocity control.
  * <p>
- * Feeder Left (CAN 1), Feeder Right (CAN 2), Shooter (CAN 3).
+ * CAN IDs are configured in {@link frc.robot.Config.Launcher}.
  */
 public class LauncherHardwareRev implements LauncherHardware {
 

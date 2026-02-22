@@ -12,10 +12,7 @@ import edu.wpi.first.networktables.BooleanEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Preferences;
-import edu.wpi.first.wpilibj.RobotBase;
-import frc.robot.Config;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -179,33 +176,26 @@ public class Util {
     static BooleanEntry isRedAlliance = null;
 
     /**
-     * Fetching the alliance is different in simulation versus the real
-     * game. In simulation, we want to fetch it from the dashboard; in the
-     * real game we'll talk to the driver station.
+     * Returns the current alliance color from {@code FMSInfo/IsRedAlliance}.
+     * <p>
+     * This NetworkTables entry is the single source of truth for alliance
+     * color. It is set automatically by the Driver Station software (both
+     * in simulation and on a real field), so third-party libraries
+     * (PathPlanner, Limelight, etc.) will all agree with our code.
+     * <p>
+     * To change your alliance in simulation or practice, use the Driver
+     * Station software or set the value in SmartDashboard / Elastic.
      *
-     * <p>When {@link Config.Alliance#overrideEnabled} is true, the value of
-     * {@link Config.Alliance#isRed} is returned instead. This lets teams set
-     * their alliance color in Elastic during practice without an FMS.</p>
-     *
-     * @return true if we are on the red alliance?
+     * @return true if we are on the red alliance
      */
     public static boolean isRedAlliance() {
-        // check override first - useful at practice fields without FMS
-        if (Config.Alliance.overrideEnabled.getAsBoolean()) {
-            return Config.Alliance.isRed.getAsBoolean();
+        if (isRedAlliance == null) {
+            isRedAlliance = NetworkTableInstance.getDefault()
+                    .getTable("FMSInfo")
+                    .getBooleanTopic("IsRedAlliance")
+                    .getEntry(false);
         }
-
-        if (RobotBase.isSimulation()) {
-            if (isRedAlliance == null) {
-                isRedAlliance = NetworkTableInstance.getDefault()
-                        .getTable("FMSInfo")
-                        .getBooleanTopic("IsRedAlliance")
-                        .getEntry(false);
-            }
-            return isRedAlliance.get();
-        } else {
-            return DriverStation.getAlliance().orElse(Alliance.Red) == Alliance.Red;
-        }
+        return isRedAlliance.get();
     }
 
     /**

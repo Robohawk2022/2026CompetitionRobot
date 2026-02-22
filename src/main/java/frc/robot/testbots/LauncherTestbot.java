@@ -9,7 +9,7 @@ import frc.robot.subsystems.launcher.LauncherHardwareSim;
 import frc.robot.subsystems.launcher.LauncherSubsystem;
 
 /**
- * Standalone test program for the Launcher subsystem (3-motor design).
+ * Standalone test program for the Launcher subsystem (4-motor design).
  * <p>
  * Run with: {@code ./gradlew simulateJava -Probot=LauncherTestbot}
  * <p>
@@ -22,10 +22,6 @@ import frc.robot.subsystems.launcher.LauncherSubsystem;
  * </ul>
  */
 public class LauncherTestbot extends TimedRobot {
-
-    public static final int FEEDER_LEFT_CAN_ID = 32;
-    public static final int FEEDER_RIGHT_CAN_ID = 11;
-    public static final int SHOOTER_CAN_ID = 60;
 
     private LauncherSubsystem launcher;
     private GameController controller;

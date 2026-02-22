@@ -13,19 +13,20 @@ import edu.wpi.first.math.MathUtil;
 import static frc.robot.Config.Launcher.*;
 
 /**
- * Subsystem for the launcher: 2 feeder motors + 1 shooter motor.
+ * Subsystem for the launcher: 2 feeder motors + 1 shooter motor + 1 shooter intake motor.
  * <p>
  * <b>Motors:</b>
  * <ul>
  *   <li>Feeder Left - bottom left (onboard velocity PID), spins inward</li>
  *   <li>Feeder Right - bottom right (onboard velocity PID), spins inward</li>
  *   <li>Shooter - top flywheel (onboard velocity PID), flings balls out</li>
+ *   <li>Shooter Intake - feeds balls into the shooter during shots</li>
  * </ul>
  * <p>
  * <b>Intake:</b> Both feeders spin inward at intake RPM to pull balls in.
  * <p>
- * <b>Shooting:</b> Feeders spin inward at feed RPM while shooter spins at
- * shoot RPM. All three must reach target before feeding begins.
+ * <b>Shooting:</b> Shooter spins up first, then feeders and shooter intake
+ * engage to feed balls through.
  */
 public class LauncherSubsystem extends SubsystemBase {
 
