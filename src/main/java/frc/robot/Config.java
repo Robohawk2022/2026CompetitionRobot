@@ -173,61 +173,6 @@ public interface Config {
 
 //endregion
 
-//region Intake ----------------------------------------------------------------
-
-    interface IntakeFront {
-
-        /** CAN ID for the intake motor */
-        int MOTOR_CAN_ID = 20;
-
-        //=======================================================================
-        // Speed settings (in revolutions per second)
-        //=======================================================================
-
-        /** Target speed for intake (sucking in) in revolutions per second */
-        DoubleSupplier intakeSpeedRPS = pref("IntakeFront/IntakeSpeedRPS", 80.0);
-
-        /** Target speed for eject (spitting out) in revolutions per second */
-        DoubleSupplier ejectSpeedRPS = pref("IntakeFront/EjectSpeedRPS", 60.0);
-
-        /**
-         * Invert the motor direction.
-         * <p>
-         * Toggle this if the motor spins the wrong way (ejecting instead of intaking).
-         */
-        BooleanSupplier inverted = pref("IntakeFront/Inverted?", false);
-
-        //=======================================================================
-        // Closed-loop PID gains
-        //=======================================================================
-
-        /** Velocity feedforward gain (volts per rev/sec) */
-        DoubleSupplier kV = pref("IntakeFront/kV", 0.12);
-
-        /** Proportional gain for velocity control */
-        DoubleSupplier kP = pref("IntakeFront/kP", 0.1);
-
-        //=======================================================================
-        // Stall detection
-        //=======================================================================
-
-        /** Velocity threshold below which motor is considered stalled (RPM) */
-        DoubleSupplier stallThresholdRPM = pref("IntakeFront/StallThresholdRPM", 100.0);
-
-        /** Time motor must be stalled before triggering stall state (seconds) */
-        DoubleSupplier stallTimeSec = pref("IntakeFront/StallTimeSec", 0.25);
-
-        //=======================================================================
-        // Motor limits
-        //=======================================================================
-
-        /** Current limit for the intake motor in amps */
-        DoubleSupplier currentLimit = pref("IntakeFront/CurrentLimit", 40.0);
-
-    }
-
-//endregion
-
 //region Launcher --------------------------------------------------------------
 
     interface Launcher {

@@ -5,18 +5,13 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.ShootingCommands;
 import frc.robot.subsystems.auto.AutonomousSubsystem;
-import frc.robot.subsystems.intakefront.IntakeFrontHardwareSim;
-import frc.robot.subsystems.intakefront.IntakeFrontHardwareSparkMax;
-import frc.robot.subsystems.intakefront.IntakeFrontSubsystem;
 import frc.robot.subsystems.launcher.LauncherHardwareRev;
 import frc.robot.subsystems.launcher.LauncherHardwareSim;
 import frc.robot.subsystems.launcher.LauncherSubsystem;
 import frc.robot.subsystems.led.LEDHardwareBlinkin;
 import frc.robot.subsystems.led.LEDHardwareSim;
-import frc.robot.subsystems.led.LEDSignal;
 import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.limelight.LimelightSubsystem;
 import frc.robot.subsystems.swerve.CommandSwerveDrivetrain;
@@ -42,8 +37,6 @@ public class RobotContainer {
     // launcher + intake + LED
     final LauncherSubsystem launcher = new LauncherSubsystem(Robot.isSimulation()
             ? new LauncherHardwareSim() : new LauncherHardwareRev());
-    final IntakeFrontSubsystem intake = new IntakeFrontSubsystem(Robot.isSimulation()
-            ? new IntakeFrontHardwareSim() : new IntakeFrontHardwareSparkMax());
     final LEDSubsystem led = new LEDSubsystem(Robot.isSimulation()
             ? new LEDHardwareSim() : new LEDHardwareBlinkin(LED_PWM_PORT));
 
@@ -61,9 +54,6 @@ public class RobotContainer {
 
         // LED distance to hub
         led.setDistanceSupplier(() -> Util.feetBetween(swerve.getPose(), Field.getHubCenter()));
-        intake.setStallCallback(stalled -> {
-            if (stalled) led.flash(LEDSignal.INTAKE_FULL, 2.0);
-        });
 
         configureBindings();
     }
@@ -83,9 +73,7 @@ public class RobotContainer {
         driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
 
         // operator bindings
-        operator.a().whileTrue(Commands.parallel(
-                launcher.intakeCommand(),
-                intake.intakeCommand()));
+        operator.a().whileTrue(launcher.intakeCommand());
         operator.b().whileTrue(launcher.shootCommand());
     }
 }
