@@ -144,9 +144,112 @@ public interface Config {
 
 //endregion
 
+//region Shooting --------------------------------------------------------------
+
+    /**
+     * Configuration for shooting distance presets.
+     * <p>
+     * Each distance has a target RPM for the shooter. The robot LED turns
+     * green when within tolerance of a shooting distance, red otherwise.
+     */
+    interface Shooting {
+
+        /** Close shooting distance in feet */
+        DoubleSupplier closeDistance = pref("Shooting/CloseDistanceFt", 3.0);
+
+        /** Shooter RPM for close distance */
+        DoubleSupplier closeRPM = pref("Shooting/CloseRPM", 2525.0);
+
+        /** Far shooting distance in feet */
+        DoubleSupplier farDistance = pref("Shooting/FarDistanceFt", 4.5);
+
+        /** Shooter RPM for far distance */
+        DoubleSupplier farRPM = pref("Shooting/FarRPM", 3225.0);
+
+        /** How close to the target distance we need to be (in feet) */
+        DoubleSupplier distanceTolerance = pref("Shooting/DistanceToleranceFt", 0.5);
+
+    }
+
+//endregion
+
+//region Intake ----------------------------------------------------------------
+
+    interface IntakeFront {
+
+        /** CAN ID for the intake motor */
+        int MOTOR_CAN_ID = 20;
+
+        //=======================================================================
+        // Speed settings (in revolutions per second)
+        //=======================================================================
+
+        /** Target speed for intake (sucking in) in revolutions per second */
+        DoubleSupplier intakeSpeedRPS = pref("IntakeFront/IntakeSpeedRPS", 80.0);
+
+        /** Target speed for eject (spitting out) in revolutions per second */
+        DoubleSupplier ejectSpeedRPS = pref("IntakeFront/EjectSpeedRPS", 60.0);
+
+        /**
+         * Invert the motor direction.
+         * <p>
+         * Toggle this if the motor spins the wrong way (ejecting instead of intaking).
+         */
+        BooleanSupplier inverted = pref("IntakeFront/Inverted?", false);
+
+        //=======================================================================
+        // Closed-loop PID gains
+        //=======================================================================
+
+        /** Velocity feedforward gain (volts per rev/sec) */
+        DoubleSupplier kV = pref("IntakeFront/kV", 0.12);
+
+        /** Proportional gain for velocity control */
+        DoubleSupplier kP = pref("IntakeFront/kP", 0.1);
+
+        //=======================================================================
+        // Stall detection
+        //=======================================================================
+
+        /** Velocity threshold below which motor is considered stalled (RPM) */
+        DoubleSupplier stallThresholdRPM = pref("IntakeFront/StallThresholdRPM", 100.0);
+
+        /** Time motor must be stalled before triggering stall state (seconds) */
+        DoubleSupplier stallTimeSec = pref("IntakeFront/StallTimeSec", 0.25);
+
+        //=======================================================================
+        // Motor limits
+        //=======================================================================
+
+        /** Current limit for the intake motor in amps */
+        DoubleSupplier currentLimit = pref("IntakeFront/CurrentLimit", 40.0);
+
+    }
+
+//endregion
+
 //region Launcher --------------------------------------------------------------
 
     interface Launcher {
+
+        //=======================================================================
+        // CAN IDs
+        //=======================================================================
+
+        int FEEDER_LEFT_CAN_ID = 32;
+        int FEEDER_RIGHT_CAN_ID = 11;
+        int SHOOTER_CAN_ID = 60;
+        int SHOOTER_INTAKE_CAN_ID = 9;
+
+        //=======================================================================
+        // Gear ratios (for reference)
+        //=======================================================================
+
+        /** 4:1 * 3:1 = 12:1 total gear reduction per feeder */
+        double FEEDER_GEAR_RATIO = 12.0;
+
+        /** Shooter: dual NEO through 1:1 gearbox (no reduction) */
+        double SHOOTER_GEAR_RATIO = 1.0;
 
         //=======================================================================
         // Feeder Left velocity PID - closed loop (SparkMax onboard)
@@ -173,24 +276,44 @@ public interface Config {
         DoubleSupplier shooterKD = pref("Launcher/Shooter/kD", 0.0);
 
         //=======================================================================
-        // RPM targets
+        // Shooter Intake velocity PID - closed loop (SparkMax onboard)
         //=======================================================================
 
-        /** Feeder RPM for intake (pulling balls in) */
-        double FEEDER_RPM = 2000.0;
+        DoubleSupplier shooterIntakeKV = pref("Launcher/ShooterIntake/kV", 0.0002);
+        DoubleSupplier shooterIntakeKP = pref("Launcher/ShooterIntake/kP", 0.0005);
+
+        //=======================================================================
+        // RPM targets — intake mode
+        //=======================================================================
+
+        /** Feeder Left and Right RPM during intake (intake motor off during intake) */
+        DoubleSupplier feederRPM = pref("Launcher/FeederRPM", 3600.0);
+
+        //=======================================================================
+        // RPM targets — shoot mode
+        //=======================================================================
 
         /** Feeder RPM when feeding balls to shooter during a shot */
-        double FEED_SHOOT_RPM = 4000.0;
+        DoubleSupplier feedShootRPM = pref("Launcher/FeedShootRPM", 3600.0);
 
-        /** Shooter RPM during intake (low speed, just enough to help pull balls in) */
-        double SHOOTER_INTAKE_RPM = 1000.0;
-
-        /** Shooter RPM for shooting (much higher than feeders) */
+        /** Shooter (main flywheel) RPM during shooting */
         DoubleSupplier shooterRPM = pref("Launcher/ShooterRPM", 2525.0);
+        DoubleSupplier shooterIntakingRPM = pref("Launcher/ShooterIntakingRPM", 1000.0);
+
+        /** Intake motor (CAN 9) RPM during shooting (feeds ball into shooter) */
+        DoubleSupplier intakeRPM = pref("Launcher/IntakeRPM", 3000.0);
 
         //=======================================================================
         // Motor configuration
         //=======================================================================
+
+        boolean FEEDER_LEFT_INVERTED = true;
+        boolean FEEDER_RIGHT_INVERTED = false;
+        boolean SHOOTER_INVERTED = false;
+        boolean SHOOTER_INTAKE_INVERTED = true;
+
+        /** Current limit for all launcher motors in amps (NEO safe range: 40-60A) */
+        DoubleSupplier currentLimit = pref("Launcher/CurrentLimit", 60.0);
 
         /** RPM tolerance for "at speed" check */
         DoubleSupplier tolerance = pref("Launcher/ToleranceRPM", 100.0);

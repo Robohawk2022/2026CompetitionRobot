@@ -14,7 +14,6 @@ import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Preferences;
-import edu.wpi.first.wpilibj.RobotBase;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -178,24 +177,26 @@ public class Util {
     static BooleanEntry isRedAlliance = null;
 
     /**
-     * Fetching the alliance is different in simulation versus the real
-     * game. In simulation, we want to fetch it from the dashboard; in the
-     * real game we'll talk to the driver station.
+     * Returns the current alliance color.
+     * <p>
+     * When connected to FMS (competition), uses {@link DriverStation#getAlliance()}
+     * which is authoritative. When no FMS is attached (practice / simulation),
+     * reads {@code FMSInfo/IsRedAlliance} from NetworkTables so the alliance
+     * can be changed from SmartDashboard, Elastic, or the Driver Station app.
      *
-     * @return true if we are on the red alliance?
+     * @return true if we are on the red alliance
      */
     public static boolean isRedAlliance() {
-        if (RobotBase.isSimulation()) {
-            if (isRedAlliance == null) {
-                isRedAlliance = NetworkTableInstance.getDefault()
-                        .getTable("FMSInfo")
-                        .getBooleanTopic("IsRedAlliance")
-                        .getEntry(false);
-            }
-            return isRedAlliance.get();
-        } else {
+        if (DriverStation.isFMSAttached()) {
             return DriverStation.getAlliance().orElse(Alliance.Red) == Alliance.Red;
         }
+        if (isRedAlliance == null) {
+            isRedAlliance = NetworkTableInstance.getDefault()
+                    .getTable("FMSInfo")
+                    .getBooleanTopic("IsRedAlliance")
+                    .getEntry(false);
+        }
+        return isRedAlliance.get();
     }
 
     /**

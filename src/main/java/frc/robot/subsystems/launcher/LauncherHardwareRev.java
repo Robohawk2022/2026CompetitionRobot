@@ -14,47 +14,48 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import static frc.robot.Config.Launcher.*;
 
 /**
- * Implements {@link LauncherHardware} using 3 REV SparkMax motors (NEO)
+ * Implements {@link LauncherHardware} using 4 REV SparkMax motors (NEO)
  * with onboard closed-loop velocity control.
  * <p>
- * Feeder Left (CAN 1), Feeder Right (CAN 2), Shooter (CAN 3).
+ * CAN IDs are configured in {@link frc.robot.Config.Launcher}.
  */
 public class LauncherHardwareRev implements LauncherHardware {
-
-    public static final boolean FEEDER_LEFT_INVERTED = true;
-    public static final boolean FEEDER_RIGHT_INVERTED = false;
-    public static final boolean SHOOTER_INVERTED = false;
-
-    public static final int CURRENT_LIMIT = 60;
 
     private final SparkMax feederLeftMotor;
     private final SparkMax feederRightMotor;
     private final SparkMax shooterMotor;
+    private final SparkMax shooterIntakeMotor;
 
     private final RelativeEncoder feederLeftEncoder;
     private final RelativeEncoder feederRightEncoder;
     private final RelativeEncoder shooterEncoder;
+    private final RelativeEncoder shooterIntakeEncoder;
 
     private final SparkClosedLoopController feederLeftController;
     private final SparkClosedLoopController feederRightController;
     private final SparkClosedLoopController shooterController;
+    private final SparkClosedLoopController shooterIntakeController;
 
     private final SparkMaxConfig feederLeftConfig;
     private final SparkMaxConfig feederRightConfig;
     private final SparkMaxConfig shooterConfig;
+    private final SparkMaxConfig shooterIntakeConfig;
 
-    public LauncherHardwareRev(int feederLeftCanId, int feederRightCanId, int shooterCanId) {
-        feederLeftMotor = new SparkMax(feederLeftCanId, MotorType.kBrushless);
-        feederRightMotor = new SparkMax(feederRightCanId, MotorType.kBrushless);
-        shooterMotor = new SparkMax(shooterCanId, MotorType.kBrushless);
+    public LauncherHardwareRev() {
+        feederLeftMotor = new SparkMax(FEEDER_LEFT_CAN_ID, MotorType.kBrushless);
+        feederRightMotor = new SparkMax(FEEDER_RIGHT_CAN_ID, MotorType.kBrushless);
+        shooterMotor = new SparkMax(SHOOTER_CAN_ID, MotorType.kBrushless);
+        shooterIntakeMotor = new SparkMax(SHOOTER_INTAKE_CAN_ID, MotorType.kBrushless);
 
         feederLeftEncoder = feederLeftMotor.getEncoder();
         feederRightEncoder = feederRightMotor.getEncoder();
         shooterEncoder = shooterMotor.getEncoder();
+        shooterIntakeEncoder = shooterIntakeMotor.getEncoder();
 
         feederLeftController = feederLeftMotor.getClosedLoopController();
         feederRightController = feederRightMotor.getClosedLoopController();
         shooterController = shooterMotor.getClosedLoopController();
+        shooterIntakeController = shooterIntakeMotor.getClosedLoopController();
 
         // feeder motors get independent PID gains
         feederLeftConfig = createMotorConfig(FEEDER_LEFT_INVERTED,
@@ -75,13 +76,20 @@ public class LauncherHardwareRev implements LauncherHardware {
         shooterMotor.configure(shooterConfig,
                 ResetMode.kResetSafeParameters,
                 PersistMode.kPersistParameters);
+
+        // shooter intake - same side as shooter, feeds into it
+        shooterIntakeConfig = createMotorConfig(SHOOTER_INTAKE_INVERTED,
+                shooterIntakeKV.getAsDouble(), shooterIntakeKP.getAsDouble());
+        shooterIntakeMotor.configure(shooterIntakeConfig,
+                ResetMode.kResetSafeParameters,
+                PersistMode.kPersistParameters);
     }
 
     private SparkMaxConfig createMotorConfig(boolean inverted, double kV, double kP) {
         SparkMaxConfig config = new SparkMaxConfig();
         config.idleMode(IdleMode.kCoast);
         config.inverted(inverted);
-        config.smartCurrentLimit(CURRENT_LIMIT);
+        config.smartCurrentLimit((int) currentLimit.getAsDouble());
         config.closedLoopRampRate(0.1);
 
         config.closedLoop.p(kP);
@@ -156,6 +164,26 @@ public class LauncherHardwareRev implements LauncherHardware {
     @Override
     public void resetShooterPID(double kV, double kP, double kI, double kD) {
         applyPID(shooterConfig, shooterMotor, SHOOTER_INVERTED, kV, kP, kI, kD);
+    }
+
+    @Override
+    public void setShooterIntakeRPM(double rpm) {
+        setMotorRPM(shooterIntakeMotor, shooterIntakeController, rpm);
+    }
+
+    @Override
+    public double getShooterIntakeRPM() {
+        return shooterIntakeEncoder.getVelocity();
+    }
+
+    @Override
+    public double getShooterIntakeAmps() {
+        return shooterIntakeMotor.getOutputCurrent();
+    }
+
+    @Override
+    public void resetShooterIntakePID(double kV, double kP, double kI, double kD) {
+        applyPID(shooterIntakeConfig, shooterIntakeMotor, SHOOTER_INTAKE_INVERTED, kV, kP, kI, kD);
     }
 
     private void applyPID(SparkMaxConfig config, SparkMax motor, boolean inverted,

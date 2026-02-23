@@ -73,8 +73,9 @@ public class SwerveSubsystem extends SubsystemBase {
         this.field2d = new Field2d();
         SmartDashboard.putData("Field", field2d);
 
-        // zero the gyro heading and go through the motions of pose reset
-        resetPose(Pose2d.kZero);
+        // reset pose to a reasonable starting position on the field
+        // (center-field, facing toward the red alliance wall)
+        resetPose(new Pose2d(8.27, 4.01, Rotation2d.kZero));
 
         // dashboard telemetry
         SmartDashboard.putData(getName(), builder -> {
@@ -408,6 +409,54 @@ public class SwerveSubsystem extends SubsystemBase {
                     new SwerveOrbitCommand(this, controller, hubCenter)
             );
         });
+    }
+
+    /**
+     * Creates a command that rotates to face the hub center. Uses a deferred
+     * command so the heading is calculated just before the command runs.
+     * <p>
+     * Reuses {@link SwerveToHeadingCommand} so there is only one set of
+     * rotation PID parameters to tune.
+     *
+     * @return the aim-at-hub command
+     * @see SwerveToHeadingCommand
+     */
+    public Command aimAtHubCommand() {
+        return defer(() -> {
+            Pose2d currentPose = getPose();
+            Pose2d hubCenter = Field.getHubCenter();
+
+            // angle from robot to hub center
+            Rotation2d angleToHub = hubCenter.getTranslation()
+                    .minus(currentPose.getTranslation())
+                    .getAngle();
+
+            Util.log("[swerve] aim at hub: heading %.1f deg", angleToHub.getDegrees());
+            return new SwerveToHeadingCommand(this, angleToHub);
+        });
+    }
+
+    /**
+     * Rapidly oscillates the robot left and right (robot-relative) to
+     * dislodge stuck balls. Hold trigger to jiggle, release to stop.
+     *
+     * @return the jiggle command
+     */
+    public Command jiggleCommand() {
+        // ~1-2 inches of travel at ~6 Hz oscillation
+        double speedMps = Units.feetToMeters(2.0); // 2 ft/s sideways
+        double periodSec = 0.16; // full cycle = 0.16s (~6 Hz)
+        double halfPeriod = periodSec / 2.0;
+        edu.wpi.first.wpilibj.Timer timer = new edu.wpi.first.wpilibj.Timer();
+        return startRun(
+            () -> timer.restart(),
+            () -> {
+                // alternate left/right each half-period
+                double t = timer.get() % periodSec;
+                double vy = (t < halfPeriod) ? speedMps : -speedMps;
+                driveRobotRelative("jiggle", new ChassisSpeeds(0, vy, 0));
+            }
+        );
     }
 
     /**
