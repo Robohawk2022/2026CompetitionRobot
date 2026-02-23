@@ -144,124 +144,70 @@ public interface Config {
 
 //endregion
 
-//region Shooting --------------------------------------------------------------
+//region Launcher --------------------------------------------------------------
 
-    /**
-     * Configuration for shooting distance presets.
-     * <p>
-     * Each distance has a target RPM for the shooter. The robot LED turns
-     * green when within tolerance of a shooting distance, red otherwise.
-     */
-    interface Shooting {
+    class PIDFConfig {
 
-        /** Close shooting distance in feet */
-        DoubleSupplier closeDistance = pref("Shooting/CloseDistanceFt", 3.0);
+        public final DoubleSupplier p;
+        public final DoubleSupplier i;
+        public final DoubleSupplier iz;
+        public final DoubleSupplier d;
+        public final DoubleSupplier v;
 
-        /** Shooter RPM for close distance */
-        DoubleSupplier closeRPM = pref("Shooting/CloseRPM", 2525.0);
-
-        /** Far shooting distance in feet */
-        DoubleSupplier farDistance = pref("Shooting/FarDistanceFt", 4.5);
-
-        /** Shooter RPM for far distance */
-        DoubleSupplier farRPM = pref("Shooting/FarRPM", 3225.0);
-
-        /** How close to the target distance we need to be (in feet) */
-        DoubleSupplier distanceTolerance = pref("Shooting/DistanceToleranceFt", 0.5);
+        public PIDFConfig(String name,
+                          double defaultP,
+                          double defaultI,
+                          double defaultIZone,
+                          double defaultD,
+                          double defaultV) {
+            p = pref(name+"/kP", defaultP);
+            i = pref(name+"/kI", defaultI);
+            iz = pref(name+"/kIZone", defaultIZone);
+            d = pref(name+"/kD", defaultD);
+            v = pref(name+"/kV", defaultV);
+        }
 
     }
 
-//endregion
+    class LauncherSpeeds {
 
-//region Launcher --------------------------------------------------------------
+        public final DoubleSupplier intakeRpm;
+        public final DoubleSupplier feederRpm;
+        public final DoubleSupplier agitatorRpm;
+        public final DoubleSupplier shooterRpm;
+
+        public LauncherSpeeds(String path,
+                              double defaultIntakeRpm,
+                              double defaultFeederRpm,
+                              double defaultAgitatorRpm,
+                              double defaultShooterRpm) {
+            intakeRpm = pref(path+"/IntakeRpm", defaultIntakeRpm);
+            feederRpm = pref(path+"/FeederRpm", defaultFeederRpm);
+            agitatorRpm = pref(path+"/AgitatorRpm", defaultAgitatorRpm);
+            shooterRpm = pref(path+"/ShooterRpm", defaultShooterRpm);
+        }
+    }
 
     interface Launcher {
 
-        //=======================================================================
-        // CAN IDs
-        //=======================================================================
+        /** PID configuration for motors */
+        PIDFConfig intakePid = new PIDFConfig("LauncherSubsystem/IntakeMotor", 0.0004, 0.0, 20.0, 0.0, 0.00017);
+        PIDFConfig feederPid = new PIDFConfig("LauncherSubsystem/FeederMotor", 0.0004, 0.0, 20.0, 0.0, 0.00017);
+        PIDFConfig agitatorPid = new PIDFConfig("LauncherSubsystem/AgitatorMotor", 0.0004, 0.0, 20.0, 0.0, 0.00017);
+        PIDFConfig shooterPid = new PIDFConfig("LauncherSubsystem/ShooterMotor", 0.0005, 0.0, 20.0, 0.0, 0.0002);
 
-        int FEEDER_LEFT_CAN_ID = 32;
-        int FEEDER_RIGHT_CAN_ID = 11;
-        int SHOOTER_CAN_ID = 60;
-        int SHOOTER_INTAKE_CAN_ID = 9;
+        /** Target speeds for various mode */
+        LauncherSpeeds intakeSpeeds = new LauncherSpeeds("BallHandling/IntakeSpeeds", 3000.0, 3000.0, 0.0, 1000.0);
+        LauncherSpeeds ejectSpeeds = new LauncherSpeeds("BallHandling/EjectSpeeds", 3000.0, 3000.0, 0.0, 1000.0);
+        LauncherSpeeds shootSpeeds = new LauncherSpeeds("BallHandling/ShootSpeeds", 3000.0, 3000.0, 1000.0, 3000.0);
 
-        //=======================================================================
-        // Gear ratios (for reference)
-        //=======================================================================
-
-        /** 4:1 * 3:1 = 12:1 total gear reduction per feeder */
-        double FEEDER_GEAR_RATIO = 12.0;
-
-        /** Shooter: dual NEO through 1:1 gearbox (no reduction) */
-        double SHOOTER_GEAR_RATIO = 1.0;
-
-        //=======================================================================
-        // Feeder Left velocity PID - closed loop (SparkMax onboard)
-        //=======================================================================
-
-        DoubleSupplier feederLeftKV = pref("Launcher/FeederLeft/kV", 0.00017);
-        DoubleSupplier feederLeftKP = pref("Launcher/FeederLeft/kP", 0.0004);
-        DoubleSupplier feederLeftKD = pref("Launcher/FeederLeft/kD", 0.0);
-
-        //=======================================================================
-        // Feeder Right velocity PID - closed loop (SparkMax onboard)
-        //=======================================================================
-
-        DoubleSupplier feederRightKV = pref("Launcher/FeederRight/kV", 0.000175);
-        DoubleSupplier feederRightKP = pref("Launcher/FeederRight/kP", 0.0004);
-        DoubleSupplier feederRightKD = pref("Launcher/FeederRight/kD", 0.0);
-
-        //=======================================================================
-        // Shooter velocity PID - closed loop (SparkMax onboard)
-        //=======================================================================
-
-        DoubleSupplier shooterKV = pref("Launcher/Shooter/kV", 0.0002);
-        DoubleSupplier shooterKP = pref("Launcher/Shooter/kP", 0.0005);
-        DoubleSupplier shooterKD = pref("Launcher/Shooter/kD", 0.0);
-
-        //=======================================================================
-        // Shooter Intake velocity PID - closed loop (SparkMax onboard)
-        //=======================================================================
-
-        DoubleSupplier shooterIntakeKV = pref("Launcher/ShooterIntake/kV", 0.0002);
-        DoubleSupplier shooterIntakeKP = pref("Launcher/ShooterIntake/kP", 0.0005);
-
-        //=======================================================================
-        // RPM targets — intake mode
-        //=======================================================================
-
-        /** Feeder Left and Right RPM during intake (intake motor off during intake) */
-        DoubleSupplier feederRPM = pref("Launcher/FeederRPM", 3600.0);
-
-        //=======================================================================
-        // RPM targets — shoot mode
-        //=======================================================================
-
-        /** Feeder RPM when feeding balls to shooter during a shot */
-        DoubleSupplier feedShootRPM = pref("Launcher/FeedShootRPM", 3600.0);
-
-        /** Shooter (main flywheel) RPM during shooting */
-        DoubleSupplier shooterRPM = pref("Launcher/ShooterRPM", 2525.0);
-        DoubleSupplier shooterIntakingRPM = pref("Launcher/ShooterIntakingRPM", 1000.0);
-
-        /** Intake motor (CAN 9) RPM during shooting (feeds ball into shooter) */
-        DoubleSupplier intakeRPM = pref("Launcher/IntakeRPM", 3000.0);
-
-        //=======================================================================
-        // Motor configuration
-        //=======================================================================
-
-        boolean FEEDER_LEFT_INVERTED = true;
-        boolean FEEDER_RIGHT_INVERTED = false;
-        boolean SHOOTER_INVERTED = false;
-        boolean SHOOTER_INTAKE_INVERTED = true;
-
-        /** Current limit for all launcher motors in amps (NEO safe range: 40-60A) */
-        DoubleSupplier currentLimit = pref("Launcher/CurrentLimit", 60.0);
-
-        /** RPM tolerance for "at speed" check */
-        DoubleSupplier tolerance = pref("Launcher/ToleranceRPM", 100.0);
+        /** Distance & spin up time for shooting */
+        DoubleSupplier shootDistanceFeet = pref("BallHandling/ShootDistance", 7.0);
+        DoubleSupplier shootDistanceTolerance = pref("BallHandling/ShootDistanceTolerance", 0.5);
+        DoubleSupplier shootSpinupTime = pref("BallHandling/ShootSpinupTime", 1.0);
+        DoubleSupplier shootSpeedTolerance = pref("BallHandling/ShootSpeedTolerance", 100.0);
+        DoubleSupplier stallSpeed = pref("BallHandling/StallSpeed", 30.0);
+        DoubleSupplier stallTime = pref("BallHandling/StallTime", 1.0);
 
     }
 

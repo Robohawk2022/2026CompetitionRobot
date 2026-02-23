@@ -8,12 +8,11 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.subsystems.launcher.LauncherSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.util.Field;
 
-import static frc.robot.Config.Shooting.*;
+import static frc.robot.Config.Launcher.shootDistanceFeet;
 
 /**
  * Factory methods for shooting command sequences.
@@ -50,7 +49,7 @@ public class ShootingCommands {
             }
 
             // target position: hub center + direction * farDistance
-            double farDistMeters = Units.feetToMeters(farDistance.getAsDouble());
+            double farDistMeters = Units.feetToMeters(shootDistanceFeet.getAsDouble());
             Translation2d targetTranslation = hubCenter.getTranslation()
                     .plus(direction.times(farDistMeters));
 
@@ -61,7 +60,7 @@ public class ShootingCommands {
 
             return Commands.sequence(
                     swerve.driveToPoseCommand(targetPose),
-                    launcher.shootAtRPMCommand(farRPM).withTimeout(3.0)
+                    launcher.shootCommand().withTimeout(3.0)
             );
 
         }, Set.of(swerve, launcher));

@@ -24,6 +24,10 @@ import frc.robot.util.Util;
 public class RobotContainer {
 
     static final int LED_PWM_PORT = 0;
+    static final int INTAKE_CAN_ID = 9;
+    static final int FEEDER_CAN_ID = 32;
+    static final int AGITATOR_CAN_ID = 11;
+    static final int SHOOTER_CAN_ID = 60;
 
     final GameController driver = new GameController(0);
     final GameController operator = new GameController(1);
@@ -36,9 +40,11 @@ public class RobotContainer {
 
     // launcher + intake + LED
     final LauncherSubsystem launcher = new LauncherSubsystem(Robot.isSimulation()
-            ? new LauncherHardwareSim() : new LauncherHardwareRev());
+                ? new LauncherHardwareSim()
+                : new LauncherHardwareRev(INTAKE_CAN_ID, FEEDER_CAN_ID, AGITATOR_CAN_ID, SHOOTER_CAN_ID));
     final LEDSubsystem led = new LEDSubsystem(Robot.isSimulation()
-            ? new LEDHardwareSim() : new LEDHardwareBlinkin(LED_PWM_PORT));
+                ? new LEDHardwareSim() 
+                : new LEDHardwareBlinkin(LED_PWM_PORT));
 
     public RobotContainer() {
 
@@ -50,7 +56,7 @@ public class RobotContainer {
 
         // default commands
         swerve.setDefaultCommand(swerve.driveCommand(driver));
-        launcher.setDefaultCommand(launcher.idleCommand());
+        launcher.setDefaultCommand(launcher.coast());
 
         // LED distance to hub
         led.setDistanceSupplier(() -> Util.feetBetween(swerve.getPose(), Field.getHubCenter()));
