@@ -39,8 +39,14 @@ public class SwerveTestbot extends TimedRobot {
 
         // a will drive the robot one meter straight forward from its
         // current position
-        controller.a().onTrue(swerve.driveToPoseCommand(oldPose ->
-            oldPose.transformBy(new Transform2d(1.0, 0.0, Rotation2d.kZero))));
+        controller.a().onTrue(swerve.defer(() -> {
+            Pose2d currentPose = swerve.getPose();
+            Pose2d newPose = currentPose.transformBy(new Transform2d(
+                    1.0,
+                    0.0,
+                    Rotation2d.kZero));
+            return swerve.driveToPoseCommand(newPose);
+        }));
 
         // b will drive the robot one meter straight forward, turn it around,
         // drive it back and then turn around again to start position
@@ -74,10 +80,6 @@ public class SwerveTestbot extends TimedRobot {
                     swerve.driveToPoseCommand(p3),
                     swerve.driveToPoseCommand(p0));
         }));
-
-        // Orbit mode: hold left bumper to orbit around the Reef while facing it
-        controller.leftBumper()
-                .whileTrue(swerve.orbitCommand(controller));
 
         controller.rightBumper()
                 .onTrue(limelight.resetPoseFromVisionCommand());

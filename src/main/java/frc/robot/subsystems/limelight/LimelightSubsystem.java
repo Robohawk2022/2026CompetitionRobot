@@ -128,7 +128,7 @@ public class LimelightSubsystem extends SubsystemBase {
 
         // publish poses
         Util.publishPose("LimelightTarget", latestTarget.getTagPose());
-        Util.publishPose("limelightEstimate", latestEstimate);
+        Util.publishPose("limelightRobot", latestEstimate);
         Util.publishPose("LimelightEstimateTag", latestTagPose);
     }
 

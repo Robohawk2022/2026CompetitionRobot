@@ -71,10 +71,10 @@ public class RobotContainer {
     private void configureBindings() {
 
         // driver bindings
-        driver.leftBumper().whileTrue(swerve.orbitCommand(driver));
-        driver.rightBumper().whileTrue(swerve.aimAtHubCommand());
+        // driver.leftBumper().whileTrue(swerve.orbitCommand(driver));
+        driver.rightBumper().whileTrue(ShootingCommands.aimAtHubCommand(swerve));
         driver.y().onTrue(ShootingCommands.driveAndShootCommand(swerve, launcher));
-        driver.leftTrigger().whileTrue(swerve.jiggleCommand());
+        driver.leftTrigger().whileTrue(ShootingCommands.jiggleCommand(swerve));
         driver.leftStick().onTrue(swerve.zeroPoseCommand());
         driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
 
