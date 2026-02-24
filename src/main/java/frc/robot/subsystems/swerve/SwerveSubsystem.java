@@ -31,6 +31,9 @@ import frc.robot.util.Util;
  */
 public class SwerveSubsystem extends SubsystemBase {
 
+    /** Start pose */
+    static final Pose2d START_POSE = Pose2d.kZero;
+
     /** Enable verbose logging for debugging */
     static final boolean verboseLogging = true;
 
@@ -41,7 +44,7 @@ public class SwerveSubsystem extends SubsystemBase {
     // Reusable SwerveRequest objects
     final SwerveRequest.RobotCentric robotCentricRequest = new SwerveRequest.RobotCentric();
     final SwerveRequest.SwerveDriveBrake brakeRequest = new SwerveRequest.SwerveDriveBrake();
-    final SwervePoseSimulator poseSimulator;
+    final SwerveDeadReckoner deadReckoner;
 
     String currentMode = "idle";
     int resetCount = 0;
@@ -59,8 +62,8 @@ public class SwerveSubsystem extends SubsystemBase {
         this.drivetrain = Objects.requireNonNull(drivetrain);
         this.wheelsLocked = false;
 
-        poseSimulator = new SwervePoseSimulator(Pose2d.kZero);
-        drivetrain.resetPose(Pose2d.kZero);
+        deadReckoner = new SwerveDeadReckoner(START_POSE);
+        drivetrain.resetPose(START_POSE);
 
         // dashboard telemetry
         SmartDashboard.putData(getName(), builder -> {
@@ -112,9 +115,10 @@ public class SwerveSubsystem extends SubsystemBase {
     @Override
     public void simulationPeriodic() {
 
-        poseSimulator.update(latestSpeed);
+        // in simulation we will update our dead reckoning pose
+        deadReckoner.update(latestSpeed);
 
-        Util.publishPose("SimulatedPose", poseSimulator.getPose());
+        // we will also publish the (incorrect) CTRE pose so we can laugh at it
         Util.publishPose("CtrePose", drivetrain.getState().Pose);
     }
 
@@ -126,8 +130,11 @@ public class SwerveSubsystem extends SubsystemBase {
      * @return the current robot heading from the gyro
      */
     public Rotation2d getHeading() {
+
+        // if we are in simulation, we will calculate our pose via dead reckoning
+        // TODO WTF is wrong with the CTRE simulator?
         return RobotBase.isSimulation()
-                ? poseSimulator.getPose().getRotation()
+                ? getPose().getRotation()
                 : drivetrain.getState().Pose.getRotation();
     }
 
@@ -135,8 +142,11 @@ public class SwerveSubsystem extends SubsystemBase {
      * @return the current estimated pose (odometry fused with vision)
      */
     public Pose2d getPose() {
+
+        // if we are in simulation, we will calculate our pose via dead reckoning
+        // TODO WTF is wrong with the CTRE simulator?
        return RobotBase.isSimulation()
-                ? poseSimulator.getPose()
+                ? deadReckoner.getPose()
                 : drivetrain.getState().Pose;
     }
 
@@ -168,7 +178,7 @@ public class SwerveSubsystem extends SubsystemBase {
      */
     public void resetPose(Pose2d newPose) {
         drivetrain.resetPose(newPose);
-        poseSimulator.resetPose(newPose);
+        deadReckoner.resetPose(newPose);
         resetCount++;
         Util.log("[swerve] reset pose to %s", newPose);
     }
@@ -208,8 +218,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 .withVelocityX(speeds.vxMetersPerSecond)
                 .withVelocityY(speeds.vyMetersPerSecond)
                 .withRotationalRate(speeds.omegaRadiansPerSecond)
-                .withCenterOfRotation(center)
-        );
+                .withCenterOfRotation(center));
     }
 
     /**

@@ -157,10 +157,6 @@ public class SwerveToPoseCommand extends Command {
         headingCurrentDeg = swerve.getHeading().getDegrees();
 
         // calculate errors
-        // distance error: how far we still need to travel (positive = need to move forward)
-        distanceErrorFeet = distanceGoalFeet - distanceDesiredFeet -
-                (distanceGoalFeet - distanceCurrentFeet);
-        // simplified: distanceErrorFeet = currentDistanceFeet (remaining distance to target)
         distanceErrorFeet = distanceCurrentFeet;
         headingErrorDeg = Util.degreeModulus(headingGoalDeg - headingCurrentDeg);
 

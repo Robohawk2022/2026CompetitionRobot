@@ -52,6 +52,25 @@ public class ShootingCommands {
         );
     }
 
+    /**
+     * @return a command that uses a {@link SwerveToHeadingCommand} to turn
+     * the robot to face the hub
+     */
+    public static Command faceHub(SwerveSubsystem swerve) {
+        return swerve.defer(() -> {
+
+            Pose2d hubCenter = Field.getHubCenter();
+            Pose2d robotPose = swerve.getPose();
+
+            Translation2d hubToRobot = robotPose
+                    .getTranslation()
+                    .minus(hubCenter.getTranslation());
+
+            return new SwerveToHeadingCommand(swerve, hubToRobot
+                    .getAngle()
+                    .plus(Rotation2d.k180deg));
+        });
+    }
 
     /**
      * @return a command that uses {@link SwerveToPoseCommand} to drive the

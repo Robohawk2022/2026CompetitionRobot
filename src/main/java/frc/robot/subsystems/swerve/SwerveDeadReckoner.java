@@ -9,17 +9,17 @@ import frc.robot.util.Util;
  * Calculates a pose based on {@link ChassisSpeeds} updates for simulating
  * a swerve drive
  */
-public class SwervePoseSimulator {
+public class SwerveDeadReckoner {
 
     double x;
     double y;
     double heading;
 
     /**
-     * Creates a {@link SwervePoseSimulator}
+     * Creates a {@link SwerveDeadReckoner}
      * @param initialPose initial robot pose
      */
-    public SwervePoseSimulator(Pose2d initialPose) {
+    public SwerveDeadReckoner(Pose2d initialPose) {
         resetPose(initialPose);
     }
 
