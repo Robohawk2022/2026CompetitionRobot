@@ -185,9 +185,11 @@ public class ShootingCommands {
      * @return a command that will turn off the LEDs unless we are within
      * shooting range of the hub
      */
-    public static Command flashAtShootingRange(SwerveSubsystem swerve, LEDSubsystem led) {
+    public static Command flashWhenSHootable(SwerveSubsystem swerve, LEDSubsystem led) {
 
-        BooleanSupplier inRange = () -> {
+        // TODO should we also wait till the shooter is at speed?
+        // TODO should we also check the angle to the hub?
+        BooleanSupplier readyToShoot = () -> {
             double currentDistanceFeet = Util.feetBetween(
                     swerve.getPose(),
                     Field.getHubCenter());
@@ -198,8 +200,8 @@ public class ShootingCommands {
         };
 
         return Commands.either(
-                led.show(LEDSignal.SHOOT_RANGE_CLOSE),
+                led.flash(LEDSignal.SHOOT_RANGE_CLOSE),
                 led.show(LEDSignal.OFF),
-                inRange);
+                readyToShoot);
     }
 }

@@ -66,10 +66,14 @@ public class LEDTestbot extends TimedRobot {
 
     @Override
     public void teleopInit() {
+
+        // on teleop init, flash the alliance color for 3 seconds
         LEDSignal signal = Util.isRedAlliance()
                 ? LEDSignal.ALLIANCE_RED
                 : LEDSignal.ALLIANCE_BLUE;
-        CommandScheduler.getInstance().schedule(led.flash(signal));
+        CommandScheduler
+                .getInstance()
+                .schedule(led.flash(signal).withTimeout(3.0));
     }
 
     @Override

@@ -61,9 +61,8 @@ public class RobotContainer {
         led = new LEDSubsystem(RobotBase.isSimulation()
                 ? new LEDHardwareSim()
                 : new LEDHardwareBlinkin(LED_PWM_PORT));
-        led.setDefaultCommand(ShootingCommands.flashAtShootingRange(swerve, led));
-        limelight.odometryBrokenTrigger()
-                .whileTrue(led.flash(LEDSignal.ERROR).repeatedly());
+        led.setDefaultCommand(ShootingCommands.flashWhenSHootable(swerve, led));
+        limelight.odometryBrokenTrigger().whileTrue(led.flash(LEDSignal.ERROR));
 
         configureBindings();
     }

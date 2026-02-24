@@ -21,7 +21,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class LEDSubsystem extends SubsystemBase {
 
     public static final double FLASH_CYCLE_DURATION = 0.4;
-    public static final int FLASH_CYCLE_COUNT = 4;
 
     private final LEDHardware hardware;
     private LEDSignal currentSignal;
@@ -56,23 +55,11 @@ public class LEDSubsystem extends SubsystemBase {
     }
 
     /**
-     * @return a command that will show the supplied signal for the specified
-     * number of seconds, or until interrupted
-     */
-    public Command showWithTimeout(LEDSignal signal, double timeout) {
-        return show(signal).withTimeout(timeout);
-    }
-
-    /**
-     * @return a command that will flash the supplied signal for a short
-     * period, or until interrupted
+     * @return a command that will flash the supplied signal until interrupted
      */
     public Command flash(LEDSignal signal) {
-        Command cmd = showWithTimeout(signal, FLASH_CYCLE_DURATION);
-        for (int i=1; i<FLASH_CYCLE_COUNT; i++) {
-            cmd = cmd.andThen(showWithTimeout(LEDSignal.OFF, FLASH_CYCLE_DURATION));
-            cmd = cmd.andThen(showWithTimeout(signal, FLASH_CYCLE_DURATION));
-        }
-        return cmd;
+        Command flashOn = show(signal).withTimeout(FLASH_CYCLE_DURATION);
+        Command flashOff = show(LEDSignal.OFF).withTimeout(FLASH_CYCLE_DURATION);
+        return flashOff.andThen(flashOn).repeatedly();
     }
 }
