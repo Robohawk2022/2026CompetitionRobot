@@ -1,6 +1,8 @@
 package frc.robot.subsystems.limelight;
 
 import edu.wpi.first.math.Vector;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
@@ -8,6 +10,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Config.Limelight;
 import frc.robot.subsystems.limelight.LimelightHelpers.PoseEstimate;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
@@ -38,30 +41,30 @@ import static frc.robot.Config.Limelight.maxYawRate;
  */
 public class LimelightSubsystem extends SubsystemBase {
 
+    /**
+     * If our vision estimates are continuously too far from the odometry
+     * for this amount of time, we will consider odometry "broken"
+     */
+    public static final double BROKEN_TIMEOUT = 4.0;
+
     /** Enable verbose logging for debugging */
     static final boolean verboseLogging = true;
 
     final SwerveSubsystem swerve;
     final LimelightTarget latestTarget;
     final LimelightResults results;
+    final Debouncer debouncer;
     double lastTime;
     double lastYaw;
     double lastYawRate;
     boolean spinningTooFast;
     Pose2d latestEstimate;
     Pose2d latestTagPose;
-    Pose2d latestTargetPose;
     long restrictedTag;
-    long noEstimate;
-    long noTags;
-    long poseOutsideField;
-    long poseJumpTooBig;
-    long lowConfidenceCount;
-    long highConfidenceCount;
-    long mediumConfidenceCount;
     boolean forceResetPose;
     boolean estimateSuccessful;
     boolean resetPose;
+    boolean isBroken;
 
     /**
      * Creates a {@link LimelightSubsystem}
@@ -73,22 +76,32 @@ public class LimelightSubsystem extends SubsystemBase {
         this.swerve = Objects.requireNonNull(swerve);
         this.latestTarget = new LimelightTarget();
         this.results = new LimelightResults();
+        this.debouncer = new Debouncer(BROKEN_TIMEOUT, DebounceType.kRising);
         this.latestEstimate = null;
         this.latestTagPose = null;
         this.forceResetPose = false;
         this.estimateSuccessful = false;
+        this.isBroken = false;
 
         SmartDashboard.putData("LimelightSubsystem", builder -> {
-            builder.addIntegerProperty("RestrictedTag", () -> restrictedTag, null);
-            builder.addBooleanProperty("TooFast?", () -> spinningTooFast, null);
+            builder.addBooleanProperty("Broken?", () -> isBroken, null);
             builder.addBooleanProperty("HasEstimate?", () -> estimateSuccessful, null);
             builder.addBooleanProperty("HasTarget?", latestTarget::isValid, null);
             builder.addBooleanProperty("ResetPose?", () -> forceResetPose, val -> forceResetPose = val);
+            builder.addIntegerProperty("RestrictedTag", () -> restrictedTag, null);
+            builder.addBooleanProperty("TooFast?", () -> spinningTooFast, null);
             if (verboseLogging) {
                 latestTarget.addToDashboard(builder);
                 results.addToDashboard(builder);
             }
         });
+    }
+
+    /**
+     * @return do we consider odometry to be broken?
+     */
+    public boolean isBroken() {
+        return isBroken;
     }
 
     /**
@@ -256,11 +269,16 @@ public class LimelightSubsystem extends SubsystemBase {
             resetPose = false;
         }
 
-        // if the pose is too far from the current pose, we don't submit it
+        // if the pose is too far from the current pose, we don't submit it;
+        // this might be a sign that odometry is broken
         if (Util.feetBetween(currentPose, estimate.pose) > maxPoseJumpFeet.getAsDouble()) {
             results.poseJumpTooBig();
+            isBroken = debouncer.calculate(true);
             return;
         }
+
+        // huzzah! we have an estimate
+        isBroken = debouncer.calculate(false);
 
         // let's figure out our confidence level
         boolean multiTag = estimate.rawFiducials.length > 1;
@@ -294,6 +312,10 @@ public class LimelightSubsystem extends SubsystemBase {
 //endregion
 
 //region Pose estimate ---------------------------------------------------------
+
+    public Trigger odometryBrokenTrigger() {
+        return new Trigger(this::isBroken);
+    }
 
     public Command resetPoseFromVisionCommand() {
         return runOnce(() -> forceResetPose = true);

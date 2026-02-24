@@ -12,8 +12,6 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import frc.robot.Config.PIDFConfig;
 import frc.robot.util.Util;
 
-import java.util.function.Consumer;
-
 import static frc.robot.Config.Launcher.agitatorPid;
 import static frc.robot.Config.Launcher.feederPid;
 import static frc.robot.Config.Launcher.shooterPid;
@@ -163,22 +161,6 @@ public class LauncherHardwareRev implements LauncherHardware{
         } else {
             pid.setSetpoint(rpm, ControlType.kVelocity);
         }
-    }
-
-//endregion
-
-//region Helper ----------------------------------------------------------------
-
-    /**
-     * Updates motor configuration, using the supplied callback to update it
-     * prior to saving
-     */
-    private void configureMotor(SparkMax motor, Consumer<SparkMaxConfig> consumer) {
-        SparkMaxConfig config = new SparkMaxConfig();
-        consumer.accept(config);
-        motor.configure(config,
-                ResetMode.kResetSafeParameters,
-                PersistMode.kPersistParameters);
     }
 
 //endregion
