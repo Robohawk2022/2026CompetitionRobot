@@ -11,23 +11,21 @@ import frc.robot.util.Util;
  */
 public class SwerveDeadReckoner {
 
-    double x;
-    double y;
-    double heading;
+    Pose2d latestPose;
 
     /**
      * Creates a {@link SwerveDeadReckoner}
      * @param initialPose initial robot pose
      */
     public SwerveDeadReckoner(Pose2d initialPose) {
-        resetPose(initialPose);
+        latestPose = initialPose;
     }
 
     /**
      * @return the current calculated pose of the robot
      */
     public Pose2d getPose() {
-        return new Pose2d(x, y, Rotation2d.fromRadians(heading));
+        return latestPose;
     }
 
     /**
@@ -35,23 +33,28 @@ public class SwerveDeadReckoner {
      * @param speeds robot-relative movement speeds
      */
     public void update(ChassisSpeeds speeds) {
+
         if (speeds != null) {
 
             // convert robot-relative to field-relative for updating
             // field position
             speeds = ChassisSpeeds.fromRobotRelativeSpeeds(
                     speeds,
-                    Rotation2d.fromRadians(heading));
+                    latestPose.getRotation());
 
-            x += speeds.vxMetersPerSecond * Util.DT;
-            y += speeds.vyMetersPerSecond * Util.DT;
-            heading += speeds.omegaRadiansPerSecond * Util.DT;
+            double dx = speeds.vxMetersPerSecond * Util.DT;
+            double dy = speeds.vyMetersPerSecond * Util.DT;
+            double dh = speeds.omegaRadiansPerSecond * Util.DT;
+
+            // calculate a new pose estimate based on the supplied speeds
+            latestPose = new Pose2d(
+                    latestPose.getX() + dx,
+                    latestPose.getY() + dy,
+                    Rotation2d.fromRadians(latestPose.getRotation().getRadians() + dh));
         }
     }
 
     public void resetPose(Pose2d pose) {
-        x = pose.getTranslation().getX();
-        y = pose.getTranslation().getY();
-        heading = pose.getRotation().getRadians();
+        latestPose = pose;
     }
 }

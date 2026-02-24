@@ -20,8 +20,8 @@ public final class Main {
         // RobotBase.startRobot(VisionSimTestbot::new);
         // RobotBase.startRobot(Robot::new);
         // RobotBase.startRobot(LauncherTestbot::new);
-//        RobotBase.startRobot(ShootingSimTestbot::new);
-        RobotBase.startRobot(AutonomousTestbot::new);
+       RobotBase.startRobot(ShootingSimTestbot::new);
+        // RobotBase.startRobot(AutonomousTestbot::new);
     }
 }
 
