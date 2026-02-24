@@ -26,32 +26,6 @@ import static frc.robot.Config.Launcher.shootSpinupTime;
 public class ShootingCommands {
 
     /**
-     * @return a command that uses {@link SwerveToHeadingCommand} to aim the
-     * swerve drive at the center of the hub
-     */
-    public static Command aimAtHubCommand(SwerveSubsystem swerve) {
-        return swerve.defer(() -> {
-
-            Pose2d currentPose = swerve.getPose();
-
-            Pose2d hubCenter = Field.getHubCenter();
-            Util.publishPose("HubPose", hubCenter);
-
-            // angle from robot to hub center
-            Rotation2d angleToHub = hubCenter.getTranslation()
-                    .minus(currentPose.getTranslation())
-                    .getAngle();
-
-            Util.log("[aim-at-hub] =============================");
-            Util.log("   hub at %s", hubCenter);
-            Util.log("   robot at %s", currentPose);
-            Util.log("   angle = %.2f", angleToHub.getDegrees());
-
-            return new SwerveToHeadingCommand(swerve, angleToHub);
-        });
-    }
-
-    /**
      * Rapidly oscillates the robot left and right (robot-relative) to
      * dislodge stuck balls. Hold trigger to jiggle, release to stop.
      *

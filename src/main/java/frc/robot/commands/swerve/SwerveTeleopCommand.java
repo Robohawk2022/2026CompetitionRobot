@@ -2,6 +2,7 @@ package frc.robot.commands.swerve;
 
 import java.util.Objects;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -121,10 +122,10 @@ public class SwerveTeleopCommand extends Command {
         // via setOperatorPerspectiveForward (called in periodic based on alliance)
         // so we use field-relative driving when driverRelative mode is enabled
         if (driverRelative.getAsBoolean()) {
-            swerve.driveFieldRelative("teleop", speeds);
-        } else {
-            swerve.driveRobotRelative("teleop", speeds);
+            speeds = Util.fromDriverRelativeSpeeds(speeds, swerve.getHeading());
         }
+
+        swerve.driveRobotRelative("teleop", speeds);
     }
 
 }
