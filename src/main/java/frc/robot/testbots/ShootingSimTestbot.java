@@ -42,6 +42,6 @@ public class ShootingSimTestbot extends TimedRobot {
     @Override
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
-        // limelightSim.update(swerve.getPose());
+         limelightSim.update(swerve.getPose());
     }
 }
