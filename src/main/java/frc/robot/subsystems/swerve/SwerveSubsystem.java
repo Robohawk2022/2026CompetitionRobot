@@ -111,8 +111,11 @@ public class SwerveSubsystem extends SubsystemBase {
 
     @Override
     public void simulationPeriodic() {
+
         poseSimulator.update(latestSpeed);
+
         Util.publishPose("SimulatedPose", poseSimulator.getPose());
+        Util.publishPose("CtrePose", drivetrain.getState().Pose);
     }
 
 //endregion
@@ -192,6 +195,7 @@ public class SwerveSubsystem extends SubsystemBase {
      * @param center the center of rotation (null means robot center)
      */
     public void driveRobotRelative(String mode, ChassisSpeeds speeds, Translation2d center) {
+
         currentMode = mode;
         latestSpeed = speeds;
 

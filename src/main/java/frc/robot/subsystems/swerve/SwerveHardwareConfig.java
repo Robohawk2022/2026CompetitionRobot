@@ -1,6 +1,5 @@
 package frc.robot.subsystems.swerve;
 
-import com.ctre.phoenix6.signals.InvertedValue;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.util.Units;
@@ -54,20 +53,16 @@ public final class SwerveHardwareConfig {
     public static final double WHEEL_CIRCUMFERENCE_METERS = WHEEL_DIAMETER_METERS * Math.PI;
 
     // manufacturer-supplied gear ratios - see https://www.swervedrivespecialties.com/products/mk5i-swerve-module
-    public static final double SDS_MK5I_DRIVE_R1 = 7.03;
-    public static final double SDS_MK5I_DRIVE_R2 = 6.03;
-    public static final double SDS_MK5I_DRIVE_R3 = 5.27;
-    public static final double SDS_MK5I_TURN = 26.0;
+    public static final double SDS_MK5I_DRIVE_R3 = 5.2734375;
+    public static final double SDS_MK5I_TURN = 26.09090909090909;
 
     // drive motor
     public static final double DRIVE_GEAR_RATIO = SDS_MK5I_DRIVE_R3;
-    public static final double DRIVE_POSITION_FACTOR = WHEEL_CIRCUMFERENCE_METERS / DRIVE_GEAR_RATIO;
-    public static final double DRIVE_VELOCITY_FACTOR = DRIVE_POSITION_FACTOR / 60.0;
     public static final double DRIVE_CURRENT_LIMIT_AMPS = 60.0;
 
     // turn motor
     public static final double TURN_GEAR_RATIO =  SDS_MK5I_TURN;
-    public static final double TURN_CURRENT_LIMIT_AMPS = 40.0;
+    public static final double TURN_CURRENT_LIMIT_AMPS = 60.0;
 
     public static final double MAX_MOTOR_RPM = 6380.0;  // Kraken X60 free speed
     public static final double MAX_WHEEL_SPEED_MPS = (MAX_MOTOR_RPM / 60.0) * WHEEL_CIRCUMFERENCE_METERS / DRIVE_GEAR_RATIO;
@@ -95,22 +90,14 @@ public final class SwerveHardwareConfig {
     public static final int PIGEON_ID = 10;
 
     //==========================================================================
-    // MOTOR_INVERSIONS
-    //==========================================================================
-
-    public static final InvertedValue FL_DRIVE_INVERTED = InvertedValue.Clockwise_Positive;
-    public static final InvertedValue FR_DRIVE_INVERTED = InvertedValue.CounterClockwise_Positive;
-    public static final InvertedValue BL_DRIVE_INVERTED = InvertedValue.Clockwise_Positive;
-    public static final InvertedValue BR_DRIVE_INVERTED = InvertedValue.CounterClockwise_Positive;
-
-    //==========================================================================
     // PID TUNING
     //==========================================================================
 
     public static final double DRIVE_KP = 0.1;
-    public static final double DRIVE_KV = 0.12;
-    public static final double DRIVE_KS = 0.0;
+    public static final double DRIVE_KV = 0.124;
 
     public static final double TURN_KP = 6.0;
-    public static final double TURN_KD = 0.001;
+    public static final double TURN_KD = 0.5;
+    public static final double TURN_KS = 0.1;
+    public static final double TURN_KV = 2.49;
 }

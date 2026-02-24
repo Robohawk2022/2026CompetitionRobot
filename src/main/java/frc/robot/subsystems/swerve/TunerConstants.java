@@ -24,14 +24,21 @@ public class TunerConstants {
 
     // PID gains for steer motors (tuned for CTRE swerve)
     private static final Slot0Configs steerGains = new Slot0Configs()
-        .withKP(6).withKI(0).withKD(0.5)
-        .withKS(0.1).withKV(2.49).withKA(0)
-        .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign);
+            .withKP(SwerveHardwareConfig.TURN_KP)
+            .withKI(0)
+            .withKD(SwerveHardwareConfig.TURN_KD)
+            .withKS(SwerveHardwareConfig.TURN_KS)
+            .withKV(SwerveHardwareConfig.TURN_KV)
+            .withKA(0)
+            .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign);
 
     // PID gains for drive motors (tuned for CTRE swerve)
     private static final Slot0Configs driveGains = new Slot0Configs()
-        .withKP(0.1).withKI(0).withKD(0)
-        .withKS(0).withKV(0.124);
+            .withKP(SwerveHardwareConfig.DRIVE_KP)
+            .withKI(0)
+            .withKD(0)
+            .withKS(0)
+            .withKV(SwerveHardwareConfig.DRIVE_KV);
 
     // Closed-loop output types
     private static final ClosedLoopOutputType kSteerClosedLoopOutput = ClosedLoopOutputType.Voltage;
@@ -52,7 +59,7 @@ public class TunerConstants {
     private static final TalonFXConfiguration steerInitialConfigs = new TalonFXConfiguration()
         .withCurrentLimits(
             new CurrentLimitsConfigs()
-                .withStatorCurrentLimit(Amps.of(60))
+                .withStatorCurrentLimit(Amps.of(SwerveHardwareConfig.TURN_CURRENT_LIMIT_AMPS))
                 .withStatorCurrentLimitEnable(true)
         );
     private static final CANcoderConfiguration encoderInitialConfigs = new CANcoderConfiguration();
@@ -68,8 +75,8 @@ public class TunerConstants {
     private static final double kCoupleRatio = 3.375;
 
     // Gear ratios (MK5i R3)
-    private static final double kDriveGearRatio = 5.2734375;
-    private static final double kSteerGearRatio = 26.09090909090909;
+    private static final double kDriveGearRatio = SwerveHardwareConfig.DRIVE_GEAR_RATIO;
+    private static final double kSteerGearRatio = SwerveHardwareConfig.TURN_GEAR_RATIO;
     private static final Distance kWheelRadius = Inches.of(2);
 
     // Motor inversions
@@ -77,7 +84,7 @@ public class TunerConstants {
     private static final boolean kInvertRightSide = true;
 
     // Pigeon ID
-    private static final int kPigeonId = 10;
+    private static final int kPigeonId = SwerveHardwareConfig.PIGEON_ID;
 
     // Simulation parameters
     private static final MomentOfInertia kSteerInertia = KilogramSquareMeters.of(0.01);
@@ -118,50 +125,50 @@ public class TunerConstants {
     //==========================================================================
     // Front Left Module
     //==========================================================================
-    private static final int kFrontLeftDriveMotorId = 41;
-    private static final int kFrontLeftSteerMotorId = 42;
-    private static final int kFrontLeftEncoderId = 43;
+    private static final int kFrontLeftDriveMotorId = SwerveHardwareConfig.FL_DRIVE_ID;
+    private static final int kFrontLeftSteerMotorId = SwerveHardwareConfig.FL_TURN_ID;
+    private static final int kFrontLeftEncoderId = SwerveHardwareConfig.FL_ENCODER_ID;
     private static final Angle kFrontLeftEncoderOffset = Rotations.of(-0.2177734375);
     private static final boolean kFrontLeftSteerMotorInverted = false;
     private static final boolean kFrontLeftEncoderInverted = false;
-    private static final Distance kFrontLeftXPos = Inches.of(9.71875);
-    private static final Distance kFrontLeftYPos = Inches.of(12.5);
+    private static final Distance kFrontLeftXPos = Inches.of(SwerveHardwareConfig.WHEEL_BASE_INCHES / 2.0);
+    private static final Distance kFrontLeftYPos = Inches.of(SwerveHardwareConfig.TRACK_WIDTH_INCHES / 2.0);
 
     //==========================================================================
     // Front Right Module
     //==========================================================================
-    private static final int kFrontRightDriveMotorId = 21;
-    private static final int kFrontRightSteerMotorId = 22;
-    private static final int kFrontRightEncoderId = 23;
+    private static final int kFrontRightDriveMotorId = SwerveHardwareConfig.FR_DRIVE_ID;
+    private static final int kFrontRightSteerMotorId = SwerveHardwareConfig.FR_TURN_ID;
+    private static final int kFrontRightEncoderId = SwerveHardwareConfig.FR_ENCODER_ID;
     private static final Angle kFrontRightEncoderOffset = Rotations.of(-0.19775390625);
     private static final boolean kFrontRightSteerMotorInverted = false;
     private static final boolean kFrontRightEncoderInverted = false;
-    private static final Distance kFrontRightXPos = Inches.of(9.71875);
-    private static final Distance kFrontRightYPos = Inches.of(-12.5);
+    private static final Distance kFrontRightXPos = Inches.of(SwerveHardwareConfig.WHEEL_BASE_INCHES / 2.0);
+    private static final Distance kFrontRightYPos = Inches.of(-SwerveHardwareConfig.TRACK_WIDTH_INCHES / 2.0);
 
     //==========================================================================
     // Back Left Module
     //==========================================================================
-    private static final int kBackLeftDriveMotorId = 11;
-    private static final int kBackLeftSteerMotorId = 12;
-    private static final int kBackLeftEncoderId = 13;
+    private static final int kBackLeftDriveMotorId = SwerveHardwareConfig.BL_DRIVE_ID;
+    private static final int kBackLeftSteerMotorId = SwerveHardwareConfig.BL_TURN_ID;
+    private static final int kBackLeftEncoderId = SwerveHardwareConfig.BL_ENCODER_ID;
     private static final Angle kBackLeftEncoderOffset = Rotations.of(0.051025390625);
     private static final boolean kBackLeftSteerMotorInverted = false;
     private static final boolean kBackLeftEncoderInverted = false;
-    private static final Distance kBackLeftXPos = Inches.of(-9.71875);
-    private static final Distance kBackLeftYPos = Inches.of(12.5);
+    private static final Distance kBackLeftXPos = Inches.of(-SwerveHardwareConfig.WHEEL_BASE_INCHES / 2.0);
+    private static final Distance kBackLeftYPos = Inches.of(SwerveHardwareConfig.TRACK_WIDTH_INCHES / 2.0);
 
     //==========================================================================
     // Back Right Module
     //==========================================================================
-    private static final int kBackRightDriveMotorId = 31;
-    private static final int kBackRightSteerMotorId = 32;
-    private static final int kBackRightEncoderId = 33;
+    private static final int kBackRightDriveMotorId = SwerveHardwareConfig.BR_DRIVE_ID;
+    private static final int kBackRightSteerMotorId = SwerveHardwareConfig.BR_TURN_ID;
+    private static final int kBackRightEncoderId = SwerveHardwareConfig.BR_ENCODER_ID;
     private static final Angle kBackRightEncoderOffset = Rotations.of(-0.169189453125);
     private static final boolean kBackRightSteerMotorInverted = false;
     private static final boolean kBackRightEncoderInverted = false;
-    private static final Distance kBackRightXPos = Inches.of(-9.71875);
-    private static final Distance kBackRightYPos = Inches.of(-12.5);
+    private static final Distance kBackRightXPos = Inches.of(-SwerveHardwareConfig.WHEEL_BASE_INCHES / 2.0);
+    private static final Distance kBackRightYPos = Inches.of(-SwerveHardwareConfig.TRACK_WIDTH_INCHES / 2.0);
 
     //==========================================================================
     // Module Constants
