@@ -77,6 +77,7 @@ public class VisionSimTestbot extends TimedRobot {
     /**
      * Teleports the robot to a specific position.
      */
+    @SuppressWarnings("unused")
     private void teleportTo(double x, double y, double headingDeg) {
         Pose2d newPose = new Pose2d(x, y, Rotation2d.fromDegrees(headingDeg));
         swerve.resetPose(newPose);

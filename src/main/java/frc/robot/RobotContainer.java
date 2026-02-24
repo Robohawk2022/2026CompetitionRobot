@@ -4,12 +4,16 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.ShootingCommands;
 import frc.robot.subsystems.auto.AutonomousSubsystem;
 import frc.robot.subsystems.launcher.LauncherHardwareRev;
+import frc.robot.subsystems.launcher.LauncherHardwareSim;
 import frc.robot.subsystems.launcher.LauncherSubsystem;
 import frc.robot.subsystems.led.LEDHardwareBlinkin;
+import frc.robot.subsystems.led.LEDHardwareSim;
+import frc.robot.subsystems.led.LEDSignal;
 import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.limelight.LimelightSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
@@ -42,16 +46,24 @@ public class RobotContainer {
         auto = new AutonomousSubsystem(swerve);
 
         // launcher (default command is coasting the wheels)
-        launcher = new LauncherSubsystem(new LauncherHardwareRev(
-                INTAKE_CAN_ID,
-                FEEDER_CAN_ID,
-                AGITATOR_CAN_ID,
-                SHOOTER_CAN_ID));
+        launcher = new LauncherSubsystem(RobotBase.isSimulation()
+                ? new LauncherHardwareSim()
+                : new LauncherHardwareRev(
+                        INTAKE_CAN_ID,
+                        FEEDER_CAN_ID,
+                        AGITATOR_CAN_ID,
+                        SHOOTER_CAN_ID));
         launcher.setDefaultCommand(launcher.coast());
 
-        // LED (default command is showing range to shooter)
-        led = new LEDSubsystem(new LEDHardwareBlinkin(LED_PWM_PORT));
+        // LED
+        //  - default command is showing range to shooter
+        //  - as long as odometry is broken, flash the error signal
+        led = new LEDSubsystem(RobotBase.isSimulation()
+                ? new LEDHardwareSim()
+                : new LEDHardwareBlinkin(LED_PWM_PORT));
         led.setDefaultCommand(ShootingCommands.flashAtShootingRange(swerve, led));
+        limelight.odometryBrokenTrigger()
+                .whileTrue(led.flash(LEDSignal.ERROR).repeatedly());
 
         configureBindings();
     }

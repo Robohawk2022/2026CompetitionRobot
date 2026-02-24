@@ -38,6 +38,7 @@ import frc.robot.subsystems.swerve.TunerConstants.TunerSwerveDrivetrain;
  *   <li>Vision measurement integration with FPGA timestamp conversion</li>
  * </ul>
  */
+@SuppressWarnings("unused")
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
 
     private static final double kSimLoopPeriod = 0.004; // 4 ms (250 Hz)

@@ -21,7 +21,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.swerve.SwerveHardwareConfig;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
-import frc.robot.subsystems.swerve.TunerConstants;
 import frc.robot.util.DigitBoardProgramPicker;
 import frc.robot.util.Util;
 
