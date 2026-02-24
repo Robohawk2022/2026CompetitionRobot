@@ -2,6 +2,7 @@ package frc.robot.testbots;
 
 import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.GameController;
 import frc.robot.subsystems.launcher.LauncherHardwareRev;
@@ -23,23 +24,32 @@ import frc.robot.subsystems.launcher.LauncherSubsystem;
  */
 public class LauncherTestbot extends TimedRobot {
 
+    // CAN IDs from the testing setup
+    public static final int INTAKE_CAN_ID = 9;
+    public static final int FEEDER_CAN_ID = 32;
+    public static final int AGITATOR_CAN_ID = 11;
+    public static final int SHOOTER_CAN_ID = 60;
+
     private LauncherSubsystem launcher;
-    private GameController controller;
+    private double testRpm;
 
     @Override
     public void robotInit() {
+
+        testRpm = 1000.0;
+
         System.out.println(">>> LauncherTestbot starting...");
 
         // clear stale Preferences so code defaults always win on deploy
         Preferences.removeAll();
 
-        boolean sim = isSimulation();
-        launcher = new LauncherSubsystem(sim
+        launcher = new LauncherSubsystem(isSimulation()
                 ? new LauncherHardwareSim()
-                : new LauncherHardwareRev());
-        controller = new GameController(0);
+                : new LauncherHardwareRev(INTAKE_CAN_ID, FEEDER_CAN_ID, AGITATOR_CAN_ID, SHOOTER_CAN_ID));
 
-        launcher.setDefaultCommand(launcher.idleCommand());
+        GameController controller = new GameController(0);
+
+        launcher.setDefaultCommand(launcher.coast());
 
         // intake: feeders spin inward
         controller.a().whileTrue(launcher.intakeCommand());
@@ -50,18 +60,19 @@ public class LauncherTestbot extends TimedRobot {
         // shoot: feeders + shooter spin up
         controller.x().whileTrue(launcher.shootCommand());
 
-        // stop all
-        controller.y().onTrue(launcher.stopCommand());
-
-        // reverse shooter
-        controller.povDown().whileTrue(launcher.reverseShooterCommand());
+        // left bumper: run all motors at test velocity
+        controller.leftBumper().whileTrue(launcher.defer(() ->
+                launcher.velocityCommand(testRpm, testRpm, testRpm, testRpm)));
 
         System.out.println(">>> Button mappings:");
         System.out.println("    A (hold) = Intake (feeders inward)");
         System.out.println("    B (hold) = Eject (feeders outward)");
         System.out.println("    X (hold) = Shoot (feeders + shooter)");
-        System.out.println("    Y (press) = Stop all");
-        System.out.println("    D-pad Down (hold) = Reverse shooter");
+
+        SmartDashboard.putData("LauncherTestbot", builder -> {
+            builder.addDoubleProperty("TestRpm", () -> testRpm, val -> testRpm = val);
+        });
+
     }
 
     @Override
@@ -71,6 +82,6 @@ public class LauncherTestbot extends TimedRobot {
 
     @Override
     public void disabledInit() {
-        launcher.stop();
+        launcher.coast();
     }
 }

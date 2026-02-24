@@ -9,7 +9,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.Util;
 
-import static frc.robot.Config.Shooting.*;
+import static frc.robot.Config.Launcher.shootDistanceFeet;
+import static frc.robot.Config.Launcher.shootDistanceTolerance;
 
 /**
  * Subsystem for controlling LEDs via the REV Blinkin controller.
@@ -121,14 +122,11 @@ public class LEDSubsystem extends SubsystemBase {
 
     private void updateDistanceSignal() {
         double distance = distanceSupplier.getAsDouble();
-        double tol = distanceTolerance.getAsDouble();
+        double tol = shootDistanceTolerance.getAsDouble();
 
-        if (Math.abs(distance - closeDistance.getAsDouble()) <= tol) {
+        if (Math.abs(distance - shootDistanceFeet.getAsDouble()) <= tol) {
             shotZone = "close";
             setSignal(LEDSignal.SHOOT_RANGE_CLOSE);
-        } else if (Math.abs(distance - farDistance.getAsDouble()) <= tol) {
-            shotZone = "far";
-            setSignal(LEDSignal.SHOOT_RANGE_FAR);
         } else {
             shotZone = "none";
             setSignal(LEDSignal.SHOOT_RANGE_MEDIUM);

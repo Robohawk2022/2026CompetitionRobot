@@ -1,278 +1,226 @@
 package frc.robot.subsystems.launcher;
 
-import java.util.Objects;
-import java.util.function.DoubleSupplier;
-
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
+import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.Util;
-import edu.wpi.first.math.MathUtil;
 
-import static frc.robot.Config.Launcher.*;
+import static frc.robot.Config.Launcher.ejectSpeeds;
+import static frc.robot.Config.Launcher.intakeSpeeds;
+import static frc.robot.Config.Launcher.shootSpeedTolerance;
+import static frc.robot.Config.Launcher.shootSpeeds;
+import static frc.robot.Config.Launcher.stallSpeed;
+import static frc.robot.Config.Launcher.stallTime;
 
 /**
- * Subsystem for the launcher: 2 feeder motors + 1 shooter motor + 1 shooter intake motor.
- * <p>
- * <b>Motors:</b>
+ * Launcher subsystem for the 2026 robot. Four spinning "wheel bars":
  * <ul>
- *   <li>Feeder Left - bottom left (onboard velocity PID), spins inward</li>
- *   <li>Feeder Right - bottom right (onboard velocity PID), spins inward</li>
- *   <li>Shooter - top flywheel (onboard velocity PID), flings balls out</li>
- *   <li>Shooter Intake - feeds balls into the shooter during shots</li>
+ *     <li>Intake (in the gap in the front of the chassis)</li>
+ *     <li>Feeder (directly behind intake and below shooter)</li>
+ *     <li>Agitator (at the back in the hopper)</li>
+ *     <li>Shooter (on the top)</li>
  * </ul>
- * <p>
- * <b>Intake:</b> Both feeders spin inward at intake RPM to pull balls in.
- * <p>
- * <b>Shooting:</b> Shooter spins up first, then feeders and shooter intake
- * engage to feed balls through.
+ *
+ * All motors turn in the same direction during intake and shooting; for
+ * eject the intake, feeder and agitator will turn backwards.
  */
 public class LauncherSubsystem extends SubsystemBase {
-
-    static final boolean verboseLogging = true;
 
 //region Implementation --------------------------------------------------------
 
     final LauncherHardware hardware;
+    final MotorStatus intakeStatus;
+    final MotorStatus feederStatus;
+    final MotorStatus agitatorStatus;
+    final MotorStatus shooterStatus;
+    boolean shooterAtSpeed;
 
-    String currentMode;
-    double feederLeftRPM, feederRightRPM, currentShooterRPM, currentShooterIntakeRPM;
-    double feederLeftTarget, feederRightTarget, shooterTarget, shooterIntakeTarget;
-
-    /**
-     * Creates a {@link LauncherSubsystem}.
-     *
-     * @param hardware the hardware interface (required)
-     */
     public LauncherSubsystem(LauncherHardware hardware) {
-        this.hardware = Objects.requireNonNull(hardware);
-        this.currentMode = "idle";
 
-        SmartDashboard.putData(getName(), builder -> {
-            builder.addStringProperty("Mode", () -> currentMode, null);
-            builder.addBooleanProperty("AtSpeed?", this::atSpeed, null);
+        this.hardware = hardware;
+        this.intakeStatus = new MotorStatus();
+        this.feederStatus = new MotorStatus();
+        this.agitatorStatus = new MotorStatus();
+        this.shooterStatus = new MotorStatus();
+        this.shooterAtSpeed = false;
 
-            builder.addDoubleProperty("FeederLeftCurrent", () -> Util.chopDigits(feederLeftRPM), null);
-            builder.addDoubleProperty("FeederLeftTarget", () -> feederLeftTarget, null);
-            builder.addDoubleProperty("FeederRightCurrent", () -> Util.chopDigits(feederRightRPM), null);
-            builder.addDoubleProperty("FeederRightTarget", () -> feederRightTarget, null);
-            builder.addDoubleProperty("ShooterCurrent", () -> Util.chopDigits(currentShooterRPM), null);
-            builder.addDoubleProperty("ShooterTarget", () -> shooterTarget, null);
-            builder.addDoubleProperty("ShooterIntakeCurrent", () -> Util.chopDigits(currentShooterIntakeRPM), null);
-            builder.addDoubleProperty("ShooterIntakeTarget", () -> shooterIntakeTarget, null);
-
-            if (verboseLogging) {
-                builder.addDoubleProperty("FeederLeftAmps", hardware::getFeederLeftAmps, null);
-                builder.addDoubleProperty("FeederRightAmps", hardware::getFeederRightAmps, null);
-                builder.addDoubleProperty("ShooterAmps", hardware::getShooterAmps, null);
-                builder.addDoubleProperty("ShooterIntakeAmps", hardware::getShooterIntakeAmps, null);
-            }
+        SmartDashboard.putData("LauncherSubsystem", builder -> {
+            intakeStatus.addToBuilder("IntakeMotor", builder);
+            feederStatus.addToBuilder("FeederMotor", builder);
+            agitatorStatus.addToBuilder("AgitatorMotor", builder);
+            shooterStatus.addToBuilder("ShooterMotor", builder);
+            builder.addBooleanProperty("ShooterMotor/AtSpeed?", () -> shooterAtSpeed, null);
         });
     }
 
     @Override
     public void periodic() {
-        feederLeftRPM = hardware.getFeederLeftRPM();
-        feederRightRPM = hardware.getFeederRightRPM();
-        currentShooterRPM = hardware.getShooterRPM();
-        currentShooterIntakeRPM = hardware.getShooterIntakeRPM();
+
+        // update status of all motors
+        intakeStatus.update(hardware.getIntakeVelocity());
+        feederStatus.update(hardware.getFeederVelocity());
+        agitatorStatus.update(hardware.getAgitatorVelocity());
+        shooterStatus.update(hardware.getShooterVelocity());
+
+        // is the shooter at speed?
+        shooterAtSpeed = Util.nearZero(
+                shooterStatus.errorRpm,
+                shootSpeedTolerance);
     }
 
     /**
-     * @return true if all active motors are within tolerance of their target RPM
+     * @return true if any of our motors is currently stalled
      */
-    public boolean atSpeed() {
-        double tol = tolerance.getAsDouble();
-        // only check motors that have a non-zero target
-        boolean feedersOk = feederLeftTarget == 0
-            || (Math.abs(feederLeftRPM - feederLeftTarget) <= tol
-                && Math.abs(feederRightRPM - feederRightTarget) <= tol);
-        boolean shooterOk = shooterTarget == 0
-            || Math.abs(currentShooterRPM - shooterTarget) <= tol;
-        // at least one motor must be running
-        return (feederLeftTarget != 0 || shooterTarget != 0) && feedersOk && shooterOk;
+    public boolean motorStalled() {
+        return intakeStatus.stalled
+                || feederStatus.stalled
+                || agitatorStatus.stalled
+                || shooterStatus.stalled;
     }
 
     /**
-     * @return true if the shooter motor is within tolerance of its target RPM
+     * @return true if the shooter is at target speed
      */
     public boolean shooterAtSpeed() {
-        return shooterTarget != 0
-            && Math.abs(currentShooterRPM - shooterTarget) <= tolerance.getAsDouble();
-    }
-
-    /** Maximum safe RPM for NEO motors (free speed is 5676) */
-    static final double MAX_RPM = 5700;
-
-    /**
-     * Sends RPM targets to all motors via onboard PID.
-     * Clamps values to NEO safe range. Shooter intake is off (0).
-     */
-    private void driveMotors(double feederLeft, double feederRight, double shooter) {
-        driveMotors(feederLeft, feederRight, shooter, 0);
-    }
-
-    /**
-     * Sends RPM targets to all motors via onboard PID.
-     * Clamps values to NEO safe range.
-     */
-    private void driveMotors(double feederLeft, double feederRight, double shooter, double shooterIntake) {
-        feederLeftTarget = MathUtil.clamp(feederLeft, -MAX_RPM, MAX_RPM);
-        feederRightTarget = MathUtil.clamp(feederRight, -MAX_RPM, MAX_RPM);
-        shooterTarget = MathUtil.clamp(shooter, -MAX_RPM, MAX_RPM);
-        shooterIntakeTarget = MathUtil.clamp(shooterIntake, -MAX_RPM, MAX_RPM);
-        hardware.setFeederLeftRPM(feederLeftTarget);
-        hardware.setFeederRightRPM(feederRightTarget);
-        hardware.setShooterRPM(shooterTarget);
-        hardware.setShooterIntakeRPM(shooterIntakeTarget);
-    }
-
-    /**
-     * Pushes current PID gains from Config to the SparkMax onboard controllers.
-     */
-    private void applyPIDGains() {
-        hardware.resetFeederLeftPID(
-            feederLeftKV.getAsDouble(), feederLeftKP.getAsDouble(), 0, feederLeftKD.getAsDouble());
-        hardware.resetFeederRightPID(
-            feederRightKV.getAsDouble(), feederRightKP.getAsDouble(), 0, feederRightKD.getAsDouble());
-        hardware.resetShooterPID(
-            shooterKV.getAsDouble(), shooterKP.getAsDouble(), 0, 0);
-        hardware.resetShooterIntakePID(
-            shooterIntakeKV.getAsDouble(), shooterIntakeKP.getAsDouble(), 0, 0);
-    }
-
-    private void cleanup() {
-        hardware.stopAll();
-        feederLeftTarget = 0;
-        feederRightTarget = 0;
-        shooterTarget = 0;
-        shooterIntakeTarget = 0;
-        currentMode = "idle";
+        return shooterAtSpeed;
     }
 
 //endregion
 
-//region Command factories -----------------------------------------------------
+//region Triggers & Commands ---------------------------------------------------
 
     /**
-     * @return a command that idles all motors (default command)
+     * @return a command that will stop applying output to the motors
      */
-    public Command idleCommand() {
-        return run(() -> {
-            currentMode = "idle";
-            hardware.stopAll();
-        });
+    public Command coast() {
+        return velocityCommand(0.0, 0.0, 0.0, 0.0);
     }
 
     /**
-     * Spins both feeders at intake RPM (same direction as shoot). Shooter off.
-     *
-     * @return a command that runs the feeders for intake
+     * @return a command that will reset the PID when started, and then run
+     * the motors at the desired speeds
+     */
+    public Command velocityCommand(double intakeRpm,
+                                   double feederRpm,
+                                   double agitatorRpm,
+                                   double shooterRpm) {
+        return startRun(
+                () -> {
+                    intakeStatus.desiredRpm = intakeRpm;
+                    feederStatus.desiredRpm = feederRpm;
+                    agitatorStatus.desiredRpm = agitatorRpm;
+                    shooterStatus.desiredRpm = shooterRpm;
+                    hardware.resetPid();
+                },
+                () -> hardware.applyRpm(intakeRpm, feederRpm, agitatorRpm, shooterRpm));
+    }
+
+    /**
+     * @return a command that will run the motors at the desired speed
+     * for intake
      */
     public Command intakeCommand() {
-        return startRun(
-            () -> {
-                currentMode = "intake";
-                applyPIDGains();
-            },
-            () -> driveMotors(feederRPM.getAsDouble(), feederRPM.getAsDouble(), shooterIntakingRPM.getAsDouble(), 0)
-        ).finallyDo(interrupted -> cleanup());
+        return defer(() -> velocityCommand(
+                intakeSpeeds.intakeRpm.getAsDouble(),
+                intakeSpeeds.feederRpm.getAsDouble(),
+                intakeSpeeds.agitatorRpm.getAsDouble(),
+                intakeSpeeds.shooterRpm.getAsDouble()));
     }
 
     /**
-     * Spins both feeders outward (reverse) to eject balls. Shooter off.
-     *
-     * @return a command that runs the feeders in reverse for eject
+     * @return a command that will run the motors at the desired speed
+     * for ejecting
      */
     public Command ejectCommand() {
-        return startRun(
-            () -> {
-                currentMode = "eject";
-                applyPIDGains();
-            },
-            () -> driveMotors(-feederRPM.getAsDouble(), -feederRPM.getAsDouble(), 0, 0)
-        ).finallyDo(interrupted -> cleanup());
+        return defer(() -> velocityCommand(
+
+                // intake, feeder and agitator spin backwards during eject
+                -ejectSpeeds.intakeRpm.getAsDouble(),
+                -ejectSpeeds.feederRpm.getAsDouble(),
+                -ejectSpeeds.agitatorRpm.getAsDouble(),
+
+                ejectSpeeds.shooterRpm.getAsDouble()));
     }
 
     /**
-     * Spins up the shooter first, waits for it to reach speed, then starts
-     * feeders and shooter intake. Runs continuously until interrupted.
-     *
-     * @return a command that spins up then feeds for shooting
+     * @return a command that will run only the shooter motor at the desired
+     * speed for shooting
+     */
+    public Command spinUpCommand() {
+        return defer(() -> velocityCommand(
+                0.0,
+                0.0,
+                0.0,
+                shootSpeeds.shooterRpm.getAsDouble()));
+    }
+
+    /**
+     * @return a command that will run the motors at the desired speed
+     * for shooting
      */
     public Command shootCommand() {
-        return Commands.sequence(
-            // phase 1: spin up shooter only
-            startRun(
-                () -> {
-                    currentMode = "spin-up";
-                    applyPIDGains();
-                },
-                () -> driveMotors(0, 0, shooterRPM.getAsDouble(), 0)
-            ).until(this::shooterAtSpeed),
-            // phase 2: shooter at speed, start feeders and shooter intake
-            startRun(
-                () -> currentMode = "shoot",
-                () -> driveMotors(feedShootRPM.getAsDouble(), feedShootRPM.getAsDouble(), shooterRPM.getAsDouble(), intakeRPM.getAsDouble())
-            )
-        ).finallyDo(interrupted -> cleanup());
-    }
-
-    /**
-     * Spins up the shooter to the specified RPM first, waits for it to reach
-     * speed, then starts feeders and shooter intake.
-     * Runs continuously until interrupted.
-     *
-     * @param rpm supplier for the shooter RPM target
-     * @return a command that spins up then feeds for shooting at a specific RPM
-     */
-    public Command shootAtRPMCommand(DoubleSupplier rpm) {
-        return Commands.sequence(
-            // phase 1: spin up shooter only
-            startRun(
-                () -> {
-                    currentMode = "spin-up";
-                    applyPIDGains();
-                },
-                () -> driveMotors(0, 0, rpm.getAsDouble(), 0)
-            ).until(this::shooterAtSpeed),
-            // phase 2: shooter at speed, start feeders and shooter intake
-            startRun(
-                () -> currentMode = "shoot",
-                () -> driveMotors(feedShootRPM.getAsDouble(), feedShootRPM.getAsDouble(), rpm.getAsDouble(), intakeRPM.getAsDouble())
-            )
-        ).finallyDo(interrupted -> cleanup());
-    }
-
-    /**
-     * Spins the shooter motor in reverse. Feeders off.
-     *
-     * @return a command that runs the shooter in reverse
-     */
-    public Command reverseShooterCommand() {
-        return startRun(
-            () -> {
-                currentMode = "reverse-shooter";
-                applyPIDGains();
-            },
-            () -> driveMotors(0, 0, -shooterRPM.getAsDouble())
-        ).finallyDo(interrupted -> cleanup());
-    }
-
-    /**
-     * @return a command that immediately stops all motors
-     */
-    public Command stopCommand() {
-        return runOnce(this::cleanup);
-    }
-
-    /**
-     * Directly stops all motors (for use outside command system).
-     */
-    public void stop() {
-        cleanup();
+        return defer(() -> velocityCommand(
+                shootSpeeds.intakeRpm.getAsDouble(),
+                shootSpeeds.feederRpm.getAsDouble(),
+                shootSpeeds.agitatorRpm.getAsDouble(),
+                shootSpeeds.shooterRpm.getAsDouble()));
     }
 
 //endregion
+
+//region Helper ----------------------------------------------------------------
+
+    /**
+     * Represents the status of a single motor
+     */
+    static class MotorStatus {
+
+        final Debouncer debouncer;
+        double currentRpm;
+        double desiredRpm;
+        double errorRpm;
+        boolean stalled;
+
+        public MotorStatus() {
+            debouncer = new Debouncer(stallTime.getAsDouble(), DebounceType.kRising);
+            currentRpm = 0.0;
+            desiredRpm = 0.0;
+            errorRpm = 0.0;
+            stalled = false;
+        }
+
+        /**
+         * Adds keys to the SmartDashboard to display motor status
+         */
+        public void addToBuilder(String prefix, SendableBuilder builder) {
+            builder.addDoubleProperty(prefix+"/CurrentRpm", () -> currentRpm, null);
+            builder.addDoubleProperty(prefix+"/DesiredRpm", () -> desiredRpm, null);
+            builder.addDoubleProperty(prefix+"/ErrorRpm", () -> errorRpm, null);
+            builder.addBooleanProperty(prefix+"/Stalled?", () -> stalled, null);
+        }
+
+        /**
+         * Updates motor status based on current/desired RPM
+         */
+        public void update(double currentRpm) {
+
+            this.currentRpm = currentRpm;
+
+            // if we have a target speed, we calculate error (target - current)
+            // and check to see if we've been stalling for too long
+            if (desiredRpm != 0.0) {
+                this.errorRpm = desiredRpm - currentRpm;
+                this.stalled = debouncer.calculate(Math.abs(currentRpm) < stallSpeed.getAsDouble());
+            } else {
+                this.errorRpm = 0.0;
+                this.stalled = false;
+            }
+        }
+    }
+
+//endregion
+
 }

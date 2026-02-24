@@ -117,14 +117,10 @@ public class SwerveTeleopCommand extends Command {
                 Units.feetToMeters(speedY),
                 Math.toRadians(speedOmega));
 
-        // CTRE's CommandSwerveDrivetrain handles operator perspective automatically
-        // via setOperatorPerspectiveForward (called in periodic based on alliance)
-        // so we use field-relative driving when driverRelative mode is enabled
         if (driverRelative.getAsBoolean()) {
-            swerve.driveFieldRelative("teleop", speeds);
-        } else {
-            swerve.driveRobotRelative("teleop", speeds);
+            speeds = Util.fromDriverRelativeSpeeds(speeds, swerve.getHeading());
         }
+        swerve.driveRobotRelative("teleop", speeds);
     }
 
 }

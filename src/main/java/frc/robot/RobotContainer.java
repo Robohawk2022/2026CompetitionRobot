@@ -5,18 +5,13 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.ShootingCommands;
 import frc.robot.subsystems.auto.AutonomousSubsystem;
-import frc.robot.subsystems.intakefront.IntakeFrontHardwareSim;
-import frc.robot.subsystems.intakefront.IntakeFrontHardwareSparkMax;
-import frc.robot.subsystems.intakefront.IntakeFrontSubsystem;
 import frc.robot.subsystems.launcher.LauncherHardwareRev;
 import frc.robot.subsystems.launcher.LauncherHardwareSim;
 import frc.robot.subsystems.launcher.LauncherSubsystem;
 import frc.robot.subsystems.led.LEDHardwareBlinkin;
 import frc.robot.subsystems.led.LEDHardwareSim;
-import frc.robot.subsystems.led.LEDSignal;
 import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.limelight.LimelightSubsystem;
 import frc.robot.subsystems.swerve.CommandSwerveDrivetrain;
@@ -29,6 +24,10 @@ import frc.robot.util.Util;
 public class RobotContainer {
 
     static final int LED_PWM_PORT = 0;
+    static final int INTAKE_CAN_ID = 9;
+    static final int FEEDER_CAN_ID = 32;
+    static final int AGITATOR_CAN_ID = 11;
+    static final int SHOOTER_CAN_ID = 60;
 
     final GameController driver = new GameController(0);
     final GameController operator = new GameController(1);
@@ -41,11 +40,11 @@ public class RobotContainer {
 
     // launcher + intake + LED
     final LauncherSubsystem launcher = new LauncherSubsystem(Robot.isSimulation()
-            ? new LauncherHardwareSim() : new LauncherHardwareRev());
-    final IntakeFrontSubsystem intake = new IntakeFrontSubsystem(Robot.isSimulation()
-            ? new IntakeFrontHardwareSim() : new IntakeFrontHardwareSparkMax());
+                ? new LauncherHardwareSim()
+                : new LauncherHardwareRev(INTAKE_CAN_ID, FEEDER_CAN_ID, AGITATOR_CAN_ID, SHOOTER_CAN_ID));
     final LEDSubsystem led = new LEDSubsystem(Robot.isSimulation()
-            ? new LEDHardwareSim() : new LEDHardwareBlinkin(LED_PWM_PORT));
+                ? new LEDHardwareSim() 
+                : new LEDHardwareBlinkin(LED_PWM_PORT));
 
     public RobotContainer() {
 
@@ -57,13 +56,10 @@ public class RobotContainer {
 
         // default commands
         swerve.setDefaultCommand(swerve.driveCommand(driver));
-        launcher.setDefaultCommand(launcher.idleCommand());
+        launcher.setDefaultCommand(launcher.coast());
 
         // LED distance to hub
         led.setDistanceSupplier(() -> Util.feetBetween(swerve.getPose(), Field.getHubCenter()));
-        intake.setStallCallback(stalled -> {
-            if (stalled) led.flash(LEDSignal.INTAKE_FULL, 2.0);
-        });
 
         configureBindings();
     }
@@ -75,17 +71,15 @@ public class RobotContainer {
     private void configureBindings() {
 
         // driver bindings
-        driver.leftBumper().whileTrue(swerve.orbitCommand(driver));
-        driver.rightBumper().whileTrue(swerve.aimAtHubCommand());
+        // driver.leftBumper().whileTrue(swerve.orbitCommand(driver));
+        driver.rightBumper().whileTrue(ShootingCommands.orientToShoot(swerve));
         driver.y().onTrue(ShootingCommands.driveAndShootCommand(swerve, launcher));
-        driver.leftTrigger().whileTrue(swerve.jiggleCommand());
+        driver.leftTrigger().whileTrue(ShootingCommands.jiggleCommand(swerve));
         driver.leftStick().onTrue(swerve.zeroPoseCommand());
         driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
 
         // operator bindings
-        operator.a().whileTrue(Commands.parallel(
-                launcher.intakeCommand(),
-                intake.intakeCommand()));
+        operator.a().whileTrue(launcher.intakeCommand());
         operator.b().whileTrue(launcher.shootCommand());
     }
 }

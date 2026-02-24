@@ -1,9 +1,6 @@
 package frc.robot.subsystems.swerve;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -16,17 +13,14 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.GameController;
-import frc.robot.commands.swerve.SwerveOrbitCommand;
 import frc.robot.commands.swerve.SwerveTeleopCommand;
 import frc.robot.commands.swerve.SwerveToHeadingCommand;
 import frc.robot.commands.swerve.SwerveToPoseCommand;
-import frc.robot.util.Field;
 import frc.robot.util.Util;
 
 /**
@@ -37,20 +31,20 @@ import frc.robot.util.Util;
  */
 public class SwerveSubsystem extends SubsystemBase {
 
+    /** Start pose */
+    static final Pose2d START_POSE = Pose2d.kZero;
+
     /** Enable verbose logging for debugging */
     static final boolean verboseLogging = true;
 
 //region Members & constructor -------------------------------------------------
 
     final CommandSwerveDrivetrain drivetrain;
-    final List<Consumer<Pose2d>> poseResetListeners;
-    final Field2d field2d;
 
     // Reusable SwerveRequest objects
-    final SwerveRequest.FieldCentric fieldCentricRequest = new SwerveRequest.FieldCentric();
     final SwerveRequest.RobotCentric robotCentricRequest = new SwerveRequest.RobotCentric();
     final SwerveRequest.SwerveDriveBrake brakeRequest = new SwerveRequest.SwerveDriveBrake();
-    final SwerveRequest.PointWheelsAt pointRequest = new SwerveRequest.PointWheelsAt();
+    final SwerveDeadReckoner deadReckoner;
 
     String currentMode = "idle";
     int resetCount = 0;
@@ -66,16 +60,10 @@ public class SwerveSubsystem extends SubsystemBase {
     public SwerveSubsystem(CommandSwerveDrivetrain drivetrain) {
 
         this.drivetrain = Objects.requireNonNull(drivetrain);
-        this.poseResetListeners = new ArrayList<>();
         this.wheelsLocked = false;
 
-        // initialize Field2d for AdvantageScope visualization
-        this.field2d = new Field2d();
-        SmartDashboard.putData("Field", field2d);
-
-        // reset pose to a reasonable starting position on the field
-        // (center-field, facing toward the red alliance wall)
-        resetPose(new Pose2d(8.27, 4.01, Rotation2d.kZero));
+        deadReckoner = new SwerveDeadReckoner(START_POSE);
+        drivetrain.resetPose(START_POSE);
 
         // dashboard telemetry
         SmartDashboard.putData(getName(), builder -> {
@@ -108,11 +96,11 @@ public class SwerveSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+
         // CTRE drivetrain handles odometry in its own thread
         // We just need to publish visualization data
         Pose2d pose = getPose();
-        field2d.setRobotPose(pose);
-        Util.publishPose("Fused", pose);
+        Util.publishPose("FusedPose", pose);
 
         // publish position prominently for Shuffleboard
         SmartDashboard.putNumber("Pose X (ft)", Units.metersToFeet(pose.getX()));
@@ -126,36 +114,12 @@ public class SwerveSubsystem extends SubsystemBase {
 
     @Override
     public void simulationPeriodic() {
-        // In simulation, manually integrate commanded speeds to update odometry
-        // since CTRE simulation may not fully update the pose estimator
-        boolean hasMovement = latestSpeed != null &&
-            (Math.abs(latestSpeed.vxMetersPerSecond) > 0.001 ||
-             Math.abs(latestSpeed.vyMetersPerSecond) > 0.001 ||
-             Math.abs(latestSpeed.omegaRadiansPerSecond) > 0.001);
-        if (hasMovement) {
-            Pose2d currentPose = getPose();
 
-            // integrate speeds over one loop period (20ms)
-            double dt = Util.DT;
-            double dx = latestSpeed.vxMetersPerSecond * dt;
-            double dy = latestSpeed.vyMetersPerSecond * dt;
-            double dtheta = latestSpeed.omegaRadiansPerSecond * dt;
+        // in simulation we will update our dead reckoning pose
+        deadReckoner.update(latestSpeed);
 
-            // convert robot-relative speeds to field-relative
-            Rotation2d heading = currentPose.getRotation();
-            double fieldDx = dx * heading.getCos() - dy * heading.getSin();
-            double fieldDy = dx * heading.getSin() + dy * heading.getCos();
-
-            // create new pose
-            Pose2d newPose = new Pose2d(
-                currentPose.getX() + fieldDx,
-                currentPose.getY() + fieldDy,
-                currentPose.getRotation().plus(Rotation2d.fromRadians(dtheta))
-            );
-
-            // update the drivetrain's pose (bypass normal reset to avoid notifications)
-            drivetrain.resetPose(newPose);
-        }
+        // we will also publish the (incorrect) CTRE pose so we can laugh at it
+        Util.publishPose("CtrePose", drivetrain.getState().Pose);
     }
 
 //endregion
@@ -166,14 +130,24 @@ public class SwerveSubsystem extends SubsystemBase {
      * @return the current robot heading from the gyro
      */
     public Rotation2d getHeading() {
-        return drivetrain.getState().Pose.getRotation();
+
+        // if we are in simulation, we will calculate our pose via dead reckoning
+        // TODO WTF is wrong with the CTRE simulator?
+        return RobotBase.isSimulation()
+                ? getPose().getRotation()
+                : drivetrain.getState().Pose.getRotation();
     }
 
     /**
      * @return the current estimated pose (odometry fused with vision)
      */
     public Pose2d getPose() {
-        return drivetrain.getState().Pose;
+
+        // if we are in simulation, we will calculate our pose via dead reckoning
+        // TODO WTF is wrong with the CTRE simulator?
+       return RobotBase.isSimulation()
+                ? deadReckoner.getPose()
+                : drivetrain.getState().Pose;
     }
 
     /**
@@ -204,25 +178,9 @@ public class SwerveSubsystem extends SubsystemBase {
      */
     public void resetPose(Pose2d newPose) {
         drivetrain.resetPose(newPose);
-
-        // notify listeners
-        for (Consumer<Pose2d> listener : poseResetListeners) {
-            listener.accept(newPose);
-        }
-
-        // increment counter for dashboard
+        deadReckoner.resetPose(newPose);
         resetCount++;
-
         Util.log("[swerve] reset pose to %s", newPose);
-    }
-
-    /**
-     * Registers a listener to be notified when the pose is reset.
-     *
-     * @param listener the listener to register
-     */
-    public void addPoseResetListener(Consumer<Pose2d> listener) {
-        poseResetListeners.add(listener);
     }
 
 //endregion
@@ -247,6 +205,7 @@ public class SwerveSubsystem extends SubsystemBase {
      * @param center the center of rotation (null means robot center)
      */
     public void driveRobotRelative(String mode, ChassisSpeeds speeds, Translation2d center) {
+
         currentMode = mode;
         latestSpeed = speeds;
 
@@ -259,26 +218,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 .withVelocityX(speeds.vxMetersPerSecond)
                 .withVelocityY(speeds.vyMetersPerSecond)
                 .withRotationalRate(speeds.omegaRadiansPerSecond)
-                .withCenterOfRotation(center)
-        );
-    }
-
-    /**
-     * Drives the robot using field-relative speeds.
-     *
-     * @param mode the mode to display for debugging
-     * @param speeds field-relative chassis speeds (vx, vy in m/s, omega in rad/s)
-     */
-    public void driveFieldRelative(String mode, ChassisSpeeds speeds) {
-        currentMode = mode;
-        latestSpeed = speeds;
-
-        drivetrain.setControl(
-            fieldCentricRequest
-                .withVelocityX(speeds.vxMetersPerSecond)
-                .withVelocityY(speeds.vyMetersPerSecond)
-                .withRotationalRate(speeds.omegaRadiansPerSecond)
-        );
+                .withCenterOfRotation(center));
     }
 
     /**
@@ -309,17 +249,6 @@ public class SwerveSubsystem extends SubsystemBase {
                     Util.log("[swerve] locking wheels");
                 },
                 this::setX);
-    }
-
-    /**
-     * @return a command that resets all wheel angles to 0 (forward facing)
-     */
-    public Command resetWheelsCommand() {
-        return runOnce(() -> {
-            drivetrain.setControl(pointRequest.withModuleDirection(Rotation2d.kZero));
-            wheelsLocked = true;
-            Util.log("Wheels reset to forward");
-        }).finallyDo(() -> wheelsLocked = false);
     }
 
     /**
@@ -364,102 +293,6 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Creates a command that drives at fixed speeds.
-     *
-     * @param speeds the speeds to drive at
-     * @param seconds how long to drive
-     * @return the command
-     */
-    public Command fixedSpeedCommand(ChassisSpeeds speeds, double seconds) {
-        return run(() -> driveRobotRelative("auto", speeds))
-                .withTimeout(seconds);
-    }
-
-    /**
-     * Creates an orbit drive command that orbits around the hub.
-     * <p>
-     * This is a compound command that:
-     * <ol>
-     *   <li>Determines the location of the alliance hub</li>
-     *   <li>Rotates to face the hub using {@link SwerveToHeadingCommand}</li>
-     *   <li>Orbits the hub using {@link SwerveOrbitCommand}</li>
-     * </ol>
-     *
-     * @param controller the game controller for driver input
-     * @return the orbit command sequence
-     * @see SwerveOrbitCommand
-     */
-    public Command orbitCommand(GameController controller) {
-        return defer(() -> {
-
-            // determine the location of the hub
-            Pose2d hubCenter = Field.getHubCenter();
-
-            // calculate heading to face the hub from current position
-            Rotation2d headingToHub = hubCenter.getTranslation()
-                    .minus(getPose().getTranslation())
-                    .getAngle();
-
-            Util.log("[swerve] orbit: hub at %s, heading %.1f deg",
-                    hubCenter, headingToHub.getDegrees());
-
-            // sequence: rotate to face hub, then orbit
-            return Commands.sequence(
-                    new SwerveToHeadingCommand(this, headingToHub),
-                    new SwerveOrbitCommand(this, controller, hubCenter)
-            );
-        });
-    }
-
-    /**
-     * Creates a command that rotates to face the hub center. Uses a deferred
-     * command so the heading is calculated just before the command runs.
-     * <p>
-     * Reuses {@link SwerveToHeadingCommand} so there is only one set of
-     * rotation PID parameters to tune.
-     *
-     * @return the aim-at-hub command
-     * @see SwerveToHeadingCommand
-     */
-    public Command aimAtHubCommand() {
-        return defer(() -> {
-            Pose2d currentPose = getPose();
-            Pose2d hubCenter = Field.getHubCenter();
-
-            // angle from robot to hub center
-            Rotation2d angleToHub = hubCenter.getTranslation()
-                    .minus(currentPose.getTranslation())
-                    .getAngle();
-
-            Util.log("[swerve] aim at hub: heading %.1f deg", angleToHub.getDegrees());
-            return new SwerveToHeadingCommand(this, angleToHub);
-        });
-    }
-
-    /**
-     * Rapidly oscillates the robot left and right (robot-relative) to
-     * dislodge stuck balls. Hold trigger to jiggle, release to stop.
-     *
-     * @return the jiggle command
-     */
-    public Command jiggleCommand() {
-        // ~1-2 inches of travel at ~6 Hz oscillation
-        double speedMps = Units.feetToMeters(2.0); // 2 ft/s sideways
-        double periodSec = 0.16; // full cycle = 0.16s (~6 Hz)
-        double halfPeriod = periodSec / 2.0;
-        edu.wpi.first.wpilibj.Timer timer = new edu.wpi.first.wpilibj.Timer();
-        return startRun(
-            () -> timer.restart(),
-            () -> {
-                // alternate left/right each half-period
-                double t = timer.get() % periodSec;
-                double vy = (t < halfPeriod) ? speedMps : -speedMps;
-                driveRobotRelative("jiggle", new ChassisSpeeds(0, vy, 0));
-            }
-        );
-    }
-
-    /**
      * Creates a command that rotates to face the specified heading.
      *
      * @param heading the target heading
@@ -471,22 +304,6 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Creates a command that rotates to face a heading dynamically
-     * re-calculated whenever the command executes.
-     *
-     * @param headingFunction function to compute the target heading
-     * @return the heading command
-     * @see SwerveToHeadingCommand
-     */
-    public Command driveToHeadingCommand(Function<Pose2d,Rotation2d> headingFunction) {
-        return defer(() -> {
-            Pose2d currentPose = getPose();
-            Rotation2d newHeading = headingFunction.apply(currentPose);
-            return new SwerveToHeadingCommand(this, newHeading);
-        });
-    }
-
-    /**
      * Creates a command that drives to the specified pose along a straight line.
      *
      * @param pose the target pose
@@ -495,29 +312,6 @@ public class SwerveSubsystem extends SubsystemBase {
      */
     public Command driveToPoseCommand(Pose2d pose) {
         return new SwerveToPoseCommand(this, pose);
-    }
-
-    /**
-     * Creates a command that drives to a pose dynamically re-calculated
-     * whenever the command executes.
-     *
-     * @param poseFunction function to compute the target pose
-     * @return the pose command
-     * @see SwerveToPoseCommand
-     */
-    public Command driveToPoseCommand(Function<Pose2d,Pose2d> poseFunction) {
-        return defer(() -> {
-            Pose2d oldPose = getPose();
-            Pose2d newPose = poseFunction.apply(oldPose);
-            return new SwerveToPoseCommand(this, newPose);
-        });
-    }
-
-    /**
-     * @return the underlying CommandSwerveDrivetrain for direct access
-     */
-    public CommandSwerveDrivetrain getDrivetrain() {
-        return drivetrain;
     }
 
 //endregion

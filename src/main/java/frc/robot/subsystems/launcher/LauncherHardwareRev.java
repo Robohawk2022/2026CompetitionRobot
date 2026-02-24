@@ -3,198 +3,184 @@ package frc.robot.subsystems.launcher;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
-import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import frc.robot.Config.PIDFConfig;
+import frc.robot.util.Util;
 
-import static frc.robot.Config.Launcher.*;
+import java.util.function.Consumer;
+
+import static frc.robot.Config.Launcher.agitatorPid;
+import static frc.robot.Config.Launcher.feederPid;
+import static frc.robot.Config.Launcher.shooterPid;
+import static frc.robot.Config.Launcher.intakePid;
 
 /**
- * Implements {@link LauncherHardware} using 4 REV SparkMax motors (NEO)
- * with onboard closed-loop velocity control.
- * <p>
- * CAN IDs are configured in {@link frc.robot.Config.Launcher}.
+ * Implementation of {@link LauncherHardware} on SparkMax motor controllers
  */
-public class LauncherHardwareRev implements LauncherHardware {
+public class LauncherHardwareRev implements LauncherHardware{
 
-    private final SparkMax feederLeftMotor;
-    private final SparkMax feederRightMotor;
-    private final SparkMax shooterMotor;
-    private final SparkMax shooterIntakeMotor;
+    public static final int CURRENT_LIMIT = 40;
+    public static final boolean INVERTED = false;
 
-    private final RelativeEncoder feederLeftEncoder;
-    private final RelativeEncoder feederRightEncoder;
-    private final RelativeEncoder shooterEncoder;
-    private final RelativeEncoder shooterIntakeEncoder;
+//region State & constructor ---------------------------------------------------
 
-    private final SparkClosedLoopController feederLeftController;
-    private final SparkClosedLoopController feederRightController;
-    private final SparkClosedLoopController shooterController;
-    private final SparkClosedLoopController shooterIntakeController;
+    final SparkMax intakeMotor;
+    final SparkMax feederMotor;
+    final SparkMax agitatorMotor;
+    final SparkMax shooterMotor;
 
-    private final SparkMaxConfig feederLeftConfig;
-    private final SparkMaxConfig feederRightConfig;
-    private final SparkMaxConfig shooterConfig;
-    private final SparkMaxConfig shooterIntakeConfig;
+    final SparkMaxConfig intakeConfig;
+    final SparkMaxConfig feederConfig;
+    final SparkMaxConfig agitatorConfig;
+    final SparkMaxConfig shooterConfig;
 
-    public LauncherHardwareRev() {
-        feederLeftMotor = new SparkMax(FEEDER_LEFT_CAN_ID, MotorType.kBrushless);
-        feederRightMotor = new SparkMax(FEEDER_RIGHT_CAN_ID, MotorType.kBrushless);
-        shooterMotor = new SparkMax(SHOOTER_CAN_ID, MotorType.kBrushless);
-        shooterIntakeMotor = new SparkMax(SHOOTER_INTAKE_CAN_ID, MotorType.kBrushless);
+    final RelativeEncoder intakeEncoder;
+    final RelativeEncoder feederEncoder;
+    final RelativeEncoder agitatorEncoder;
+    final RelativeEncoder shooterEncoder;
 
-        feederLeftEncoder = feederLeftMotor.getEncoder();
-        feederRightEncoder = feederRightMotor.getEncoder();
+    final SparkClosedLoopController intakeController;
+    final SparkClosedLoopController feederController;
+    final SparkClosedLoopController agitatorController;
+    final SparkClosedLoopController shooterController;
+
+    public LauncherHardwareRev(int intakeId, int feederId, int agitatorId, int shooterId) {
+
+        // create configurations
+        intakeConfig = new SparkMaxConfig();
+        feederConfig = new SparkMaxConfig();
+        agitatorConfig = new SparkMaxConfig();
+        shooterConfig = new SparkMaxConfig();
+
+        // create yon motors
+        intakeMotor = createMotor(intakeId, intakeConfig);
+        feederMotor = createMotor(feederId, feederConfig);
+        agitatorMotor = createMotor(agitatorId, agitatorConfig);
+        shooterMotor = createMotor(shooterId, shooterConfig);
+
+        // grab the encoders
+        intakeEncoder = intakeMotor.getEncoder();
+        feederEncoder = feederMotor.getEncoder();
+        agitatorEncoder = agitatorMotor.getEncoder();
         shooterEncoder = shooterMotor.getEncoder();
-        shooterIntakeEncoder = shooterIntakeMotor.getEncoder();
 
-        feederLeftController = feederLeftMotor.getClosedLoopController();
-        feederRightController = feederRightMotor.getClosedLoopController();
+        // grab the PID controllers
+        intakeController = intakeMotor.getClosedLoopController();
+        feederController = feederMotor.getClosedLoopController();
+        agitatorController = agitatorMotor.getClosedLoopController();
         shooterController = shooterMotor.getClosedLoopController();
-        shooterIntakeController = shooterIntakeMotor.getClosedLoopController();
-
-        // feeder motors get independent PID gains
-        feederLeftConfig = createMotorConfig(FEEDER_LEFT_INVERTED,
-                feederLeftKV.getAsDouble(), feederLeftKP.getAsDouble());
-        feederLeftMotor.configure(feederLeftConfig,
-                ResetMode.kResetSafeParameters,
-                PersistMode.kPersistParameters);
-
-        feederRightConfig = createMotorConfig(FEEDER_RIGHT_INVERTED,
-                feederRightKV.getAsDouble(), feederRightKP.getAsDouble());
-        feederRightMotor.configure(feederRightConfig,
-                ResetMode.kResetSafeParameters,
-                PersistMode.kPersistParameters);
-
-        // shooter has its own PID gains
-        shooterConfig = createMotorConfig(SHOOTER_INVERTED,
-                shooterKV.getAsDouble(), shooterKP.getAsDouble());
-        shooterMotor.configure(shooterConfig,
-                ResetMode.kResetSafeParameters,
-                PersistMode.kPersistParameters);
-
-        // shooter intake - same side as shooter, feeds into it
-        shooterIntakeConfig = createMotorConfig(SHOOTER_INTAKE_INVERTED,
-                shooterIntakeKV.getAsDouble(), shooterIntakeKP.getAsDouble());
-        shooterIntakeMotor.configure(shooterIntakeConfig,
-                ResetMode.kResetSafeParameters,
-                PersistMode.kPersistParameters);
     }
 
-    private SparkMaxConfig createMotorConfig(boolean inverted, double kV, double kP) {
-        SparkMaxConfig config = new SparkMaxConfig();
+    /**
+     * @return a new motor with the supplied CAN ID and default settings
+     */
+    private SparkMax createMotor(int canId, SparkMaxConfig config) {
+        SparkMax motor = new SparkMax(canId, MotorType.kBrushless);
+        config.smartCurrentLimit(CURRENT_LIMIT);
+        config.inverted(INVERTED);
         config.idleMode(IdleMode.kCoast);
-        config.inverted(inverted);
-        config.smartCurrentLimit((int) currentLimit.getAsDouble());
-        config.closedLoopRampRate(0.1);
-
-        config.closedLoop.p(kP);
-        config.closedLoop.feedForward.kV(kV);
-
-        return config;
+        motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        return motor;
     }
 
-    private void setMotorRPM(SparkMax motor, SparkClosedLoopController controller, double rpm) {
-        if (rpm == 0) {
-            motor.set(0);
-        } else {
-            controller.setSetpoint(rpm, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
-        }
+//endregion
+
+//region Getters ---------------------------------------------------------------
+
+    @Override
+    public double getIntakeVelocity() {
+        return intakeEncoder.getVelocity();
     }
 
     @Override
-    public void setFeederLeftRPM(double rpm) {
-        setMotorRPM(feederLeftMotor, feederLeftController, rpm);
+    public double getFeederVelocity() {
+        return feederEncoder.getVelocity();
     }
 
     @Override
-    public void setFeederRightRPM(double rpm) {
-        setMotorRPM(feederRightMotor, feederRightController, rpm);
+    public double getAgitatorVelocity() {
+        return agitatorEncoder.getVelocity();
     }
 
     @Override
-    public void setShooterRPM(double rpm) {
-        setMotorRPM(shooterMotor, shooterController, rpm);
-    }
-
-    @Override
-    public double getFeederLeftRPM() {
-        return feederLeftEncoder.getVelocity();
-    }
-
-    @Override
-    public double getFeederRightRPM() {
-        return feederRightEncoder.getVelocity();
-    }
-
-    @Override
-    public double getShooterRPM() {
+    public double getShooterVelocity() {
         return shooterEncoder.getVelocity();
     }
 
-    @Override
-    public double getFeederLeftAmps() {
-        return feederLeftMotor.getOutputCurrent();
-    }
+//endregion
+
+//region PID configuration -----------------------------------------------------
 
     @Override
-    public double getFeederRightAmps() {
-        return feederRightMotor.getOutputCurrent();
+    public void resetPid() {
+        resetPid(intakeMotor, intakeConfig, intakePid);
+        resetPid(feederMotor, feederConfig, feederPid);
+        resetPid(agitatorMotor, agitatorConfig, agitatorPid);
+        resetPid(shooterMotor, shooterConfig, shooterPid);
+        Util.log("[launcher] reset PID values");
     }
 
-    @Override
-    public double getShooterAmps() {
-        return shooterMotor.getOutputCurrent();
-    }
+    /**
+     * Applies closed-loop configuration to the supplied motor
+     */
+    private void resetPid(SparkMax motor, SparkMaxConfig config, PIDFConfig pidf) {
 
-    @Override
-    public void resetFeederLeftPID(double kV, double kP, double kI, double kD) {
-        applyPID(feederLeftConfig, feederLeftMotor, FEEDER_LEFT_INVERTED, kV, kP, kI, kD);
-    }
+        config.closedLoop.p(pidf.p.getAsDouble());
+        config.closedLoop.i(pidf.i.getAsDouble());
+        config.closedLoop.iZone(pidf.iz.getAsDouble());
+        config.closedLoop.d(pidf.d.getAsDouble());
+        config.closedLoop.feedForward.kV(pidf.v.getAsDouble());
 
-    @Override
-    public void resetFeederRightPID(double kV, double kP, double kI, double kD) {
-        applyPID(feederRightConfig, feederRightMotor, FEEDER_RIGHT_INVERTED, kV, kP, kI, kD);
-    }
-
-    @Override
-    public void resetShooterPID(double kV, double kP, double kI, double kD) {
-        applyPID(shooterConfig, shooterMotor, SHOOTER_INVERTED, kV, kP, kI, kD);
-    }
-
-    @Override
-    public void setShooterIntakeRPM(double rpm) {
-        setMotorRPM(shooterIntakeMotor, shooterIntakeController, rpm);
-    }
-
-    @Override
-    public double getShooterIntakeRPM() {
-        return shooterIntakeEncoder.getVelocity();
-    }
-
-    @Override
-    public double getShooterIntakeAmps() {
-        return shooterIntakeMotor.getOutputCurrent();
-    }
-
-    @Override
-    public void resetShooterIntakePID(double kV, double kP, double kI, double kD) {
-        applyPID(shooterIntakeConfig, shooterIntakeMotor, SHOOTER_INTAKE_INVERTED, kV, kP, kI, kD);
-    }
-
-    private void applyPID(SparkMaxConfig config, SparkMax motor, boolean inverted,
-                           double kV, double kP, double kI, double kD) {
-        config.inverted(inverted);
-        config.closedLoop.p(kP);
-        config.closedLoop.i(kI);
-        config.closedLoop.d(kD);
-        config.closedLoop.feedForward.kV(kV);
+        // we will only rewrite the PIDF parameters
         motor.configure(config,
                 ResetMode.kNoResetSafeParameters,
-                PersistMode.kNoPersistParameters);
+                PersistMode.kPersistParameters);
     }
+
+//endregion
+
+//region Applying RPM ----------------------------------------------------------
+
+    @Override
+    public void applyRpm(double intakeRpm, double feederRpm, double agitatorRpm, double shooterRpm) {
+        applyRpm(intakeController, intakeRpm);
+        applyRpm(feederController, feederRpm);
+        applyRpm(agitatorController, agitatorRpm);
+        applyRpm(shooterController, shooterRpm);
+    }
+
+    /**
+     * Applies appropriate voltage or speed to the supplied controller
+     */
+    private void applyRpm(SparkClosedLoopController pid, double rpm) {
+        if (rpm == 0.0) {
+            pid.setSetpoint(0.0, ControlType.kVoltage);
+        } else {
+            pid.setSetpoint(rpm, ControlType.kVelocity);
+        }
+    }
+
+//endregion
+
+//region Helper ----------------------------------------------------------------
+
+    /**
+     * Updates motor configuration, using the supplied callback to update it
+     * prior to saving
+     */
+    private void configureMotor(SparkMax motor, Consumer<SparkMaxConfig> consumer) {
+        SparkMaxConfig config = new SparkMaxConfig();
+        consumer.accept(config);
+        motor.configure(config,
+                ResetMode.kResetSafeParameters,
+                PersistMode.kPersistParameters);
+    }
+
+//endregion
+
 }
