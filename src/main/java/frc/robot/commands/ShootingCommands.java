@@ -1,5 +1,6 @@
 package frc.robot.commands;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -13,11 +14,16 @@ import frc.robot.commands.swerve.SwerveOrbitCommand;
 import frc.robot.commands.swerve.SwerveToHeadingCommand;
 import frc.robot.commands.swerve.SwerveToPoseCommand;
 import frc.robot.subsystems.launcher.LauncherSubsystem;
+import frc.robot.subsystems.led.LEDSignal;
+import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.util.Field;
 import frc.robot.util.Util;
 
+import java.util.function.BooleanSupplier;
+
 import static frc.robot.Config.Launcher.shootDistanceFeet;
+import static frc.robot.Config.Launcher.shootDistanceTolerance;
 import static frc.robot.Config.Launcher.shootSpinupTime;
 
 /**
@@ -173,5 +179,27 @@ public class ShootingCommands {
                     new SwerveOrbitCommand(swerve, controller, hubCenter)
             );
         });
+    }
+
+    /**
+     * @return a command that will turn off the LEDs unless we are within
+     * shooting range of the hub
+     */
+    public static Command flashAtShootingRange(SwerveSubsystem swerve, LEDSubsystem led) {
+
+        BooleanSupplier inRange = () -> {
+            double currentDistanceFeet = Util.feetBetween(
+                    swerve.getPose(),
+                    Field.getHubCenter());
+            return MathUtil.isNear(
+                    shootDistanceFeet.getAsDouble(),
+                    currentDistanceFeet,
+                    shootDistanceTolerance.getAsDouble());
+        };
+
+        return Commands.either(
+                led.show(LEDSignal.SHOOT_RANGE_CLOSE),
+                led.show(LEDSignal.OFF),
+                inRange);
     }
 }

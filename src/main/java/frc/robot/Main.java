@@ -6,6 +6,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.testbots.AutonomousTestbot;
+import frc.robot.testbots.LEDTestbot;
 import frc.robot.testbots.LauncherTestbot;
 import frc.robot.testbots.ShootingSimTestbot;
 
@@ -14,13 +15,13 @@ public final class Main {
     private Main() {}
 
     public static void main(String... args) {
-        // RobotBase.startRobot(LEDTestbot::new);
+        RobotBase.startRobot(LEDTestbot::new);
         // RobotBase.startRobot(SysIdTestbot::new);
         // RobotBase.startRobot(SwerveTestbot::new);
         // RobotBase.startRobot(VisionSimTestbot::new);
         // RobotBase.startRobot(Robot::new);
         // RobotBase.startRobot(LauncherTestbot::new);
-       RobotBase.startRobot(ShootingSimTestbot::new);
+    //    RobotBase.startRobot(ShootingSimTestbot::new);
         // RobotBase.startRobot(AutonomousTestbot::new);
     }
 }
