@@ -1,9 +1,6 @@
 package frc.robot.subsystems.swerve;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -16,6 +13,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -39,13 +37,11 @@ public class SwerveSubsystem extends SubsystemBase {
 //region Members & constructor -------------------------------------------------
 
     final CommandSwerveDrivetrain drivetrain;
-    final List<Consumer<Pose2d>> poseResetListeners;
 
     // Reusable SwerveRequest objects
-    final SwerveRequest.FieldCentric fieldCentricRequest = new SwerveRequest.FieldCentric();
     final SwerveRequest.RobotCentric robotCentricRequest = new SwerveRequest.RobotCentric();
     final SwerveRequest.SwerveDriveBrake brakeRequest = new SwerveRequest.SwerveDriveBrake();
-    final SwerveRequest.PointWheelsAt pointRequest = new SwerveRequest.PointWheelsAt();
+    final SwervePoseSimulator poseSimulator;
 
     String currentMode = "idle";
     int resetCount = 0;
@@ -61,8 +57,10 @@ public class SwerveSubsystem extends SubsystemBase {
     public SwerveSubsystem(CommandSwerveDrivetrain drivetrain) {
 
         this.drivetrain = Objects.requireNonNull(drivetrain);
-        this.poseResetListeners = new ArrayList<>();
         this.wheelsLocked = false;
+
+        poseSimulator = new SwervePoseSimulator(Pose2d.kZero);
+        drivetrain.resetPose(Pose2d.kZero);
 
         // dashboard telemetry
         SmartDashboard.putData(getName(), builder -> {
@@ -99,7 +97,7 @@ public class SwerveSubsystem extends SubsystemBase {
         // CTRE drivetrain handles odometry in its own thread
         // We just need to publish visualization data
         Pose2d pose = getPose();
-        Util.publishPose("RobotPose", pose);
+        Util.publishPose("FusedPose", pose);
 
         // publish position prominently for Shuffleboard
         SmartDashboard.putNumber("Pose X (ft)", Units.metersToFeet(pose.getX()));
@@ -113,36 +111,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
     @Override
     public void simulationPeriodic() {
-        // In simulation, manually integrate commanded speeds to update odometry
-        // since CTRE simulation may not fully update the pose estimator
-        boolean hasMovement = latestSpeed != null &&
-            (Math.abs(latestSpeed.vxMetersPerSecond) > 0.001 ||
-             Math.abs(latestSpeed.vyMetersPerSecond) > 0.001 ||
-             Math.abs(latestSpeed.omegaRadiansPerSecond) > 0.001);
-        if (hasMovement) {
-            Pose2d currentPose = getPose();
-
-            // integrate speeds over one loop period (20ms)
-            double dt = Util.DT;
-            double dx = latestSpeed.vxMetersPerSecond * dt;
-            double dy = latestSpeed.vyMetersPerSecond * dt;
-            double dtheta = latestSpeed.omegaRadiansPerSecond * dt;
-
-            // convert robot-relative speeds to field-relative
-            Rotation2d heading = currentPose.getRotation();
-            double fieldDx = dx * heading.getCos() - dy * heading.getSin();
-            double fieldDy = dx * heading.getSin() + dy * heading.getCos();
-
-            // create new pose
-            Pose2d newPose = new Pose2d(
-                currentPose.getX() + fieldDx,
-                currentPose.getY() + fieldDy,
-                currentPose.getRotation().plus(Rotation2d.fromRadians(dtheta))
-            );
-
-            // update the drivetrain's pose (bypass normal reset to avoid notifications)
-            drivetrain.resetPose(newPose);
-        }
+        poseSimulator.update(latestSpeed);
+        Util.publishPose("SimulatedPose", poseSimulator.getPose());
     }
 
 //endregion
@@ -153,14 +123,18 @@ public class SwerveSubsystem extends SubsystemBase {
      * @return the current robot heading from the gyro
      */
     public Rotation2d getHeading() {
-        return drivetrain.getState().Pose.getRotation();
+        return RobotBase.isSimulation()
+                ? poseSimulator.getPose().getRotation()
+                : drivetrain.getState().Pose.getRotation();
     }
 
     /**
      * @return the current estimated pose (odometry fused with vision)
      */
     public Pose2d getPose() {
-       return drivetrain.getState().Pose;
+       return RobotBase.isSimulation()
+                ? poseSimulator.getPose()
+                : drivetrain.getState().Pose;
     }
 
     /**
@@ -191,25 +165,9 @@ public class SwerveSubsystem extends SubsystemBase {
      */
     public void resetPose(Pose2d newPose) {
         drivetrain.resetPose(newPose);
-
-        // notify listeners
-        for (Consumer<Pose2d> listener : poseResetListeners) {
-            listener.accept(newPose);
-        }
-
-        // increment counter for dashboard
+        poseSimulator.resetPose(newPose);
         resetCount++;
-
         Util.log("[swerve] reset pose to %s", newPose);
-    }
-
-    /**
-     * Registers a listener to be notified when the pose is reset.
-     *
-     * @param listener the listener to register
-     */
-    public void addPoseResetListener(Consumer<Pose2d> listener) {
-        poseResetListeners.add(listener);
     }
 
 //endregion
@@ -247,24 +205,6 @@ public class SwerveSubsystem extends SubsystemBase {
                 .withVelocityY(speeds.vyMetersPerSecond)
                 .withRotationalRate(speeds.omegaRadiansPerSecond)
                 .withCenterOfRotation(center)
-        );
-    }
-
-    /**
-     * Drives the robot using field-relative speeds.
-     *
-     * @param mode the mode to display for debugging
-     * @param speeds field-relative chassis speeds (vx, vy in m/s, omega in rad/s)
-     */
-    public void driveFieldRelative(String mode, ChassisSpeeds speeds) {
-        currentMode = mode;
-        latestSpeed = speeds;
-
-        drivetrain.setControl(
-            fieldCentricRequest
-                .withVelocityX(speeds.vxMetersPerSecond)
-                .withVelocityY(speeds.vyMetersPerSecond)
-                .withRotationalRate(speeds.omegaRadiansPerSecond)
         );
     }
 

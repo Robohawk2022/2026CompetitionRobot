@@ -1,5 +1,6 @@
 package frc.robot.testbots;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.GameController;
@@ -34,7 +35,8 @@ public class ShootingSimTestbot extends TimedRobot {
 
         controller.a().onTrue(ShootingCommands.orientToShoot(swerve));
         controller.b().whileTrue(ShootingCommands.jiggleCommand(swerve));
-        controller.y().onTrue(ShootingCommands.driveAndShootCommand(swerve, launcher));
+        controller.x().onTrue(swerve.resetPoseCommand(oldPose -> Pose2d.kZero));
+        // controller.y().onTrue(ShootingCommands.driveAndShootCommand(swerve, launcher));
     }
 
     @Override
