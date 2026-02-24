@@ -34,6 +34,11 @@ public class LauncherHardwareRev implements LauncherHardware{
     final SparkMax agitatorMotor;
     final SparkMax shooterMotor;
 
+    final SparkMaxConfig intakeConfig;
+    final SparkMaxConfig feederConfig;
+    final SparkMaxConfig agitatorConfig;
+    final SparkMaxConfig shooterConfig;
+
     final RelativeEncoder intakeEncoder;
     final RelativeEncoder feederEncoder;
     final RelativeEncoder agitatorEncoder;
@@ -46,11 +51,17 @@ public class LauncherHardwareRev implements LauncherHardware{
 
     public LauncherHardwareRev(int intakeId, int feederId, int agitatorId, int shooterId) {
 
+        // create configurations
+        intakeConfig = new SparkMaxConfig();
+        feederConfig = new SparkMaxConfig();
+        agitatorConfig = new SparkMaxConfig();
+        shooterConfig = new SparkMaxConfig();
+
         // create yon motors
-        intakeMotor = createMotor(intakeId);
-        feederMotor = createMotor(feederId);
-        agitatorMotor = createMotor(agitatorId);
-        shooterMotor = createMotor(shooterId);
+        intakeMotor = createMotor(intakeId, intakeConfig);
+        feederMotor = createMotor(feederId, feederConfig);
+        agitatorMotor = createMotor(agitatorId, agitatorConfig);
+        shooterMotor = createMotor(shooterId, shooterConfig);
 
         // grab the encoders
         intakeEncoder = intakeMotor.getEncoder();
@@ -68,13 +79,12 @@ public class LauncherHardwareRev implements LauncherHardware{
     /**
      * @return a new motor with the supplied CAN ID and default settings
      */
-    private SparkMax createMotor(int canId) {
+    private SparkMax createMotor(int canId, SparkMaxConfig config) {
         SparkMax motor = new SparkMax(canId, MotorType.kBrushless);
-        configureMotor(motor, config -> {
-            config.smartCurrentLimit(CURRENT_LIMIT);
-            config.inverted(INVERTED);
-            config.idleMode(IdleMode.kCoast);
-        });
+        config.smartCurrentLimit(CURRENT_LIMIT);
+        config.inverted(INVERTED);
+        config.idleMode(IdleMode.kCoast);
+        motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
         return motor;
     }
 
@@ -108,24 +118,28 @@ public class LauncherHardwareRev implements LauncherHardware{
 
     @Override
     public void resetPid() {
-        resetPid(intakeMotor, intakePid);
-        resetPid(feederMotor, feederPid);
-        resetPid(agitatorMotor, agitatorPid);
-        resetPid(shooterMotor, shooterPid);
+        resetPid(intakeMotor, intakeConfig, intakePid);
+        resetPid(feederMotor, feederConfig, feederPid);
+        resetPid(agitatorMotor, agitatorConfig, agitatorPid);
+        resetPid(shooterMotor, shooterConfig, shooterPid);
         Util.log("[launcher] reset PID values");
     }
 
     /**
      * Applies closed-loop configuration to the supplied motor
      */
-    private void resetPid(SparkMax motor, PIDFConfig pidf) {
-        configureMotor(motor, config -> {
-            config.closedLoop.p(pidf.p.getAsDouble());
-            config.closedLoop.i(pidf.i.getAsDouble());
-            config.closedLoop.iZone(pidf.iz.getAsDouble());
-            config.closedLoop.d(pidf.d.getAsDouble());
-            config.closedLoop.feedForward.kV(pidf.v.getAsDouble());
-        });
+    private void resetPid(SparkMax motor, SparkMaxConfig config, PIDFConfig pidf) {
+
+        config.closedLoop.p(pidf.p.getAsDouble());
+        config.closedLoop.i(pidf.i.getAsDouble());
+        config.closedLoop.iZone(pidf.iz.getAsDouble());
+        config.closedLoop.d(pidf.d.getAsDouble());
+        config.closedLoop.feedForward.kV(pidf.v.getAsDouble());
+
+        // we will only rewrite the PIDF parameters
+        motor.configure(config,
+                ResetMode.kNoResetSafeParameters,
+                PersistMode.kPersistParameters);
     }
 
 //endregion
