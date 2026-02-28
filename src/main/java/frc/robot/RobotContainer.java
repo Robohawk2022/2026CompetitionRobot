@@ -23,9 +23,9 @@ public class RobotContainer {
 
     static final int LED_PWM_PORT = 0;
     static final int INTAKE_CAN_ID = 9;
-    static final int FEEDER_CAN_ID = 32;
-    static final int AGITATOR_CAN_ID = 11;
-    static final int SHOOTER_CAN_ID = 60;
+    static final int FEEDER_CAN_ID = 60;
+    static final int AGITATOR_CAN_ID = 2;
+    static final int SHOOTER_CAN_ID = 32;
 
     final GameController driver;
     final SwerveSubsystem swerve;
