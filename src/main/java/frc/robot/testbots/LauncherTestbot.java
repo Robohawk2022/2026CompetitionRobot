@@ -28,7 +28,7 @@ public class LauncherTestbot extends TimedRobot {
     public static final int INTAKE_CAN_ID = 9;
     public static final int FEEDER_CAN_ID = 60;
     public static final int AGITATOR_CAN_ID = 2;
-    public static final int SHOOTER_CAN_ID = 32;
+    public static final int SHOOTER_CAN_ID = 35;
 
     private LauncherSubsystem launcher;
     private double testRpm;
