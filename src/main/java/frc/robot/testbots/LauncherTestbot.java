@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.GameController;
+import frc.robot.RobotContainer;
 import frc.robot.subsystems.launcher.LauncherHardwareRev;
 import frc.robot.subsystems.launcher.LauncherHardwareSim;
 import frc.robot.subsystems.launcher.LauncherSubsystem;
@@ -25,10 +26,10 @@ import frc.robot.subsystems.launcher.LauncherSubsystem;
 public class LauncherTestbot extends TimedRobot {
 
     // CAN IDs from the testing setup
-    public static final int INTAKE_CAN_ID = 9;
-    public static final int FEEDER_CAN_ID = 60;
-    public static final int AGITATOR_CAN_ID = 2;
-    public static final int SHOOTER_CAN_ID = 35;
+    public static final int INTAKE_CAN_ID = RobotContainer.INTAKE_CAN_ID; // 9;
+    public static final int FEEDER_CAN_ID = RobotContainer.FEEDER_CAN_ID; // 60;
+    public static final int AGITATOR_CAN_ID = RobotContainer.AGITATOR_CAN_ID; // 2;
+    public static final int SHOOTER_CAN_ID = RobotContainer.SHOOTER_CAN_ID; // 35;
 
     private LauncherSubsystem launcher;
     private double testRpm;
@@ -62,7 +63,10 @@ public class LauncherTestbot extends TimedRobot {
 
         // left bumper: run all motors at test velocity
         controller.leftBumper().whileTrue(launcher.defer(() ->
-                launcher.velocityCommand(testRpm, testRpm, testRpm, testRpm)));
+                launcher.velocityCommand(testRpm, 0.0, 0.0, 0.0)));
+                // launcher.velocityCommand(0.0, testRpm, 0.0, 0.0)));
+                // launcher.velocityCommand(0.0, 0.0, testRpm, 0.0)));
+                // launcher.velocityCommand(0.0, 0.0, 0.0, testRpm)));
 
         System.out.println(">>> Button mappings:");
         System.out.println("    A (hold) = Intake (feeders inward)");
