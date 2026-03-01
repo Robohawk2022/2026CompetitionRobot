@@ -44,8 +44,8 @@ public class ShootingCommands {
                 shooter.intakeCommand().until(shooter::atSpeed));
 
         Command step2 = Commands.parallel(
-                shooter.intakeCommand(),
                 led.flash(LEDSignal.INTAKING),
+                shooter.intakeCommand(),
                 ballPath.intakeCommand());
 
         return step1.andThen(step2);
