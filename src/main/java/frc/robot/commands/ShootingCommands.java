@@ -20,7 +20,7 @@ import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.util.Field;
 import frc.robot.util.Util;
 
-import static frc.robot.Config.BallHandling.shootDistanceFeet;
+import static frc.robot.Config.Shooter.shootDistanceFeet;
 import static frc.robot.Config.SwerveAuto.openHopperSecs;
 import static frc.robot.Config.SwerveAuto.openHopperVelocity;
 

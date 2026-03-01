@@ -44,7 +44,7 @@ public interface Config {
 
         /** Maximum speeds */
         DoubleSupplier maxTranslate = pref("SwerveTeleop/MaxTranslateFPS", 7.0);
-        DoubleSupplier maxRotate = pref("SwerveTeleop/MaxRotateDPS", 120.0);
+        DoubleSupplier maxRotate = pref("SwerveTeleop/MaxRotateDPS", 180.0);
         DoubleSupplier maxOrbit = pref("SwerveTeleop/MaxOrbitFPS", 15.0);
 
         /** Speed mode factors (turbo/sniper) */
@@ -196,18 +196,19 @@ public interface Config {
     interface Shooter {
 
         /** PID configuration for the shooter motor */
-        PIDFConfig shooterPid = new PIDFConfig("ShooterSubsystem/ShooterMotor", 0.001, 0.0, 20.0, 0.0, 0.0002);
+        PIDFConfig shooterPid = new PIDFConfig("BallPID/ShooterMotor", 0.0005, 0.0, 0.0, 0.0, 0.0002);
 
         /** Target RPM for shooting */
-        DoubleSupplier shootRpm = pref("Shooter/ShootRpm", 3000.0);
-        DoubleSupplier intakeRpm = pref("Shooter/IntakeRpm", 1000.0);
+        DoubleSupplier shootRpm = pref("ShootMode/ShooterRpm", 3600.0);
+        DoubleSupplier intakeRpm = pref("IntakeMode/ShooterRpm", 1000.0);
 
         /** How close to target RPM counts as "at speed" */
-        DoubleSupplier shootSpeedTolerance = pref("Shooter/ShootSpeedTolerance", 50.0);
+        DoubleSupplier shootSpeedTolerance = pref("ShootMode/ShootSpeedTolerance", 50.0);
+        DoubleSupplier shootDistanceFeet = pref("ShootMode/ShootDistance", 7.0);
 
         /** Stall detection */
-        DoubleSupplier stallSpeed = pref("Shooter/StallSpeed", 30.0);
-        DoubleSupplier stallTime = pref("Shooter/StallTime", 1.0);
+        DoubleSupplier stallSpeed = () -> 3.0; // pref("Shooter/StallSpeed", 30.0);
+        DoubleSupplier stallTime = () -> 1.0; // pref("Shooter/StallTime", 1.0);
     }
 
 //endregion
@@ -217,30 +218,18 @@ public interface Config {
     interface BallPath {
 
         /** PID configuration for ball-path motors */
-        PIDFConfig intakePid = new PIDFConfig("BallPathSubsystem/IntakeMotor", 0.00001, 0.0, 20.0, 0.0, 0.00017);
-        PIDFConfig feederPid = new PIDFConfig("BallPathSubsystem/FeederMotor", 0.00001, 0.0, 20.0, 0.0, 0.00017);
-        PIDFConfig agitatorPid = new PIDFConfig("BallPathSubsystem/AgitatorMotor", 0.00001, 0.0, 20.0, 0.0, 0.00017);
+        PIDFConfig intakePid = new PIDFConfig("BallPID/IntakeMotor", 0.00001, 0.0, 0.0, 0.0, 0.00017);
+        PIDFConfig feederPid = new PIDFConfig("BallPID/FeederMotor", 0.00001, 0.0, 0.0, 0.0, 0.00017);
+        PIDFConfig agitatorPid = new PIDFConfig("BallPID/AgitatorMotor", 0.00001, 0.0, 0.0, 0.0, 0.00017);
 
         /** Target speeds for various modes */
-        BallPathSpeeds intakeSpeeds = new BallPathSpeeds("BallHandling/IntakeSpeeds", 3000.0, 3000.0, 0.0);
-        BallPathSpeeds ejectSpeeds = new BallPathSpeeds("BallHandling/EjectSpeeds", 3000.0, 3000.0, 0.0);
-        BallPathSpeeds feedSpeeds = new BallPathSpeeds("BallHandling/FeedSpeeds", 3000.0, 3000.0, 1000.0);
+        BallPathSpeeds intakeSpeeds = new BallPathSpeeds("IntakeMode", 3000.0, 3000.0, 0.0);
+        BallPathSpeeds ejectSpeeds = new BallPathSpeeds("EjectMode", 3000.0, 3000.0, 0.0);
+        BallPathSpeeds feedSpeeds = new BallPathSpeeds("ShootMode", 4000.0, 4000.0, 4000.0);
 
         /** Stall detection */
-        DoubleSupplier stallSpeed = pref("BallPath/StallSpeed", 30.0);
-        DoubleSupplier stallTime = pref("BallPath/StallTime", 1.0);
-    }
-
-//endregion
-
-//region BallHandling (shooting coordination) ----------------------------------
-
-    interface BallHandling {
-
-        /** Distance & spin up time for shooting */
-        DoubleSupplier shootDistanceFeet = pref("BallHandling/ShootDistance", 7.0);
-        DoubleSupplier shootDistanceTolerance = pref("BallHandling/ShootDistanceTolerance", 0.5);
-        DoubleSupplier shootSpinupTime = pref("BallHandling/ShootSpinupTime", 1.0);
+        DoubleSupplier stallSpeed = () -> 30.0; // pref("BallPathSubsystem/StallSpeed", 30.0);
+        DoubleSupplier stallTime = () -> 1.0; // pref("BallPathSubsystem/StallTime", 1.0);
     }
 
 //endregion
