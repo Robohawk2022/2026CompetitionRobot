@@ -7,13 +7,19 @@
         {
           "type": "path",
           "data": {
-            "pathName": "TestPath"
+            "pathName": "NearLeftToShoot"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "DoSomething3"
+            "name": "Unload"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "DriveToLeftIntake"
           }
         }
       ]

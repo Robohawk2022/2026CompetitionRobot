@@ -56,10 +56,12 @@ public class LauncherHardwareRev implements LauncherHardware{
         shooterConfig = new SparkMaxConfig();
 
         // create yon motors
-        intakeMotor = createMotor(intakeId, intakeConfig);
-        feederMotor = createMotor(feederId, feederConfig);
-        agitatorMotor = createMotor(agitatorId, agitatorConfig);
-        shooterMotor = createMotor(shooterId, shooterConfig);
+        // the intake motor generally wants to spin the opposite direction
+        // of the others, so we will invert him here
+        intakeMotor = createMotor(intakeId, intakeConfig, !INVERTED);
+        feederMotor = createMotor(feederId, feederConfig, INVERTED);
+        agitatorMotor = createMotor(agitatorId, agitatorConfig, INVERTED);
+        shooterMotor = createMotor(shooterId, shooterConfig, INVERTED);
 
         // grab the encoders
         intakeEncoder = intakeMotor.getEncoder();
@@ -77,10 +79,10 @@ public class LauncherHardwareRev implements LauncherHardware{
     /**
      * @return a new motor with the supplied CAN ID and default settings
      */
-    private SparkMax createMotor(int canId, SparkMaxConfig config) {
+    private SparkMax createMotor(int canId, SparkMaxConfig config, boolean inverted) {
         SparkMax motor = new SparkMax(canId, MotorType.kBrushless);
         config.smartCurrentLimit(CURRENT_LIMIT);
-        config.inverted(INVERTED);
+        config.inverted(inverted);
         config.idleMode(IdleMode.kCoast);
         motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
         return motor;
@@ -137,7 +139,7 @@ public class LauncherHardwareRev implements LauncherHardware{
         // we will only rewrite the PIDF parameters
         motor.configure(config,
                 ResetMode.kNoResetSafeParameters,
-                PersistMode.kPersistParameters);
+                PersistMode.kNoPersistParameters);
     }
 
 //endregion

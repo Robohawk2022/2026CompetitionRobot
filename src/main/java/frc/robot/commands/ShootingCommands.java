@@ -138,11 +138,15 @@ public class ShootingCommands {
 
         // phase 2: jiggle the robot to agitate balls in the hopper, while
         // unloading the hopper
-        Command phaseTwo = Commands.parallel(
-                jiggleCommand(swerve),
-                launcher.shootCommand());
+        Command phaseTwo = shootAndJiggle(swerve, launcher);
 
         return phaseOne.andThen(phaseTwo);
+    }
+
+    public static Command shootAndJiggle(SwerveSubsystem swerve, LauncherSubsystem launcher) {
+        return Commands.parallel(
+                jiggleCommand(swerve),
+                launcher.shootCommand());
     }
 
     /**

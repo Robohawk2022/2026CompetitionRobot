@@ -7,13 +7,19 @@
         {
           "type": "path",
           "data": {
-            "pathName": "TestPath"
+            "pathName": "FarRightToShoot"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "DoSomething2"
+            "name": "Unload"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "DriveToRIghtIntake"
           }
         }
       ]

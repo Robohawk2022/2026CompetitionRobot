@@ -16,11 +16,11 @@ public final class SwerveHardwareConfig {
     // PATHPLANNER-SPECIFIC STUFF
     //==========================================================================
 
-    /** Robot mass including bumpers and battery (kg) */
-    public static final double ROBOT_MASS_KG = 54.0;
+    /** Robot mass including bumpers and battery */
+    public static final double ROBOT_MASS_KG = 60.0 * 0.45; // lbs to kg
 
     /** Robot moment of inertia (kg*m^2) - estimate or calculate from CAD */
-    public static final double ROBOT_MOI = 6.0;
+    public static final double ROBOT_MOI = 6.0; // stolen from last year's bot
 
     // guess on COF based on https://www.chiefdelphi.com/t/what-is-the-coefficient-of-friction-of-the-new-swerve-drive-specialties-molded-spike-grip-wheels/512813
     public static final double WHEEL_COF = 2.255;
@@ -29,10 +29,10 @@ public final class SwerveHardwareConfig {
     // CHASSIS MEASUREMENTS
     //==========================================================================
 
-    public static final double WHEEL_BASE_INCHES = 19.0 + 7.0 / 16.0;
+    public static final double WHEEL_BASE_INCHES = 19.25;
     public static final double WHEEL_BASE_METERS = Units.inchesToMeters(WHEEL_BASE_INCHES);
 
-    public static final double TRACK_WIDTH_INCHES = 25.0;
+    public static final double TRACK_WIDTH_INCHES = 25.0 - 1.0 / 8.0;
     public static final double TRACK_WIDTH_METERS = Units.inchesToMeters(TRACK_WIDTH_INCHES);
 
     public static final Translation2d [] MODULE_TRANSLATIONS = {

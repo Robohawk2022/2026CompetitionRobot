@@ -6,6 +6,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.ShootingCommands;
 import frc.robot.subsystems.auto.AutonomousSubsystem;
 import frc.robot.subsystems.launcher.LauncherHardwareRev;
@@ -78,7 +79,7 @@ public class RobotContainer {
         // a/b/x/y are "pure" shooting commands
         driver.a().onTrue(launcher.intakeCommand());
         driver.b().onTrue(launcher.shootCommand());
-        driver.x().onTrue(launcher.ejectCommand());
+        driver.x().whileTrue(ShootingCommands.shootAndJiggle(swerve, launcher));
         driver.y().onTrue(launcher.coast());
 
         // bumpers exercise auto shooting

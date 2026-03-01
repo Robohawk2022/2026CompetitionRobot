@@ -1,8 +1,15 @@
 # TEST PLAN
 
-* Use the `LauncherTestbot` to tune the launch motors. Focus on being able
+[x] Use the `LauncherTestbot` to tune the launch motors. Focus on being able
 to hit and maintain an arbitrary target speed; we'll tweak the speeds once
 we start game testing.
+
+* Test intaking balls. Tune speeds for the various motors, and consider how 
+ejection may need to work.
+
+* Test shooting. Pick one shooting distance and get reliable from there. 
+Then move the robot to a different angle at the same distance, to see if 
+we're still accurate.
 
 * Test swerve teleop (driver relative on both alliances, turbo and sniper
 mode), and tune the maximum speeds for translate & rotate to comfortable
@@ -26,13 +33,6 @@ to manually reset the odometry during a match.)
 * Test driving to a shooting position. Pay particular attention to accuracy;
 we may need to alter the feedback calculations or other tuning parameters in
 SwerveToPoseCommand.
-
-* Test intaking balls. Tune speeds for the various motors, and consider how 
-ejection may need to work.
-
-* Test shooting. Pick one shooting distance and get reliable from there. 
-Then move the robot to a different angle at the same distance, to see if 
-we're still accurate.
 
 * Test an autonomous routine.
 
