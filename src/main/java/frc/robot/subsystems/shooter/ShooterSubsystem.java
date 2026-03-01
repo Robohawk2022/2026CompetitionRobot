@@ -142,7 +142,7 @@ public class ShooterSubsystem extends SubsystemBase {
                 this.errorRpm = desiredRpm - currentRpm;
                 this.stalled = debouncer.calculate(Math.abs(currentRpm) < stallSpeed.getAsDouble());
             } else {
-                this.errorRpm = 0.0;
+                this.errorRpm = Double.NaN;
                 this.stalled = false;
             }
         }
