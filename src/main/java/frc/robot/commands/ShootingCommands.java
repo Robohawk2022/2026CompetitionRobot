@@ -26,6 +26,8 @@ import java.util.function.BooleanSupplier;
 import static frc.robot.Config.BallHandling.shootDistanceFeet;
 import static frc.robot.Config.BallHandling.shootDistanceTolerance;
 import static frc.robot.Config.BallHandling.shootSpinupTime;
+import static frc.robot.Config.SwerveAuto.openHopperSecs;
+import static frc.robot.Config.SwerveAuto.openHopperVelocity;
 
 /**
  * Factory methods for shooting command sequences.
@@ -58,7 +60,7 @@ public class ShootingCommands {
      *
      * @return the jiggle command
      */
-    public static Command jiggleCommand(SwerveSubsystem swerve) {
+    public static Command jiggle(SwerveSubsystem swerve) {
 
         // ~1-2 inches of travel at ~6 Hz oscillation
         double speedMps = Units.feetToMeters(2.0); // 2 ft/s sideways
@@ -77,6 +79,21 @@ public class ShootingCommands {
                     swerve.driveRobotRelative("jiggle", new ChassisSpeeds(0, vy, 0));
                 }
         );
+    }
+
+    /**
+     * @return command to run our ghetto "open the hopper" routine
+     */
+    public static Command openHopper(SwerveSubsystem swerve) {
+        return swerve.defer(() -> {
+            double vel = openHopperVelocity.getAsDouble();
+            double secs = openHopperSecs.getAsDouble();
+            Command back = swerve.driveAtSpeedCommand("hop-b",
+                    new ChassisSpeeds(-vel, 0.0, 0.0));
+            Command fwd = swerve.driveAtSpeedCommand("hop-f",
+                    new ChassisSpeeds(vel, 0.0, 0.0));
+            return back.withTimeout(secs).andThen(fwd.withTimeout(2.0 * secs));
+        });
     }
 
     /**
@@ -161,7 +178,7 @@ public class ShootingCommands {
         // phase 2: jiggle the robot to agitate balls in the hopper, while
         // keeping the shooter spinning and feeding balls
         Command phaseTwo = Commands.parallel(
-                jiggleCommand(swerve),
+                jiggle(swerve),
                 shooter.shootCommand(),
                 ballPath.feedCommand());
 
@@ -175,7 +192,7 @@ public class ShootingCommands {
                                          ShooterSubsystem shooter,
                                          BallPathSubsystem ballPath) {
         return Commands.parallel(
-                jiggleCommand(swerve),
+                jiggle(swerve),
                 shooter.shootCommand(),
                 ballPath.feedCommand());
     }

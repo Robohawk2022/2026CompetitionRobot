@@ -36,7 +36,7 @@ public class VisionSimTestbot extends TimedRobot {
         controller = new GameController(0);
 
         // default to field-relative driving
-        swerve.setDefaultCommand(swerve.driveCommand(controller));
+        swerve.setDefaultCommand(swerve.teleopCommand(controller));
 
         // start zeroes heading but keeps the robot where it is
         controller.start().onTrue(swerve.zeroHeadingCommand());

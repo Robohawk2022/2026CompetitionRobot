@@ -14,6 +14,13 @@
         * Left stick = forward/back
         * Left stick button zeros pose
 
+* Test opening the hopper
+    * Prefs are in SwerveAuto 
+    * Start button runs routine     
+
+* Test jiggle
+    * Y will jiggle 
+
 * Test intake mode
     * Holding A will run in take mode
     * Should spin up then engage ball path

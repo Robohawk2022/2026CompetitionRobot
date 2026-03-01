@@ -70,11 +70,15 @@ public interface Config {
 
     interface SwerveAuto {
 
+        /** Speed for opening hopper */
+        DoubleSupplier openHopperVelocity = pref("SwerveAuto/OpenHopperFPS", 10.0);
+        DoubleSupplier openHopperSecs = pref("SwerveAuto/OpenHopperSecs", 0.5);
+
         /** Maximum translation velocity in feet per second */
-        DoubleSupplier maxTranslationVelocity = pref("SwerveAuto/MaxTranslationFPS", 2.0);
+        DoubleSupplier maxTranslationVelocity = pref("SwerveAuto/MaxTranslationFPS", 7.0);
 
         /** Maximum translation acceleration in feet per second squared */
-        DoubleSupplier maxTranslationAcceleration = pref("SwerveAuto/MaxTranslationFPSS", 4.0);
+        DoubleSupplier maxTranslationAcceleration = pref("SwerveAuto/MaxTranslationFPSS", 7.0);
 
         /** Proportional gain for translation feedback (units: 1/sec) */
         DoubleSupplier translationKp = pref("SwerveAuto/TranslationKp", 0.0);

@@ -32,7 +32,7 @@ public class SwerveTestbot extends TimedRobot {
         controller = new GameController(0);
 
         // default to field-relative driving with turbo/sniper modes
-        swerve.setDefaultCommand(swerve.driveCommand(controller));
+        swerve.setDefaultCommand(swerve.teleopCommand(controller));
 
         // Odometry reset on start
         controller.start().onTrue(swerve.zeroPoseCommand());

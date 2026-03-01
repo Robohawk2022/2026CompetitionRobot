@@ -248,7 +248,7 @@ public class SwerveSubsystem extends SubsystemBase {
      * @return the drive command (field-relative)
      * @see SwerveTeleopCommand
      */
-    public Command driveCommand(GameController controller) {
+    public Command teleopCommand(GameController controller) {
         return new SwerveTeleopCommand(this, controller);
     }
 
@@ -291,6 +291,16 @@ public class SwerveSubsystem extends SubsystemBase {
      */
     public Command driveToHeadingCommand(Rotation2d heading) {
         return new SwerveToHeadingCommand(this, heading);
+    }
+
+    /**
+     * Creates a command that drives at a specific speed
+     *
+     * @param speed the speed
+     * @return the command
+     */
+    public Command driveAtSpeedCommand(String mode, ChassisSpeeds speed) {
+        return run(() -> driveRobotRelative(mode, speed));
     }
 
     /**

@@ -40,7 +40,7 @@ public class ShootingSimTestbot extends TimedRobot {
         limelightSim = new LimelightSim();
 
         controller.a().onTrue(ShootingCommands.orientToShoot(swerve));
-        controller.b().whileTrue(ShootingCommands.jiggleCommand(swerve));
+        controller.b().whileTrue(ShootingCommands.jiggle(swerve));
         controller.x().whileTrue(ShootingCommands.driveAndShootCommand(swerve, shooter, ballPath));
         controller.y().onTrue(swerve.resetPoseCommand(oldPose -> Pose2d.kZero));
     }

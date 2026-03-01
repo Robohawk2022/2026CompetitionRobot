@@ -8,7 +8,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.ShootingCommands;
 import frc.robot.subsystems.auto.AutonomousSubsystem;
 import frc.robot.subsystems.ballpath.BallPathHardwareRev;
@@ -24,7 +23,6 @@ import frc.robot.subsystems.shooter.ShooterHardwareSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.TunerConstants;
-import frc.robot.util.Field;
 
 public class RobotContainer {
 
@@ -54,7 +52,7 @@ public class RobotContainer {
 
         // swerve drive (default command is driving in teleop mode)
         swerve = new SwerveSubsystem(TunerConstants.createDrivetrain());
-        swerve.setDefaultCommand(swerve.driveCommand(driver));
+        swerve.setDefaultCommand(swerve.teleopCommand(driver));
 
         limelight = new LimelightSubsystem(swerve);
         auto = new AutonomousSubsystem(swerve);
@@ -98,7 +96,7 @@ public class RobotContainer {
         driver.a().whileTrue(ShootingCommands.intakeMode(ballPath, shooter));
         driver.b().whileTrue(shooter.intakeCommand());
         driver.x().whileTrue(ShootingCommands.shootMode(ballPath, shooter));
-        driver.y().onTrue(Commands.parallel(shooter.coast(), ballPath.coast()));
+        driver.y().whileTrue(ShootingCommands.jiggle(swerve));
 
         // bumpers exercise auto shooting
 //        driver.leftBumper().whileTrue(ShootingCommands.orientToShoot(swerve));
@@ -112,5 +110,6 @@ public class RobotContainer {
         driver.leftStick().onTrue(swerve.zeroPoseCommand());
         driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
 
+        driver.start().onTrue(ShootingCommands.openHopper(swerve));
     }
 }
