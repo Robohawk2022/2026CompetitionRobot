@@ -43,17 +43,17 @@ public interface Config {
     interface SwerveTeleop {
 
         /** Maximum speeds */
-        DoubleSupplier maxTranslate = pref("SwerveTeleop/MaxTranslateFPS", 10.0);
-        DoubleSupplier maxRotate = pref("SwerveTeleop/MaxRotateDPS", 180.0);
+        DoubleSupplier maxTranslate = pref("SwerveTeleop/MaxTranslateFPS", 7.0);
+        DoubleSupplier maxRotate = pref("SwerveTeleop/MaxRotateDPS", 120.0);
         DoubleSupplier maxOrbit = pref("SwerveTeleop/MaxOrbitFPS", 15.0);
 
         /** Speed mode factors (turbo/sniper) */
-        DoubleSupplier sniperFactor = pref("SwerveTeleop/SniperFactor", 0.25);
-        DoubleSupplier turboFactor = pref("SwerveTeleop/TurboFactor", 1.5);
+        DoubleSupplier sniperFactor = pref("SwerveTeleop/SniperFactor", 0.5);
+        DoubleSupplier turboFactor = pref("SwerveTeleop/TurboFactor", 2.0);
         BooleanSupplier applySniperToRotation = pref("SwerveTeleop/SniperRotation?", true);
 
         /** Driver relative mode */
-        BooleanSupplier driverRelative = pref("SwerveTeleop/DriverRelative?", true);
+        BooleanSupplier driverRelative = pref("SwerveTeleop/DriverRelative?", false);
 
         /** Joystick deadband & exponent */
         DoubleSupplier deadband = pref("SwerveTeleop/Deadband", 0.1);
@@ -196,6 +196,7 @@ public interface Config {
 
         /** Target RPM for shooting */
         DoubleSupplier shootRpm = pref("Shooter/ShootRpm", 3000.0);
+        DoubleSupplier intakeRpm = pref("Shooter/IntakeRpm", 1000.0);
 
         /** How close to target RPM counts as "at speed" */
         DoubleSupplier shootSpeedTolerance = pref("Shooter/ShootSpeedTolerance", 100.0);

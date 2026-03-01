@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.Util;
 
+import static frc.robot.Config.Shooter.intakeRpm;
 import static frc.robot.Config.Shooter.shootRpm;
 import static frc.robot.Config.Shooter.shootSpeedTolerance;
 import static frc.robot.Config.Shooter.stallSpeed;
@@ -41,6 +42,10 @@ public class ShooterSubsystem extends SubsystemBase {
         shooterAtSpeed = Util.nearZero(
                 shooterStatus.errorRpm,
                 shootSpeedTolerance);
+    }
+
+    public boolean atSpeed() {
+        return shooterAtSpeed;
     }
 
     /**
@@ -84,7 +89,14 @@ public class ShooterSubsystem extends SubsystemBase {
     /**
      * @return a command that will spin up the shooter to the configured shoot RPM
      */
-    public Command spinUpCommand() {
+    public Command intakeCommand() {
+        return defer(() -> velocityCommand(intakeRpm.getAsDouble()));
+    }
+
+    /**
+     * @return a command that will spin up the shooter to the configured shoot RPM
+     */
+    public Command shootCommand() {
         return defer(() -> velocityCommand(shootRpm.getAsDouble()));
     }
 

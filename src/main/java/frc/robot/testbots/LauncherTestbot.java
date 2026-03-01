@@ -70,7 +70,7 @@ public class LauncherTestbot extends TimedRobot {
 
         // shoot: shooter spins up + ball-path feeds
         controller.x().whileTrue(Commands.parallel(
-                shooter.spinUpCommand(),
+                shooter.shootCommand(),
                 ballPath.feedCommand()));
 
         // stop all motors

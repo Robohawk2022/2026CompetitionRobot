@@ -229,9 +229,12 @@ public class AutonomousSubsystem extends SubsystemBase {
         // we use a LinkedHashMap so the programs will be shown in the
         // same order as below
         Map<String,String> programs = new LinkedHashMap<>();
-        programs.put("EX01", "Example1");
-        programs.put("EX02", "Example2");
-        programs.put("EX03", "Example3");
+        programs.put("FLA", "FLA");
+        programs.put("MLA", "MLA");
+        programs.put("NLA", "NLA");
+        programs.put("FRA", "FRA");
+        programs.put("MRA", "MRA");
+        programs.put("NRA", "NRA");
         return programs;
     }
 
@@ -247,9 +250,9 @@ public class AutonomousSubsystem extends SubsystemBase {
 
         // you will have to create commands that do real things like
         // shooting and scoring if you want to use them in your autos
-        NamedCommands.registerCommand("DoSomething1", Commands.print("*** DID SOMETHING #1 ***"));
-        NamedCommands.registerCommand("DoSomething2", Commands.print("*** DID SOMETHING #2 ***"));
-        NamedCommands.registerCommand("DoSomething3", Commands.print("*** DID SOMETHING #3 ***"));
+        NamedCommands.registerCommand("Unload", Commands.print("*** Unload ***"));
+        NamedCommands.registerCommand("DriveToLeftIntake", Commands.print("*** DriveToLeftIntake ***"));
+        NamedCommands.registerCommand("DriveToRightIntake", Commands.print("*** DriveToRightIntake ***"));
     }
 
     /*

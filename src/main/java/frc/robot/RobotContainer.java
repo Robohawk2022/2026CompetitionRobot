@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -22,8 +24,11 @@ import frc.robot.subsystems.shooter.ShooterHardwareSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.TunerConstants;
+import frc.robot.util.Field;
 
 public class RobotContainer {
+
+    public static boolean RESET_PREFS = true;
 
     public static final int LED_PWM_PORT = 0;
     public static final int INTAKE_CAN_ID = 60;
@@ -40,6 +45,10 @@ public class RobotContainer {
     final LEDSubsystem led;
 
     public RobotContainer() {
+
+        if (RESET_PREFS) {
+            Preferences.removeAll();
+        }
 
         driver = new GameController(0);
 
@@ -86,14 +95,18 @@ public class RobotContainer {
         // sticks and left/right trigger are already taken by swerve teleop
 
         // a/b/x/y are ball-handling commands
-        driver.a().onTrue(ballPath.intakeCommand());
-        driver.b().onTrue(Commands.parallel(shooter.spinUpCommand(), ballPath.feedCommand()));
-        driver.x().whileTrue(ShootingCommands.shootAndJiggle(swerve, shooter, ballPath));
+        driver.a().whileTrue(ShootingCommands.intakeMode(ballPath, shooter));
+        driver.b().whileTrue(shooter.intakeCommand());
+        driver.x().whileTrue(ShootingCommands.shootMode(ballPath, shooter));
         driver.y().onTrue(Commands.parallel(shooter.coast(), ballPath.coast()));
 
         // bumpers exercise auto shooting
-        driver.leftBumper().whileTrue(ShootingCommands.orientToShoot(swerve));
-        driver.rightBumper().whileTrue(ShootingCommands.driveAndShootCommand(swerve, shooter, ballPath));
+//        driver.leftBumper().whileTrue(ShootingCommands.orientToShoot(swerve));
+//        driver.rightBumper().whileTrue(ShootingCommands.driveAndShootCommand(swerve, shooter, ballPath));
+        driver.rightBumper().whileTrue(ShootingCommands.orbitCommand(
+                driver,
+                swerve,
+                Pose2d.kZero));
 
         // sticks reset pose
         driver.leftStick().onTrue(swerve.zeroPoseCommand());

@@ -33,6 +33,26 @@ import static frc.robot.Config.BallHandling.shootSpinupTime;
 public class ShootingCommands {
 
     /**
+     * Spin up the shooter to intake speed then run the ball path in
+     * intake mode
+     */
+    public static Command intakeMode(BallPathSubsystem ballPath, ShooterSubsystem shooter) {
+        Command step1 = shooter.intakeCommand().until(shooter::atSpeed);
+        Command step2 = shooter.intakeCommand().alongWith(ballPath.intakeCommand());
+        return step1.andThen(step2);
+    }
+
+    /**
+     * Spin up the shooter to shoot speed then run the ball path in
+     * feed mode
+     */
+    public static Command shootMode(BallPathSubsystem ballPath, ShooterSubsystem shooter) {
+        Command step1 = shooter.shootCommand().until(shooter::atSpeed);
+        Command step2 = shooter.shootCommand().alongWith(ballPath.feedCommand());
+        return step1.andThen(step2);
+    }
+
+    /**
      * Rapidly oscillates the robot left and right (robot-relative) to
      * dislodge stuck balls. Hold trigger to jiggle, release to stop.
      *
@@ -136,15 +156,13 @@ public class ShootingCommands {
         // shooter wheel up to speed
         Command phaseOne = Commands.parallel(
                 orientToShoot(swerve),
-                shooter
-                    .spinUpCommand()
-                    .withTimeout(shootSpinupTime.getAsDouble()));
+                shooter.shootCommand().withTimeout(shootSpinupTime.getAsDouble()));
 
         // phase 2: jiggle the robot to agitate balls in the hopper, while
         // keeping the shooter spinning and feeding balls
         Command phaseTwo = Commands.parallel(
                 jiggleCommand(swerve),
-                shooter.spinUpCommand(),
+                shooter.shootCommand(),
                 ballPath.feedCommand());
 
         return phaseOne.andThen(phaseTwo);
@@ -158,8 +176,12 @@ public class ShootingCommands {
                                          BallPathSubsystem ballPath) {
         return Commands.parallel(
                 jiggleCommand(swerve),
-                shooter.spinUpCommand(),
+                shooter.shootCommand(),
                 ballPath.feedCommand());
+    }
+
+    public static Command orbitCommand(GameController controller, SwerveSubsystem swerve) {
+        return orbitCommand(controller, swerve, null);
     }
 
     /**
@@ -176,11 +198,14 @@ public class ShootingCommands {
      * @return the orbit command sequence
      * @see SwerveOrbitCommand
      */
-    public Command orbitCommand(GameController controller, SwerveSubsystem swerve) {
+    public static Command orbitCommand(GameController controller, SwerveSubsystem swerve, Pose2d center) {
         return swerve.defer(() -> {
 
-            // determine the location of the hub
-            Pose2d hubCenter = Field.getHubCenter();
+            // if we already have a center of rotation, use that;
+            // otherwise use the center of the hub
+            Pose2d hubCenter = center == null
+                    ? Field.getHubCenter()
+                    : center;
 
             // calculate heading to face the hub from current position
             Rotation2d headingToHub = hubCenter.getTranslation()
@@ -193,7 +218,7 @@ public class ShootingCommands {
             // sequence: rotate to face hub, then orbit
             return Commands.sequence(
                     new SwerveToHeadingCommand(swerve, headingToHub),
-                    new SwerveOrbitCommand(swerve, controller, hubCenter)
+                    new SwerveOrbitCommand(swerve, controller, center)
             );
         });
     }

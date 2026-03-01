@@ -21,11 +21,33 @@ public enum LEDSignal {
     // Robot state signals - map meanings to patterns
     //=======================================================================
 
+    /** Robot is enabled but nothing active */
+    IDLE(BlinkinCode.SOLID_HOT_PINK),
+
+    /** Shooter at target speed, ready to fire */
+    SPINNING_UP(BlinkinCode.SOLID_YELLOW),
+
+    /** Shooter at target speed, ready to fire */
+    READY_TO_SHOOT(BlinkinCode.RAINBOW_PARTY),
+
+    /** Error / fault condition */
+    ERROR(BlinkinCode.STROBE_RED),
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /** Robot is disabled/idle */
     DISABLED(BlinkinCode.BREATH_GRAY),
-
-    /** Robot is enabled but nothing active */
-    IDLE(BlinkinCode.SOLID_BLUE),
 
     /** Intake is running (actively collecting) */
     INTAKING(BlinkinCode.SOLID_GREEN),
@@ -45,9 +67,6 @@ public enum LEDSignal {
     /** Robot is in shooting range - far distance */
     SHOOT_RANGE_FAR(BlinkinCode.SOLID_RED),
 
-    /** Shooter at target speed, ready to fire */
-    READY_TO_SHOOT(BlinkinCode.STROBE_GOLD),
-
     /** Vision target acquired */
     TARGET_LOCKED(BlinkinCode.SOLID_LIME),
 
@@ -62,9 +81,6 @@ public enum LEDSignal {
 
     /** Climbing sequence active */
     CLIMBING(BlinkinCode.COLOR_WAVES_PARTY),
-
-    /** Error / fault condition */
-    ERROR(BlinkinCode.STROBE_RED),
 
     /** Alliance color - Red */
     ALLIANCE_RED(BlinkinCode.SOLID_RED),
