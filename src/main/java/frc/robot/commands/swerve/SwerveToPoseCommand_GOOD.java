@@ -232,11 +232,14 @@ public class SwerveToPoseCommand_GOOD extends Command {
             SmartDashboard.putNumber("SwerveAutoPoseCommand/ErrorX", pidX.getError());
             SmartDashboard.putNumber("SwerveAutoPoseCommand/ErrorY", pidY.getError());
             SmartDashboard.putNumber("SwerveAutoPoseCommand/ErrorOmega", pidOmega.getError());
+            SmartDashboard.putNumber("SwerveAutoPoseCommand/TimeLeft", totalTime - t);
+            SmartDashboard.putNumber("SwerveAutoPoseCommand/TimeTotal", totalTime);
             Util.publishPose("AutoPoseNext", desiredPose);
             Util.publishPose("AutoPoseFinal", finalPose);
         }
 
         swerve.driveRobotRelative("auto", robotRelativeSpeeds);
+    
     }
 
     /**

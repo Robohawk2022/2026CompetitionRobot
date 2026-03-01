@@ -38,10 +38,10 @@ public class TeleopInput {
      * @return SNIPER if left trigger, TURBO if right trigger, else NORMAL
      */
     public static TurboSniperMode getMode(GameController controller) {
-        if (controller.leftTriggerSupplier().getAsBoolean()) {
+        if (controller.getLeftBumper()) {
             return TurboSniperMode.SNIPER;
         }
-        if (controller.rightTriggerSupplier().getAsBoolean()) {
+        if (controller.getRightBumper()) {
             return TurboSniperMode.TURBO;
         }
         return TurboSniperMode.NORMAL;

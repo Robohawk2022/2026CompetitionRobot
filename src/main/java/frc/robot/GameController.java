@@ -302,6 +302,24 @@ public class GameController {
         });
     }
 
+    public boolean getLeftBumper() {
+        int button = switch (getType()) {
+            case XBOX -> XBOX_LEFT_BUMPER;
+            case BITDO -> BITDO_LEFT_BUMPER;
+            case LOGITECH -> LOGITECH_LEFT_BUMPER;
+        };
+        return controller.getHID().getRawButton(button);
+    }
+
+    public boolean getRightBumper() {
+        int button = switch (getType()) {
+            case XBOX -> XBOX_RIGHT_BUMPER;
+            case BITDO -> BITDO_RIGHT_BUMPER;
+            case LOGITECH -> LOGITECH_RIGHT_BUMPER;
+        };
+        return controller.getHID().getRawButton(button);
+    }
+
     /** @return trigger for right bumper (mapped for controller type) */
     public Trigger rightBumper() {
         return new Trigger(() -> {

@@ -5,9 +5,11 @@
 package frc.robot;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.ShootingCommands;
 import frc.robot.subsystems.auto.AutonomousSubsystem;
 import frc.robot.subsystems.ballpath.BallPathHardwareRev;
@@ -85,7 +87,7 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-        return auto.generateCommand();
+        return Commands.none(); // auto.generateCommand();
     }
 
     private void configureBindings() {
@@ -93,23 +95,19 @@ public class RobotContainer {
         // sticks and left/right trigger are already taken by swerve teleop
 
         // a/b/x/y are ball-handling commands
-        driver.a().whileTrue(ShootingCommands.intakeMode(led, ballPath, shooter));
-        driver.b().whileTrue(shooter.intakeCommand());
-        driver.x().whileTrue(ShootingCommands.shootMode(led, ballPath, shooter));
-        driver.y().whileTrue(ShootingCommands.jiggle(swerve));
+        driver.leftTrigger().whileTrue(ShootingCommands.intakeMode(led, ballPath, shooter));
+        driver.rightTrigger().whileTrue(ShootingCommands.shootMode(led, ballPath, shooter));
+        driver.b().whileTrue(ballPath.ejectCommand());
+        driver.x().whileTrue(ShootingCommands.jiggle(swerve));
 
-        // bumpers exercise auto shooting
-        driver.leftBumper().whileTrue(ShootingCommands.orientToShoot(led, swerve));
-        driver.rightBumper().whileTrue(ShootingCommands.driveAndShootCommand(led, swerve, shooter, ballPath));
-        driver.rightBumper().whileTrue(ShootingCommands.orbitCommand(
-                driver,
-                swerve,
-                Pose2d.kZero));
+        driver.start().whileTrue(swerve.driveToHeadingCommand(Rotation2d.k180deg));
+            //ShootingCommands.orientToShoot(led, swerve));
 
         // sticks reset pose
         driver.leftStick().onTrue(swerve.zeroPoseCommand());
         driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
 
-        driver.start().onTrue(ShootingCommands.openHopper(swerve));
+        // driver.start().onTrue(ShootingCommands.openHopper(swerve));
+       // driver.start().onTrue(getAutonomousCommand());
     }
 }
