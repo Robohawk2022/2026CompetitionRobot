@@ -196,14 +196,14 @@ public interface Config {
     interface Shooter {
 
         /** PID configuration for the shooter motor */
-        PIDFConfig shooterPid = new PIDFConfig("ShooterSubsystem/ShooterMotor", 0.0005, 0.0, 20.0, 0.0, 0.0002);
+        PIDFConfig shooterPid = new PIDFConfig("ShooterSubsystem/ShooterMotor", 0.001, 0.0, 20.0, 0.0, 0.0002);
 
         /** Target RPM for shooting */
         DoubleSupplier shootRpm = pref("Shooter/ShootRpm", 3000.0);
         DoubleSupplier intakeRpm = pref("Shooter/IntakeRpm", 1000.0);
 
         /** How close to target RPM counts as "at speed" */
-        DoubleSupplier shootSpeedTolerance = pref("Shooter/ShootSpeedTolerance", 100.0);
+        DoubleSupplier shootSpeedTolerance = pref("Shooter/ShootSpeedTolerance", 50.0);
 
         /** Stall detection */
         DoubleSupplier stallSpeed = pref("Shooter/StallSpeed", 30.0);
@@ -217,9 +217,9 @@ public interface Config {
     interface BallPath {
 
         /** PID configuration for ball-path motors */
-        PIDFConfig intakePid = new PIDFConfig("BallPathSubsystem/IntakeMotor", 0.0004, 0.0, 20.0, 0.0, 0.00017);
-        PIDFConfig feederPid = new PIDFConfig("BallPathSubsystem/FeederMotor", 0.0004, 0.0, 20.0, 0.0, 0.00017);
-        PIDFConfig agitatorPid = new PIDFConfig("BallPathSubsystem/AgitatorMotor", 0.0004, 0.0, 20.0, 0.0, 0.00017);
+        PIDFConfig intakePid = new PIDFConfig("BallPathSubsystem/IntakeMotor", 0.00001, 0.0, 20.0, 0.0, 0.00017);
+        PIDFConfig feederPid = new PIDFConfig("BallPathSubsystem/FeederMotor", 0.00001, 0.0, 20.0, 0.0, 0.00017);
+        PIDFConfig agitatorPid = new PIDFConfig("BallPathSubsystem/AgitatorMotor", 0.00001, 0.0, 20.0, 0.0, 0.00017);
 
         /** Target speeds for various modes */
         BallPathSpeeds intakeSpeeds = new BallPathSpeeds("BallHandling/IntakeSpeeds", 3000.0, 3000.0, 0.0);
