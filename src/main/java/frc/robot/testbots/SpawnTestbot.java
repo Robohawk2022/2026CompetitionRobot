@@ -2,6 +2,8 @@ package frc.robot.testbots;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -9,15 +11,19 @@ import frc.robot.GameController;
 import frc.robot.subsystems.limelight.LimelightSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.TunerConstants;
+import frc.robot.util.Field;
 
 /**
- * Standalone test program that spawns the robot at a specific field position.
+ * Standalone test program that spawns the robot 8 feet from the hub center.
+ * <p>
+ * Press A to teleport to the +45 degree position, B for -45 degrees.
+ * Both positions face the hub.
  * <p>
  * Run with: {@code ./gradlew simulateJava -Probot=SpawnTestbot}
  */
 public class SpawnTestbot extends TimedRobot {
 
-    static final Pose2d SPAWN_POSE = new Pose2d(11.916, 4.035, Rotation2d.kZero);
+    static final double DISTANCE_FEET = 8.0;
 
     final SwerveSubsystem swerve;
     final LimelightSubsystem limelight;
@@ -29,28 +35,62 @@ public class SpawnTestbot extends TimedRobot {
         limelight = new LimelightSubsystem(swerve);
         controller = new GameController(0);
 
-        // teleport to spawn position
-        swerve.resetPose(SPAWN_POSE);
+        // spawn at the +45 degree position by default
+        swerve.resetPose(poseFromHub(45));
 
         // default to field-relative driving
         swerve.setDefaultCommand(swerve.teleopCommand(controller));
 
+        // A teleports to +45 degrees from hub, facing hub
+        controller.a().onTrue(swerve.resetPoseCommand(oldPose -> poseFromHub(45)));
+
+        // B teleports to -45 degrees from hub, facing hub
+        controller.b().onTrue(swerve.resetPoseCommand(oldPose -> poseFromHub(-45)));
+
         // start zeroes heading but keeps robot position
         controller.start().onTrue(swerve.zeroHeadingCommand());
 
-        // back resets pose to spawn position
-        controller.back().onTrue(swerve.resetPoseCommand(oldPose -> SPAWN_POSE));
+        // back resets pose to origin
+        controller.back().onTrue(swerve.zeroPoseCommand());
 
         // right bumper resets pose from vision
         controller.rightBumper().onTrue(limelight.resetPoseFromVisionCommand());
     }
 
+    /**
+     * Computes a pose that is 8 feet from the hub center at the given angle,
+     * facing the hub.
+     *
+     * @param angleDeg angle from hub center in degrees (0 = toward red wall)
+     * @return the pose facing the hub
+     */
+    static Pose2d poseFromHub(double angleDeg) {
+        Pose2d hub = Field.getHubCenter();
+        double distMeters = Units.feetToMeters(DISTANCE_FEET);
+        double angleRad = Math.toRadians(angleDeg);
+
+        // position 8 feet out from hub at the given angle
+        Translation2d offset = new Translation2d(
+                distMeters * Math.cos(angleRad),
+                distMeters * Math.sin(angleRad));
+        Translation2d position = hub.getTranslation().plus(offset);
+
+        // face back toward the hub
+        Rotation2d heading = offset.getAngle().plus(Rotation2d.k180deg);
+
+        return new Pose2d(position, heading);
+    }
+
     @Override
     public void robotInit() {
+        Pose2d hub = Field.getHubCenter();
         System.out.println(">>> SpawnTestbot starting...");
-        System.out.println(">>> Spawning at (11.916, 4.035) meters");
+        System.out.printf(">>> Hub center at (%.2f, %.2f) meters%n", hub.getX(), hub.getY());
+        System.out.println(">>> Spawning 8 feet from hub at +45 degrees");
+        System.out.println(">>> Press A to teleport to +45 deg position");
+        System.out.println(">>> Press B to teleport to -45 deg position");
         System.out.println(">>> Press START to zero heading");
-        System.out.println(">>> Press BACK to teleport back to spawn");
+        System.out.println(">>> Press BACK to reset pose to origin");
 
         SmartDashboard.putData("Pose", builder -> {
             builder.addDoubleProperty("X_meters", () -> swerve.getPose().getX(), null);
