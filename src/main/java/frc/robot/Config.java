@@ -238,7 +238,7 @@ public interface Config {
     interface BallHandling {
 
         /** Distance & spin up time for shooting */
-        DoubleSupplier shootDistanceFeet = pref("BallHandling/ShootDistance", 7.0);
+        DoubleSupplier shootDistanceFeet = pref("BallHandling/ShootDistance", 8.0);
         DoubleSupplier shootDistanceTolerance = pref("BallHandling/ShootDistanceTolerance", 0.5);
         DoubleSupplier shootSpinupTime = pref("BallHandling/ShootSpinupTime", 1.0);
     }

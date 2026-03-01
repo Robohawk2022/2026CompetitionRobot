@@ -228,7 +228,7 @@ public class LimelightSubsystem extends SubsystemBase {
         }
 
         // grab the estimate; if there isn't one, we're done
-        PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightName);
+        PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightName);
         if (estimate == null || estimate.pose == null) {
             results.noEstimate();
             return;
@@ -311,7 +311,7 @@ public class LimelightSubsystem extends SubsystemBase {
 
 //endregion
 
-//region Pose estimate ---------------------------------------------------------
+//region Commands ---------------------------------------------------------
 
     public Trigger odometryBrokenTrigger() {
         return new Trigger(this::isBroken);

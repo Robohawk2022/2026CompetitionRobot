@@ -39,7 +39,7 @@ public class ShootingCommands {
      */
     public static Command intakeMode(LEDSubsystem led, BallPathSubsystem ballPath, ShooterSubsystem shooter) {
 
-        Command step1 = Commands.parallel(
+        Command step1 = Commands.race(
                 led.flash(LEDSignal.SPINNING_UP),
                 shooter.intakeCommand().until(shooter::atSpeed));
 
@@ -57,7 +57,7 @@ public class ShootingCommands {
      */
     public static Command shootMode(LEDSubsystem led, BallPathSubsystem ballPath, ShooterSubsystem shooter) {
 
-        Command step1 = Commands.parallel(
+        Command step1 = Commands.race(
                 led.flash(LEDSignal.SPINNING_UP),
                 shooter.shootCommand().until(shooter::atSpeed));
 
@@ -107,7 +107,7 @@ public class ShootingCommands {
                     new ChassisSpeeds(-vel, 0.0, 0.0));
             Command fwd = swerve.driveAtSpeedCommand("hop-f",
                     new ChassisSpeeds(vel, 0.0, 0.0));
-            return back.withTimeout(secs).andThen(fwd.withTimeout(2.0 * secs));
+            return back.withTimeout(secs).andThen(fwd.withTimeout(secs));
         });
     }
 
@@ -142,7 +142,7 @@ public class ShootingCommands {
                     .plus(direction.times(farDistMeters));
 
             // target heading: face the hub (opposite of direction from hub)
-            Rotation2d targetHeading = direction.times(-1.0).getAngle();
+            Rotation2d targetHeading = direction.times(1.0).getAngle();
 
             return Commands.parallel(
                     led.flash(LEDSignal.AIMING),
@@ -239,27 +239,4 @@ public class ShootingCommands {
         });
     }
 
-    /**
-     * @return a command that will turn off the LEDs unless we are within
-     * shooting range of the hub
-     */
-    public static Command flashWhenShootable(SwerveSubsystem swerve, LEDSubsystem led) {
-
-        // TODO should we also wait till the shooter is at speed?
-        // TODO should we also check the angle to the hub?
-        BooleanSupplier readyToShoot = () -> {
-            double currentDistanceFeet = Util.feetBetween(
-                    swerve.getPose(),
-                    Field.getHubCenter());
-            return MathUtil.isNear(
-                    shootDistanceFeet.getAsDouble(),
-                    currentDistanceFeet,
-                    shootDistanceTolerance.getAsDouble());
-        };
-
-        return Commands.either(
-                led.flash(LEDSignal.SHOOT_RANGE_CLOSE),
-                led.show(LEDSignal.OFF),
-                readyToShoot);
-    }
 }

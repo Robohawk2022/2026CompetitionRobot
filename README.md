@@ -1,32 +1,34 @@
 # TEST PLAN
 
-* Tune the new shooter wheel
+[x] Tune the new shooter wheel
     * Holding B will run shooter wheel only
     * Speeds in ShooterSubsystem
     * Look for "at speed" on the dashboard
 
-* Test swerve modes
+[x] Test swerve modes
     * Left trigger = sniper
     * Right trigger = turbo
+
+* Test swerve orbit
     * Right bumper = orbit starting position
         * Will rotate to face position
         * Right stick = spin around
         * Left stick = forward/back
         * Left stick button zeros pose
 
-* Test opening the hopper
+[x] Test opening the hopper
     * Prefs are in SwerveAuto 
     * Start button runs routine     
 
-* Test jiggle
+[x] Test jiggle
     * Y will jiggle 
 
-* Test intake mode
+[x] Test intake mode
     * Holding A will run in take mode
     * Should spin up then engage ball path
     * Verify speeds in dashboard
 
-* Test shoot mode
+[x] Test shoot mode
     * Holding X will run in shoot mode
     * Should spin up then engage ball path
     * Verify speeds in dashboard
@@ -35,7 +37,7 @@
     * Find it
     * Measure to center of hub
 
-* Test vision
+[x] Test vision
     * Enable it  
     * Right stick button resets pose
     * Look for error on dashboard

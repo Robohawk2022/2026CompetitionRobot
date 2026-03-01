@@ -26,10 +26,10 @@ import frc.robot.subsystems.swerve.TunerConstants;
 
 public class RobotContainer {
 
-    public static boolean RESET_PREFS = true;
+    public static boolean RESET_PREFS = false;
 
     public static final int LED_PWM_PORT = 0;
-    public static final int INTAKE_CAN_ID = 60;
+    public static final int INTAKE_CAN_ID = 8;
     public static final int FEEDER_CAN_ID = 9;
     public static final int AGITATOR_CAN_ID = 2;
     public static final int SHOOTER_CAN_ID = 35;

@@ -190,17 +190,18 @@ public class SwerveToPoseCommand extends Command {
         if (t < translationTrapezoid.totalTime() || t < rotationTrapezoid.totalTime()) {
             return false;
         }
+        return true;
 
-        // check position tolerance
-        double distanceError = Util.feetBetween(swerve.getPose(), targetPose);
-        if (distanceError > positionTolerance.getAsDouble()) {
-            return false;
-        }
+        // // check position tolerance
+        // double distanceError = Util.feetBetween(swerve.getPose(), targetPose);
+        // if (distanceError > positionTolerance.getAsDouble()) {
+        //     return false;
+        // }
 
-        // check heading tolerance
-        double headingError = Math.abs(Util.degreeModulus(
-                targetPose.getRotation().getDegrees() - swerve.getHeading().getDegrees()));
-        return headingError < headingTolerance.getAsDouble();
+        // // check heading tolerance
+        // double headingError = Math.abs(Util.degreeModulus(
+        //         targetPose.getRotation().getDegrees() - swerve.getHeading().getDegrees()));
+        // return headingError < headingTolerance.getAsDouble();
     }
 
     @Override
