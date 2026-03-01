@@ -1,5 +1,7 @@
 package frc.robot.subsystems.led;
 
+import frc.robot.util.Util;
+
 /**
  * LED signals that map robot states to REV Blinkin pattern codes.
  * <p>
@@ -32,6 +34,9 @@ public enum LEDSignal {
 
     /** Error / fault condition */
     ERROR(BlinkinCode.STROBE_RED),
+
+    /** Vision searching for target */
+    AIMING(BlinkinCode.BREATH_BLUE),
 
 
 
@@ -83,10 +88,10 @@ public enum LEDSignal {
     CLIMBING(BlinkinCode.COLOR_WAVES_PARTY),
 
     /** Alliance color - Red */
-    ALLIANCE_RED(BlinkinCode.SOLID_RED),
+    ALLIANCE_RED(BlinkinCode.HEARTBEAT_RED),
 
     /** Alliance color - Blue */
-    ALLIANCE_BLUE(BlinkinCode.SOLID_BLUE),
+    ALLIANCE_BLUE(BlinkinCode.HEARTBEAT_BLUE),
 
     /** Celebration / scoring confirmed */
     CELEBRATION(BlinkinCode.RAINBOW_PARTY),
@@ -115,6 +120,12 @@ public enum LEDSignal {
     // REV Blinkin color/pattern codes
     // Reference: https://www.revrobotics.com/content/docs/REV-11-1105-UM.pdf
     //=======================================================================
+
+    public static LEDSignal heartbeat() {
+        return Util.isRedAlliance()
+                ? ALLIANCE_RED
+                : ALLIANCE_BLUE;
+    }
 
     /**
      * Constants for REV Blinkin LED controller codes.

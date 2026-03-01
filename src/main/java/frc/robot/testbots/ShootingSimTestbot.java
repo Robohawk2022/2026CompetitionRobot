@@ -8,6 +8,8 @@ import frc.robot.commands.ShootingCommands;
 import frc.robot.commands.swerve.SwerveTeleopCommand;
 import frc.robot.subsystems.ballpath.BallPathHardwareSim;
 import frc.robot.subsystems.ballpath.BallPathSubsystem;
+import frc.robot.subsystems.led.LEDHardwareSim;
+import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.limelight.LimelightSim;
 import frc.robot.subsystems.limelight.LimelightSubsystem;
 import frc.robot.subsystems.shooter.ShooterHardwareSim;
@@ -22,10 +24,13 @@ public class ShootingSimTestbot extends TimedRobot {
     final BallPathSubsystem ballPath;
     final LimelightSubsystem limelight;
     final LimelightSim limelightSim;
+    final LEDSubsystem led;
 
     public ShootingSimTestbot() {
 
         GameController controller = new GameController(0);
+
+        led = new LEDSubsystem(new LEDHardwareSim());
 
         swerve = new SwerveSubsystem(TunerConstants.createDrivetrain());
         swerve.setDefaultCommand(new SwerveTeleopCommand(swerve, controller));
@@ -39,9 +44,9 @@ public class ShootingSimTestbot extends TimedRobot {
         limelight = new LimelightSubsystem(swerve);
         limelightSim = new LimelightSim();
 
-        controller.a().onTrue(ShootingCommands.orientToShoot(swerve));
+        controller.a().onTrue(ShootingCommands.orientToShoot(led, swerve));
         controller.b().whileTrue(ShootingCommands.jiggle(swerve));
-        controller.x().whileTrue(ShootingCommands.driveAndShootCommand(swerve, shooter, ballPath));
+        controller.x().whileTrue(ShootingCommands.driveAndShootCommand(led, swerve, shooter, ballPath));
         controller.y().onTrue(swerve.resetPoseCommand(oldPose -> Pose2d.kZero));
     }
 

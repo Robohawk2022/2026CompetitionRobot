@@ -78,7 +78,7 @@ public class RobotContainer {
         led = new LEDSubsystem(RobotBase.isSimulation()
                 ? new LEDHardwareSim()
                 : new LEDHardwareBlinkin(LED_PWM_PORT));
-        led.setDefaultCommand(ShootingCommands.flashWhenSHootable(swerve, led));
+        led.setDefaultCommand(led.show(LEDSignal.heartbeat()));
         limelight.odometryBrokenTrigger().whileTrue(led.flash(LEDSignal.ERROR));
 
         configureBindings();
@@ -93,14 +93,14 @@ public class RobotContainer {
         // sticks and left/right trigger are already taken by swerve teleop
 
         // a/b/x/y are ball-handling commands
-        driver.a().whileTrue(ShootingCommands.intakeMode(ballPath, shooter));
+        driver.a().whileTrue(ShootingCommands.intakeMode(led, ballPath, shooter));
         driver.b().whileTrue(shooter.intakeCommand());
-        driver.x().whileTrue(ShootingCommands.shootMode(ballPath, shooter));
+        driver.x().whileTrue(ShootingCommands.shootMode(led, ballPath, shooter));
         driver.y().whileTrue(ShootingCommands.jiggle(swerve));
 
         // bumpers exercise auto shooting
-        driver.leftBumper().whileTrue(ShootingCommands.orientToShoot(swerve));
-        driver.rightBumper().whileTrue(ShootingCommands.driveAndShootCommand(swerve, shooter, ballPath));
+        driver.leftBumper().whileTrue(ShootingCommands.orientToShoot(led, swerve));
+        driver.rightBumper().whileTrue(ShootingCommands.driveAndShootCommand(led, swerve, shooter, ballPath));
         driver.rightBumper().whileTrue(ShootingCommands.orbitCommand(
                 driver,
                 swerve,

@@ -25,7 +25,6 @@ import java.util.function.BooleanSupplier;
 
 import static frc.robot.Config.BallHandling.shootDistanceFeet;
 import static frc.robot.Config.BallHandling.shootDistanceTolerance;
-import static frc.robot.Config.BallHandling.shootSpinupTime;
 import static frc.robot.Config.SwerveAuto.openHopperSecs;
 import static frc.robot.Config.SwerveAuto.openHopperVelocity;
 
@@ -38,9 +37,17 @@ public class ShootingCommands {
      * Spin up the shooter to intake speed then run the ball path in
      * intake mode
      */
-    public static Command intakeMode(BallPathSubsystem ballPath, ShooterSubsystem shooter) {
-        Command step1 = shooter.intakeCommand().until(shooter::atSpeed);
-        Command step2 = shooter.intakeCommand().alongWith(ballPath.intakeCommand());
+    public static Command intakeMode(LEDSubsystem led, BallPathSubsystem ballPath, ShooterSubsystem shooter) {
+
+        Command step1 = Commands.parallel(
+                led.flash(LEDSignal.SPINNING_UP),
+                shooter.intakeCommand().until(shooter::atSpeed));
+
+        Command step2 = Commands.parallel(
+                shooter.intakeCommand(),
+                led.flash(LEDSignal.INTAKING),
+                ballPath.intakeCommand());
+
         return step1.andThen(step2);
     }
 
@@ -48,9 +55,17 @@ public class ShootingCommands {
      * Spin up the shooter to shoot speed then run the ball path in
      * feed mode
      */
-    public static Command shootMode(BallPathSubsystem ballPath, ShooterSubsystem shooter) {
-        Command step1 = shooter.shootCommand().until(shooter::atSpeed);
-        Command step2 = shooter.shootCommand().alongWith(ballPath.feedCommand());
+    public static Command shootMode(LEDSubsystem led, BallPathSubsystem ballPath, ShooterSubsystem shooter) {
+
+        Command step1 = Commands.parallel(
+                led.flash(LEDSignal.SPINNING_UP),
+                shooter.shootCommand().until(shooter::atSpeed));
+
+        Command step2 = Commands.parallel(
+                led.flash(LEDSignal.CELEBRATION),
+                shooter.shootCommand(),
+                ballPath.feedCommand());
+
         return step1.andThen(step2);
     }
 
@@ -97,30 +112,10 @@ public class ShootingCommands {
     }
 
     /**
-     * @return a command that uses a {@link SwerveToHeadingCommand} to turn
-     * the robot to face the hub
-     */
-    public static Command faceHub(SwerveSubsystem swerve) {
-        return swerve.defer(() -> {
-
-            Pose2d hubCenter = Field.getHubCenter();
-            Pose2d robotPose = swerve.getPose();
-
-            Translation2d hubToRobot = robotPose
-                    .getTranslation()
-                    .minus(hubCenter.getTranslation());
-
-            return new SwerveToHeadingCommand(swerve, hubToRobot
-                    .getAngle()
-                    .plus(Rotation2d.k180deg));
-        });
-    }
-
-    /**
      * @return a command that uses {@link SwerveToPoseCommand} to drive the
      * robot into a shooting position in one fell swoop
      */
-    public static Command orientToShoot(SwerveSubsystem swerve) {
+    public static Command orientToShoot(LEDSubsystem led, SwerveSubsystem swerve) {
 
         return swerve.defer(() -> {
 
@@ -149,9 +144,11 @@ public class ShootingCommands {
             // target heading: face the hub (opposite of direction from hub)
             Rotation2d targetHeading = direction.times(-1.0).getAngle();
 
-            return new SwerveToPoseCommand(
-                    swerve,
-                    new Pose2d(targetTranslation, targetHeading));
+            return Commands.parallel(
+                    led.flash(LEDSignal.AIMING),
+                    new SwerveToPoseCommand(
+                            swerve,
+                            new Pose2d(targetTranslation, targetHeading)));
         });
     }
 
@@ -165,20 +162,22 @@ public class ShootingCommands {
      * @param ballPath the ball-path subsystem
      * @return a command that drives to shooting position and shoots
      */
-    public static Command driveAndShootCommand(SwerveSubsystem swerve,
+    public static Command driveAndShootCommand(LEDSubsystem led,
+                                               SwerveSubsystem swerve,
                                                ShooterSubsystem shooter,
                                                BallPathSubsystem ballPath) {
 
         // phase 1: drive the robot into shooting position and drive the
         // shooter wheel up to speed
         Command phaseOne = Commands.parallel(
-                orientToShoot(swerve),
+                orientToShoot(led, swerve),
                 shooter.shootCommand().until(shooter::atSpeed));
 
         // phase 2: jiggle the robot to agitate balls in the hopper, while
         // keeping the shooter spinning and feeding balls
         Command phaseTwo = Commands.parallel(
 //                jiggle(swerve),
+                led.flash(LEDSignal.CELEBRATION),
                 shooter.shootCommand(),
                 ballPath.feedCommand());
 
@@ -188,13 +187,13 @@ public class ShootingCommands {
     /**
      * Jiggle the robot while spinning up the shooter and feeding balls.
      */
-    public static Command shootAndJiggle(SwerveSubsystem swerve,
-                                         ShooterSubsystem shooter,
-                                         BallPathSubsystem ballPath) {
+    public static Command unload(LEDSubsystem led,
+                                 SwerveSubsystem swerve,
+                                 ShooterSubsystem shooter,
+                                 BallPathSubsystem ballPath) {
         return Commands.parallel(
-                jiggle(swerve),
-                shooter.shootCommand(),
-                ballPath.feedCommand());
+                shootMode(led, ballPath, shooter),
+                jiggle(swerve));
     }
 
     public static Command orbitCommand(GameController controller, SwerveSubsystem swerve) {
@@ -244,7 +243,7 @@ public class ShootingCommands {
      * @return a command that will turn off the LEDs unless we are within
      * shooting range of the hub
      */
-    public static Command flashWhenSHootable(SwerveSubsystem swerve, LEDSubsystem led) {
+    public static Command flashWhenShootable(SwerveSubsystem swerve, LEDSubsystem led) {
 
         // TODO should we also wait till the shooter is at speed?
         // TODO should we also check the angle to the hub?
