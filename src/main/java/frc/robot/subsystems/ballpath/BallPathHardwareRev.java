@@ -98,6 +98,21 @@ public class BallPathHardwareRev implements BallPathHardware {
         return agitatorEncoder.getVelocity();
     }
 
+    @Override
+    public double getIntakeAmps() {
+        return intakeMotor.getOutputCurrent();
+    }
+
+    @Override
+    public double getFeederAmps() {
+        return feederMotor.getOutputCurrent();
+    }
+
+    @Override
+    public double getAgitatorAmps() {
+        return agitatorMotor.getOutputCurrent();
+    }
+
 //endregion
 
 //region PID configuration -----------------------------------------------------

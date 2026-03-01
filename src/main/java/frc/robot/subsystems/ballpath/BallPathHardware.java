@@ -14,6 +14,15 @@ public interface BallPathHardware {
     /** @return current agitator velocity in RPM */
     double getAgitatorVelocity();
 
+    /** @return intake motor output current in amps */
+    double getIntakeAmps();
+
+    /** @return feeder motor output current in amps */
+    double getFeederAmps();
+
+    /** @return agitator motor output current in amps */
+    double getAgitatorAmps();
+
     /** Reset PID parameters from config */
     void resetPid();
 

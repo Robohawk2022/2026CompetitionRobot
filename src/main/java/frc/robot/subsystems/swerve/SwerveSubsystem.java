@@ -3,6 +3,8 @@ package frc.robot.subsystems.swerve;
 import java.util.Objects;
 import java.util.function.Function;
 
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.swerve.SwerveModule;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.Matrix;
@@ -86,6 +88,18 @@ public class SwerveSubsystem extends SubsystemBase {
                 builder.addDoubleProperty("SpeedY", () -> Units.metersToFeet(latestSpeed.vyMetersPerSecond), null);
                 builder.addDoubleProperty("SpeedOmega", () -> Units.radiansToDegrees(latestSpeed.omegaRadiansPerSecond), null);
                 builder.addIntegerProperty("VisionPoseCount", () -> visionPoseCount, null);
+
+                // per-module drive motor current
+                String[] moduleNames = {"FL", "FR", "BL", "BR"};
+                for (int i = 0; i < moduleNames.length; i++) {
+                    SwerveModule<?, ?, ?> module = drivetrain.getModule(i);
+                    TalonFX driveMotor = (TalonFX) module.getDriveMotor();
+                    TalonFX steerMotor = (TalonFX) module.getSteerMotor();
+                    builder.addDoubleProperty("DriveAmps/" + moduleNames[i],
+                            () -> driveMotor.getSupplyCurrent().getValueAsDouble(), null);
+                    builder.addDoubleProperty("SteerAmps/" + moduleNames[i],
+                            () -> steerMotor.getSupplyCurrent().getValueAsDouble(), null);
+                }
             }
         });
     }

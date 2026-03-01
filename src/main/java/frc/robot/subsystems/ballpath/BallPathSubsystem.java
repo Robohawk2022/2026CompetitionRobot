@@ -36,6 +36,9 @@ public class BallPathSubsystem extends SubsystemBase {
             intakeStatus.addToBuilder("IntakeMotor", builder);
             feederStatus.addToBuilder("FeederMotor", builder);
             agitatorStatus.addToBuilder("AgitatorMotor", builder);
+            builder.addDoubleProperty("IntakeMotor/Amps", hardware::getIntakeAmps, null);
+            builder.addDoubleProperty("FeederMotor/Amps", hardware::getFeederAmps, null);
+            builder.addDoubleProperty("AgitatorMotor/Amps", hardware::getAgitatorAmps, null);
         });
     }
 

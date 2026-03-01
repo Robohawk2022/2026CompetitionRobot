@@ -11,6 +11,9 @@ public interface ShooterHardware {
     /** Reset PID parameters from config */
     void resetPid();
 
+    /** @return motor output current in amps */
+    double getShooterAmps();
+
     /** Run the shooter motor at desired RPM (0.0 means coast) */
     void applyRpm(double shooterRpm);
 

@@ -33,6 +33,7 @@ public class ShooterSubsystem extends SubsystemBase {
         SmartDashboard.putData("ShooterSubsystem", builder -> {
             shooterStatus.addToBuilder("ShooterMotor", builder);
             builder.addBooleanProperty("ShooterMotor/AtSpeed?", () -> shooterAtSpeed, null);
+            builder.addDoubleProperty("ShooterMotor/Amps", hardware::getShooterAmps, null);
         });
     }
 

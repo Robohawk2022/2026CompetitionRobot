@@ -13,6 +13,11 @@ public class ShooterHardwareSim implements ShooterHardware {
     }
 
     @Override
+    public double getShooterAmps() {
+        return 0.0;
+    }
+
+    @Override
     public void resetPid() {
     }
 

@@ -25,6 +25,21 @@ public class BallPathHardwareSim implements BallPathHardware {
     }
 
     @Override
+    public double getIntakeAmps() {
+        return 0.0;
+    }
+
+    @Override
+    public double getFeederAmps() {
+        return 0.0;
+    }
+
+    @Override
+    public double getAgitatorAmps() {
+        return 0.0;
+    }
+
+    @Override
     public void resetPid() {
     }
 

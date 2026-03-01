@@ -58,6 +58,11 @@ public class ShooterHardwareRev implements ShooterHardware {
     }
 
     @Override
+    public double getShooterAmps() {
+        return shooterMotor.getOutputCurrent();
+    }
+
+    @Override
     public void resetPid() {
         resetPid(shooterMotor, shooterConfig, shooterPid);
         Util.log("[shooter] reset PID values");
