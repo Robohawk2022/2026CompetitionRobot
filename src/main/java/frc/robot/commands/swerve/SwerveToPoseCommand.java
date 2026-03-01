@@ -62,7 +62,7 @@ public class SwerveToPoseCommand extends Command {
     double headingFeedbackDps;
 
     /**
-     * Creates a {@link SwerveToPoseCommand}.
+     * Creates a new commands
      *
      * @param swerve the swerve subsystem (required)
      * @param targetPose the target pose to drive to (required)

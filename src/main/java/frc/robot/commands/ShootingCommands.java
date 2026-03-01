@@ -12,7 +12,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.GameController;
 import frc.robot.commands.swerve.SwerveOrbitCommand;
 import frc.robot.commands.swerve.SwerveToHeadingCommand;
-import frc.robot.commands.swerve.SwerveToPoseCommand;
 import frc.robot.subsystems.ballpath.BallPathSubsystem;
 import frc.robot.subsystems.led.LEDSignal;
 import frc.robot.subsystems.led.LEDSubsystem;
@@ -112,7 +111,7 @@ public class ShootingCommands {
     }
 
     /**
-     * @return a command that uses {@link SwerveToPoseCommand} to drive the
+     * @return a command that to drive the
      * robot into a shooting position in one fell swoop
      */
     public static Command orientToShoot(LEDSubsystem led, SwerveSubsystem swerve) {
@@ -146,9 +145,7 @@ public class ShootingCommands {
 
             return Commands.parallel(
                     led.flash(LEDSignal.AIMING),
-                    new SwerveToPoseCommand(
-                            swerve,
-                            new Pose2d(targetTranslation, targetHeading)));
+                    swerve.driveToPoseCommand(new Pose2d(targetTranslation, targetHeading)));
         });
     }
 
