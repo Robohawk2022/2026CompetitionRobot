@@ -47,12 +47,6 @@
     * Reset pose from vision (confirm in AdvantageScope)
     * Left bumper = orient only (must hold)
     * Right bumper = orient and shoot (must hold)
-    
-* Reset commands to orbit around hub and test
-    * Make sure you are set to blue alliance
-    * Reset pose from vision (confirm in AdvantageScope)
-    * Drive to shooting position
-    * Orbit around hub
 
 * Run auto
     * Pick one & run it
@@ -64,6 +58,12 @@
     * Unload = shoot for a short period of time
     * DriveToXxx = swerve to pose command
 
+* Reset commands to orbit around hub and test
+    * Make sure you are set to blue alliance
+    * Reset pose from vision (confirm in AdvantageScope)
+    * Drive to shooting position
+    * Orbit around hub
+
 * Drive over the hump a bunch of times and see how badly it throws off the
 vision vs odometry. Same thing if we "surf" over a bunch of balls.  (Theory:
 if we do this one too many times, we may need to manually reset the odometry
@@ -72,8 +72,6 @@ during a match.)
 * Drive over the hump a bunch of times and see how badly it throws off the
 vision vs odometry. (Theory: if we do this one too many times, we may need
 to manually reset the odometry during a match.)
-
-* Test an autonomous routine.
 
 # OPEN QUESTIONS
 
