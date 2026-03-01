@@ -1,6 +1,5 @@
 package frc.robot.commands;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -21,10 +20,7 @@ import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.util.Field;
 import frc.robot.util.Util;
 
-import java.util.function.BooleanSupplier;
-
 import static frc.robot.Config.BallHandling.shootDistanceFeet;
-import static frc.robot.Config.BallHandling.shootDistanceTolerance;
 import static frc.robot.Config.SwerveAuto.openHopperSecs;
 import static frc.robot.Config.SwerveAuto.openHopperVelocity;
 
@@ -146,9 +142,7 @@ public class ShootingCommands {
 
             return Commands.parallel(
                     led.flash(LEDSignal.AIMING),
-                    new SwerveToPoseCommand(
-                            swerve,
-                            new Pose2d(targetTranslation, targetHeading)));
+                    swerve.driveToPoseCommand(new Pose2d(targetTranslation, targetHeading)));
         });
     }
 
@@ -237,29 +231,5 @@ public class ShootingCommands {
                     new SwerveOrbitCommand(swerve, controller, center)
             );
         });
-    }
-
-    /**
-     * @return a command that will turn off the LEDs unless we are within
-     * shooting range of the hub
-     */
-    public static Command flashWhenShootable(SwerveSubsystem swerve, LEDSubsystem led) {
-
-        // TODO should we also wait till the shooter is at speed?
-        // TODO should we also check the angle to the hub?
-        BooleanSupplier readyToShoot = () -> {
-            double currentDistanceFeet = Util.feetBetween(
-                    swerve.getPose(),
-                    Field.getHubCenter());
-            return MathUtil.isNear(
-                    shootDistanceFeet.getAsDouble(),
-                    currentDistanceFeet,
-                    shootDistanceTolerance.getAsDouble());
-        };
-
-        return Commands.either(
-                led.flash(LEDSignal.SHOOT_RANGE_CLOSE),
-                led.show(LEDSignal.OFF),
-                readyToShoot);
     }
 }
