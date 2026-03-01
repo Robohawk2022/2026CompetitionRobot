@@ -1,4 +1,4 @@
-package frc.robot.subsystems.launcher;
+package frc.robot.subsystems.ballpath;
 
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
@@ -6,69 +6,44 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.util.Util;
 
-import static frc.robot.Config.Launcher.ejectSpeeds;
-import static frc.robot.Config.Launcher.intakeSpeeds;
-import static frc.robot.Config.Launcher.shootSpeedTolerance;
-import static frc.robot.Config.Launcher.shootSpeeds;
-import static frc.robot.Config.Launcher.stallSpeed;
-import static frc.robot.Config.Launcher.stallTime;
+import static frc.robot.Config.BallPath.ejectSpeeds;
+import static frc.robot.Config.BallPath.feedSpeeds;
+import static frc.robot.Config.BallPath.intakeSpeeds;
+import static frc.robot.Config.BallPath.stallSpeed;
+import static frc.robot.Config.BallPath.stallTime;
 
 /**
- * Launcher subsystem for the 2026 robot. Four spinning "wheel bars":
- * <ul>
- *     <li>Intake (in the gap in the front of the chassis)</li>
- *     <li>Feeder (directly behind intake and below shooter)</li>
- *     <li>Agitator (at the back in the hopper)</li>
- *     <li>Shooter (on the top)</li>
- * </ul>
- *
- * All motors turn in the same direction during intake and shooting; for
- * eject the intake, feeder and agitator will turn backwards.
+ * Ball-path subsystem — controls the intake, feeder, and agitator motors
+ * that move balls through the robot into the shooter.
  */
-public class LauncherSubsystem extends SubsystemBase {
+public class BallPathSubsystem extends SubsystemBase {
 
 //region Implementation --------------------------------------------------------
 
-    final LauncherHardware hardware;
+    final BallPathHardware hardware;
     final MotorStatus intakeStatus;
     final MotorStatus feederStatus;
     final MotorStatus agitatorStatus;
-    final MotorStatus shooterStatus;
-    boolean shooterAtSpeed;
 
-    public LauncherSubsystem(LauncherHardware hardware) {
-
+    public BallPathSubsystem(BallPathHardware hardware) {
         this.hardware = hardware;
         this.intakeStatus = new MotorStatus();
         this.feederStatus = new MotorStatus();
         this.agitatorStatus = new MotorStatus();
-        this.shooterStatus = new MotorStatus();
-        this.shooterAtSpeed = false;
 
-        SmartDashboard.putData("LauncherSubsystem", builder -> {
+        SmartDashboard.putData("BallPathSubsystem", builder -> {
             intakeStatus.addToBuilder("IntakeMotor", builder);
             feederStatus.addToBuilder("FeederMotor", builder);
             agitatorStatus.addToBuilder("AgitatorMotor", builder);
-            shooterStatus.addToBuilder("ShooterMotor", builder);
-            builder.addBooleanProperty("ShooterMotor/AtSpeed?", () -> shooterAtSpeed, null);
         });
     }
 
     @Override
     public void periodic() {
-
-        // update status of all motors
         intakeStatus.update(hardware.getIntakeVelocity());
         feederStatus.update(hardware.getFeederVelocity());
         agitatorStatus.update(hardware.getAgitatorVelocity());
-        shooterStatus.update(hardware.getShooterVelocity());
-
-        // is the shooter at speed?
-        shooterAtSpeed = Util.nearZero(
-                shooterStatus.errorRpm,
-                shootSpeedTolerance);
     }
 
     /**
@@ -77,26 +52,18 @@ public class LauncherSubsystem extends SubsystemBase {
     public boolean motorStalled() {
         return intakeStatus.stalled
                 || feederStatus.stalled
-                || agitatorStatus.stalled
-                || shooterStatus.stalled;
-    }
-
-    /**
-     * @return true if the shooter is at target speed
-     */
-    public boolean shooterAtSpeed() {
-        return shooterAtSpeed;
+                || agitatorStatus.stalled;
     }
 
 //endregion
 
-//region Triggers & Commands ---------------------------------------------------
+//region Command factories -----------------------------------------------------
 
     /**
      * @return a command that will stop applying output to the motors
      */
     public Command coast() {
-        return velocityCommand(0.0, 0.0, 0.0, 0.0);
+        return velocityCommand(0.0, 0.0, 0.0);
     }
 
     /**
@@ -105,68 +72,47 @@ public class LauncherSubsystem extends SubsystemBase {
      */
     public Command velocityCommand(double intakeRpm,
                                    double feederRpm,
-                                   double agitatorRpm,
-                                   double shooterRpm) {
+                                   double agitatorRpm) {
         return startRun(
                 () -> {
                     intakeStatus.desiredRpm = intakeRpm;
                     feederStatus.desiredRpm = feederRpm;
                     agitatorStatus.desiredRpm = agitatorRpm;
-                    shooterStatus.desiredRpm = shooterRpm;
                     hardware.resetPid();
                 },
-                () -> hardware.applyRpm(intakeRpm, feederRpm, agitatorRpm, shooterRpm));
+                () -> hardware.applyRpm(intakeRpm, feederRpm, agitatorRpm));
     }
 
     /**
-     * @return a command that will run the motors at the desired speed
-     * for intake
+     * @return a command that will run the motors at the intake speeds
      */
     public Command intakeCommand() {
         return defer(() -> velocityCommand(
                 intakeSpeeds.intakeRpm.getAsDouble(),
                 intakeSpeeds.feederRpm.getAsDouble(),
-                intakeSpeeds.agitatorRpm.getAsDouble(),
-                intakeSpeeds.shooterRpm.getAsDouble()));
+                intakeSpeeds.agitatorRpm.getAsDouble()));
     }
 
     /**
-     * @return a command that will run the motors at the desired speed
-     * for ejecting
+     * @return a command that will run the motors at the eject speeds
+     * (intake, feeder, agitator spin backwards)
      */
     public Command ejectCommand() {
         return defer(() -> velocityCommand(
-
-                // intake, feeder and agitator spin backwards during eject
                 -ejectSpeeds.intakeRpm.getAsDouble(),
                 -ejectSpeeds.feederRpm.getAsDouble(),
-                -ejectSpeeds.agitatorRpm.getAsDouble(),
-
-                ejectSpeeds.shooterRpm.getAsDouble()));
+                -ejectSpeeds.agitatorRpm.getAsDouble()));
     }
 
     /**
-     * @return a command that will run only the shooter motor at the desired
-     * speed for shooting
+     * @return a command that will run the ball-path motors at feed speeds
+     * to push balls into the spinning shooter
      */
-    public Command spinUpCommand() {
+    public Command feedCommand() {
         return defer(() -> velocityCommand(
-                0.0,
-                0.0,
-                0.0,
-                shootSpeeds.shooterRpm.getAsDouble()));
-    }
-
-    /**
-     * @return a command that will run the motors at the desired speed
-     * for shooting
-     */
-    public Command shootCommand() {
-        return defer(() -> velocityCommand(
-                shootSpeeds.intakeRpm.getAsDouble(),
-                shootSpeeds.feederRpm.getAsDouble(),
-                shootSpeeds.agitatorRpm.getAsDouble(),
-                shootSpeeds.shooterRpm.getAsDouble()));
+                feedSpeeds.intakeRpm.getAsDouble(),
+                feedSpeeds.feederRpm.getAsDouble(),
+                feedSpeeds.agitatorRpm.getAsDouble()));
     }
 
 //endregion
@@ -174,7 +120,7 @@ public class LauncherSubsystem extends SubsystemBase {
 //region Helper ----------------------------------------------------------------
 
     /**
-     * Represents the status of a single motor
+     * Represents the status of a single motor.
      */
     static class MotorStatus {
 
@@ -193,7 +139,7 @@ public class LauncherSubsystem extends SubsystemBase {
         }
 
         /**
-         * Adds keys to the SmartDashboard to display motor status
+         * Adds keys to the SmartDashboard to display motor status.
          */
         public void addToBuilder(String prefix, SendableBuilder builder) {
             builder.addDoubleProperty(prefix+"/CurrentRpm", () -> currentRpm, null);
@@ -203,14 +149,10 @@ public class LauncherSubsystem extends SubsystemBase {
         }
 
         /**
-         * Updates motor status based on current/desired RPM
+         * Updates motor status based on current/desired RPM.
          */
         public void update(double currentRpm) {
-
             this.currentRpm = currentRpm;
-
-            // if we have a target speed, we calculate error (target - current)
-            // and check to see if we've been stalling for too long
             if (desiredRpm != 0.0) {
                 this.errorRpm = desiredRpm - currentRpm;
                 this.stalled = debouncer.calculate(Math.abs(currentRpm) < stallSpeed.getAsDouble());

@@ -13,18 +13,19 @@ import frc.robot.GameController;
 import frc.robot.commands.swerve.SwerveOrbitCommand;
 import frc.robot.commands.swerve.SwerveToHeadingCommand;
 import frc.robot.commands.swerve.SwerveToPoseCommand;
-import frc.robot.subsystems.launcher.LauncherSubsystem;
+import frc.robot.subsystems.ballpath.BallPathSubsystem;
 import frc.robot.subsystems.led.LEDSignal;
 import frc.robot.subsystems.led.LEDSubsystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.util.Field;
 import frc.robot.util.Util;
 
 import java.util.function.BooleanSupplier;
 
-import static frc.robot.Config.Launcher.shootDistanceFeet;
-import static frc.robot.Config.Launcher.shootDistanceTolerance;
-import static frc.robot.Config.Launcher.shootSpinupTime;
+import static frc.robot.Config.BallHandling.shootDistanceFeet;
+import static frc.robot.Config.BallHandling.shootDistanceTolerance;
+import static frc.robot.Config.BallHandling.shootSpinupTime;
 
 /**
  * Factory methods for shooting command sequences.
@@ -123,30 +124,42 @@ public class ShootingCommands {
      * toward the hub, stopping at the configured distance, then shoots.
      *
      * @param swerve the swerve subsystem
-     * @param launcher the launcher subsystem
+     * @param shooter the shooter subsystem
+     * @param ballPath the ball-path subsystem
      * @return a command that drives to shooting position and shoots
      */
-    public static Command driveAndShootCommand(SwerveSubsystem swerve, LauncherSubsystem launcher) {
+    public static Command driveAndShootCommand(SwerveSubsystem swerve,
+                                               ShooterSubsystem shooter,
+                                               BallPathSubsystem ballPath) {
 
         // phase 1: drive the robot into shooting position and drive the
         // shooter wheel up to speed
         Command phaseOne = Commands.parallel(
                 orientToShoot(swerve),
-                launcher
+                shooter
                     .spinUpCommand()
                     .withTimeout(shootSpinupTime.getAsDouble()));
 
         // phase 2: jiggle the robot to agitate balls in the hopper, while
-        // unloading the hopper
-        Command phaseTwo = shootAndJiggle(swerve, launcher);
+        // keeping the shooter spinning and feeding balls
+        Command phaseTwo = Commands.parallel(
+                jiggleCommand(swerve),
+                shooter.spinUpCommand(),
+                ballPath.feedCommand());
 
         return phaseOne.andThen(phaseTwo);
     }
 
-    public static Command shootAndJiggle(SwerveSubsystem swerve, LauncherSubsystem launcher) {
+    /**
+     * Jiggle the robot while spinning up the shooter and feeding balls.
+     */
+    public static Command shootAndJiggle(SwerveSubsystem swerve,
+                                         ShooterSubsystem shooter,
+                                         BallPathSubsystem ballPath) {
         return Commands.parallel(
                 jiggleCommand(swerve),
-                launcher.shootCommand());
+                shooter.spinUpCommand(),
+                ballPath.feedCommand());
     }
 
     /**

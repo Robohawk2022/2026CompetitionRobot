@@ -4,22 +4,26 @@ import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.GameController;
 import frc.robot.RobotContainer;
-import frc.robot.subsystems.launcher.LauncherHardwareRev;
-import frc.robot.subsystems.launcher.LauncherHardwareSim;
-import frc.robot.subsystems.launcher.LauncherSubsystem;
+import frc.robot.subsystems.ballpath.BallPathHardwareRev;
+import frc.robot.subsystems.ballpath.BallPathHardwareSim;
+import frc.robot.subsystems.ballpath.BallPathSubsystem;
+import frc.robot.subsystems.shooter.ShooterHardwareRev;
+import frc.robot.subsystems.shooter.ShooterHardwareSim;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 
 /**
- * Standalone test program for the Launcher subsystem (4-motor design).
+ * Standalone test program for the Shooter + BallPath subsystems.
  * <p>
  * Run with: {@code ./gradlew simulateJava -Probot=LauncherTestbot}
  * <p>
  * <b>Button mappings:</b>
  * <ul>
- *   <li>A (hold) - Intake (feeders spin inward)</li>
- *   <li>B (hold) - Eject (feeders spin outward)</li>
- *   <li>X (hold) - Shoot (feeders + shooter spin up)</li>
+ *   <li>A (hold) - Intake (ball-path motors spin inward)</li>
+ *   <li>B (hold) - Eject (ball-path motors spin outward)</li>
+ *   <li>X (hold) - Shoot (shooter spins up + ball-path feeds)</li>
  *   <li>Y (press) - Stop all motors</li>
  * </ul>
  */
@@ -31,7 +35,8 @@ public class LauncherTestbot extends TimedRobot {
     public static final int AGITATOR_CAN_ID = RobotContainer.AGITATOR_CAN_ID; // 2;
     public static final int SHOOTER_CAN_ID = RobotContainer.SHOOTER_CAN_ID; // 35;
 
-    private LauncherSubsystem launcher;
+    private ShooterSubsystem shooter;
+    private BallPathSubsystem ballPath;
     private double testRpm;
 
     @Override
@@ -44,34 +49,46 @@ public class LauncherTestbot extends TimedRobot {
         // clear stale Preferences so code defaults always win on deploy
         Preferences.removeAll();
 
-        launcher = new LauncherSubsystem(isSimulation()
-                ? new LauncherHardwareSim()
-                : new LauncherHardwareRev(INTAKE_CAN_ID, FEEDER_CAN_ID, AGITATOR_CAN_ID, SHOOTER_CAN_ID));
+        shooter = new ShooterSubsystem(isSimulation()
+                ? new ShooterHardwareSim()
+                : new ShooterHardwareRev(SHOOTER_CAN_ID));
+
+        ballPath = new BallPathSubsystem(isSimulation()
+                ? new BallPathHardwareSim()
+                : new BallPathHardwareRev(INTAKE_CAN_ID, FEEDER_CAN_ID, AGITATOR_CAN_ID));
 
         GameController controller = new GameController(0);
 
-        launcher.setDefaultCommand(launcher.coast());
+        shooter.setDefaultCommand(shooter.coast());
+        ballPath.setDefaultCommand(ballPath.coast());
 
-        // intake: feeders spin inward
-        controller.a().whileTrue(launcher.intakeCommand());
+        // intake: ball-path motors spin inward
+        controller.a().whileTrue(ballPath.intakeCommand());
 
-        // eject: feeders spin outward
-        controller.b().whileTrue(launcher.ejectCommand());
+        // eject: ball-path motors spin outward
+        controller.b().whileTrue(ballPath.ejectCommand());
 
-        // shoot: feeders + shooter spin up
-        controller.x().whileTrue(launcher.shootCommand());
+        // shoot: shooter spins up + ball-path feeds
+        controller.x().whileTrue(Commands.parallel(
+                shooter.spinUpCommand(),
+                ballPath.feedCommand()));
 
-        // left bumper: run all motors at test velocity
-        controller.leftBumper().whileTrue(launcher.defer(() ->
-                launcher.velocityCommand(testRpm, 0.0, 0.0, 0.0)));
-                // launcher.velocityCommand(0.0, testRpm, 0.0, 0.0)));
-                // launcher.velocityCommand(0.0, 0.0, testRpm, 0.0)));
-                // launcher.velocityCommand(0.0, 0.0, 0.0, testRpm)));
+        // stop all motors
+        controller.y().onTrue(Commands.parallel(
+                shooter.coast(),
+                ballPath.coast()));
+
+        // left bumper: run one motor at test velocity (uncomment the one you want)
+        controller.leftBumper().whileTrue(
+                ballPath.defer(() -> ballPath.velocityCommand(testRpm, 0.0, 0.0)));
+                // ballPath.defer(() -> ballPath.velocityCommand(0.0, testRpm, 0.0)));
+                // ballPath.defer(() -> ballPath.velocityCommand(0.0, 0.0, testRpm)));
+                // shooter.defer(() -> shooter.velocityCommand(testRpm)));
 
         System.out.println(">>> Button mappings:");
-        System.out.println("    A (hold) = Intake (feeders inward)");
-        System.out.println("    B (hold) = Eject (feeders outward)");
-        System.out.println("    X (hold) = Shoot (feeders + shooter)");
+        System.out.println("    A (hold) = Intake (ball-path inward)");
+        System.out.println("    B (hold) = Eject (ball-path outward)");
+        System.out.println("    X (hold) = Shoot (shooter + feed)");
 
         SmartDashboard.putData("LauncherTestbot", builder -> {
             builder.addDoubleProperty("TestRpm", () -> testRpm, val -> testRpm = val);
@@ -86,6 +103,7 @@ public class LauncherTestbot extends TimedRobot {
 
     @Override
     public void disabledInit() {
-        launcher.coast();
+        shooter.coast();
+        ballPath.coast();
     }
 }

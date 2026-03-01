@@ -144,7 +144,7 @@ public interface Config {
 
 //endregion
 
-//region Launcher --------------------------------------------------------------
+//region Shared helpers --------------------------------------------------------
 
     class PIDFConfig {
 
@@ -169,46 +169,73 @@ public interface Config {
 
     }
 
-    class LauncherSpeeds {
+    class BallPathSpeeds {
 
         public final DoubleSupplier intakeRpm;
         public final DoubleSupplier feederRpm;
         public final DoubleSupplier agitatorRpm;
-        public final DoubleSupplier shooterRpm;
 
-        public LauncherSpeeds(String path,
+        public BallPathSpeeds(String path,
                               double defaultIntakeRpm,
                               double defaultFeederRpm,
-                              double defaultAgitatorRpm,
-                              double defaultShooterRpm) {
+                              double defaultAgitatorRpm) {
             intakeRpm = pref(path+"/IntakeRpm", defaultIntakeRpm);
             feederRpm = pref(path+"/FeederRpm", defaultFeederRpm);
             agitatorRpm = pref(path+"/AgitatorRpm", defaultAgitatorRpm);
-            shooterRpm = pref(path+"/ShooterRpm", defaultShooterRpm);
         }
     }
 
-    interface Launcher {
+//endregion
 
-        /** PID configuration for motors */
-        PIDFConfig intakePid = new PIDFConfig("LauncherSubsystem/IntakeMotor", 0.0004, 0.0, 20.0, 0.0, 0.00017);
-        PIDFConfig feederPid = new PIDFConfig("LauncherSubsystem/FeederMotor", 0.0004, 0.0, 20.0, 0.0, 0.00017);
-        PIDFConfig agitatorPid = new PIDFConfig("LauncherSubsystem/AgitatorMotor", 0.0004, 0.0, 20.0, 0.0, 0.00017);
-        PIDFConfig shooterPid = new PIDFConfig("LauncherSubsystem/ShooterMotor", 0.0005, 0.0, 20.0, 0.0, 0.0002);
+//region Shooter ---------------------------------------------------------------
 
-        /** Target speeds for various mode */
-        LauncherSpeeds intakeSpeeds = new LauncherSpeeds("BallHandling/IntakeSpeeds", 3000.0, 3000.0, 0.0, 1000.0);
-        LauncherSpeeds ejectSpeeds = new LauncherSpeeds("BallHandling/EjectSpeeds", 3000.0, 3000.0, 0.0, 1000.0);
-        LauncherSpeeds shootSpeeds = new LauncherSpeeds("BallHandling/ShootSpeeds", 3000.0, 3000.0, 1000.0, 3000.0);
+    interface Shooter {
+
+        /** PID configuration for the shooter motor */
+        PIDFConfig shooterPid = new PIDFConfig("ShooterSubsystem/ShooterMotor", 0.0005, 0.0, 20.0, 0.0, 0.0002);
+
+        /** Target RPM for shooting */
+        DoubleSupplier shootRpm = pref("Shooter/ShootRpm", 3000.0);
+
+        /** How close to target RPM counts as "at speed" */
+        DoubleSupplier shootSpeedTolerance = pref("Shooter/ShootSpeedTolerance", 100.0);
+
+        /** Stall detection */
+        DoubleSupplier stallSpeed = pref("Shooter/StallSpeed", 30.0);
+        DoubleSupplier stallTime = pref("Shooter/StallTime", 1.0);
+    }
+
+//endregion
+
+//region BallPath --------------------------------------------------------------
+
+    interface BallPath {
+
+        /** PID configuration for ball-path motors */
+        PIDFConfig intakePid = new PIDFConfig("BallPathSubsystem/IntakeMotor", 0.0004, 0.0, 20.0, 0.0, 0.00017);
+        PIDFConfig feederPid = new PIDFConfig("BallPathSubsystem/FeederMotor", 0.0004, 0.0, 20.0, 0.0, 0.00017);
+        PIDFConfig agitatorPid = new PIDFConfig("BallPathSubsystem/AgitatorMotor", 0.0004, 0.0, 20.0, 0.0, 0.00017);
+
+        /** Target speeds for various modes */
+        BallPathSpeeds intakeSpeeds = new BallPathSpeeds("BallHandling/IntakeSpeeds", 3000.0, 3000.0, 0.0);
+        BallPathSpeeds ejectSpeeds = new BallPathSpeeds("BallHandling/EjectSpeeds", 3000.0, 3000.0, 0.0);
+        BallPathSpeeds feedSpeeds = new BallPathSpeeds("BallHandling/FeedSpeeds", 3000.0, 3000.0, 1000.0);
+
+        /** Stall detection */
+        DoubleSupplier stallSpeed = pref("BallPath/StallSpeed", 30.0);
+        DoubleSupplier stallTime = pref("BallPath/StallTime", 1.0);
+    }
+
+//endregion
+
+//region BallHandling (shooting coordination) ----------------------------------
+
+    interface BallHandling {
 
         /** Distance & spin up time for shooting */
         DoubleSupplier shootDistanceFeet = pref("BallHandling/ShootDistance", 7.0);
         DoubleSupplier shootDistanceTolerance = pref("BallHandling/ShootDistanceTolerance", 0.5);
         DoubleSupplier shootSpinupTime = pref("BallHandling/ShootSpinupTime", 1.0);
-        DoubleSupplier shootSpeedTolerance = pref("BallHandling/ShootSpeedTolerance", 100.0);
-        DoubleSupplier stallSpeed = pref("BallHandling/StallSpeed", 30.0);
-        DoubleSupplier stallTime = pref("BallHandling/StallTime", 1.0);
-
     }
 
 //endregion

@@ -9,14 +9,17 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.ShootingCommands;
 import frc.robot.subsystems.auto.AutonomousSubsystem;
-import frc.robot.subsystems.launcher.LauncherHardwareRev;
-import frc.robot.subsystems.launcher.LauncherHardwareSim;
-import frc.robot.subsystems.launcher.LauncherSubsystem;
+import frc.robot.subsystems.ballpath.BallPathHardwareRev;
+import frc.robot.subsystems.ballpath.BallPathHardwareSim;
+import frc.robot.subsystems.ballpath.BallPathSubsystem;
 import frc.robot.subsystems.led.LEDHardwareBlinkin;
 import frc.robot.subsystems.led.LEDHardwareSim;
 import frc.robot.subsystems.led.LEDSignal;
 import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.limelight.LimelightSubsystem;
+import frc.robot.subsystems.shooter.ShooterHardwareRev;
+import frc.robot.subsystems.shooter.ShooterHardwareSim;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.TunerConstants;
 
@@ -32,7 +35,8 @@ public class RobotContainer {
     final SwerveSubsystem swerve;
     final LimelightSubsystem limelight;
     final AutonomousSubsystem auto;
-    final LauncherSubsystem launcher;
+    final ShooterSubsystem shooter;
+    final BallPathSubsystem ballPath;
     final LEDSubsystem led;
 
     public RobotContainer() {
@@ -46,15 +50,20 @@ public class RobotContainer {
         limelight = new LimelightSubsystem(swerve);
         auto = new AutonomousSubsystem(swerve);
 
-        // launcher (default command is coasting the wheels)
-        launcher = new LauncherSubsystem(RobotBase.isSimulation()
-                ? new LauncherHardwareSim()
-                : new LauncherHardwareRev(
+        // shooter (default command is coasting)
+        shooter = new ShooterSubsystem(RobotBase.isSimulation()
+                ? new ShooterHardwareSim()
+                : new ShooterHardwareRev(SHOOTER_CAN_ID));
+        shooter.setDefaultCommand(shooter.coast());
+
+        // ball path (default command is coasting)
+        ballPath = new BallPathSubsystem(RobotBase.isSimulation()
+                ? new BallPathHardwareSim()
+                : new BallPathHardwareRev(
                         INTAKE_CAN_ID,
                         FEEDER_CAN_ID,
-                        AGITATOR_CAN_ID,
-                        SHOOTER_CAN_ID));
-        launcher.setDefaultCommand(launcher.coast());
+                        AGITATOR_CAN_ID));
+        ballPath.setDefaultCommand(ballPath.coast());
 
         // LED
         //  - default command is showing range to shooter
@@ -76,15 +85,15 @@ public class RobotContainer {
 
         // sticks and left/right trigger are already taken by swerve teleop
 
-        // a/b/x/y are "pure" shooting commands
-        driver.a().onTrue(launcher.intakeCommand());
-        driver.b().onTrue(launcher.shootCommand());
-        driver.x().whileTrue(ShootingCommands.shootAndJiggle(swerve, launcher));
-        driver.y().onTrue(launcher.coast());
+        // a/b/x/y are ball-handling commands
+        driver.a().onTrue(ballPath.intakeCommand());
+        driver.b().onTrue(Commands.parallel(shooter.spinUpCommand(), ballPath.feedCommand()));
+        driver.x().whileTrue(ShootingCommands.shootAndJiggle(swerve, shooter, ballPath));
+        driver.y().onTrue(Commands.parallel(shooter.coast(), ballPath.coast()));
 
         // bumpers exercise auto shooting
         driver.leftBumper().whileTrue(ShootingCommands.orientToShoot(swerve));
-        driver.rightBumper().whileTrue(ShootingCommands.driveAndShootCommand(swerve, launcher));
+        driver.rightBumper().whileTrue(ShootingCommands.driveAndShootCommand(swerve, shooter, ballPath));
 
         // sticks reset pose
         driver.leftStick().onTrue(swerve.zeroPoseCommand());

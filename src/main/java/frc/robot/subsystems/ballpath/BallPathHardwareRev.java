@@ -1,4 +1,4 @@
-package frc.robot.subsystems.launcher;
+package frc.robot.subsystems.ballpath;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
@@ -12,15 +12,14 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import frc.robot.Config.PIDFConfig;
 import frc.robot.util.Util;
 
-import static frc.robot.Config.Launcher.agitatorPid;
-import static frc.robot.Config.Launcher.feederPid;
-import static frc.robot.Config.Launcher.shooterPid;
-import static frc.robot.Config.Launcher.intakePid;
+import static frc.robot.Config.BallPath.agitatorPid;
+import static frc.robot.Config.BallPath.feederPid;
+import static frc.robot.Config.BallPath.intakePid;
 
 /**
- * Implementation of {@link LauncherHardware} on SparkMax motor controllers
+ * Implementation of {@link BallPathHardware} on SparkMax motor controllers.
  */
-public class LauncherHardwareRev implements LauncherHardware{
+public class BallPathHardwareRev implements BallPathHardware {
 
     public static final int CURRENT_LIMIT = 40;
     public static final boolean INVERTED = false;
@@ -30,30 +29,25 @@ public class LauncherHardwareRev implements LauncherHardware{
     final SparkMax intakeMotor;
     final SparkMax feederMotor;
     final SparkMax agitatorMotor;
-    final SparkMax shooterMotor;
 
     final SparkMaxConfig intakeConfig;
     final SparkMaxConfig feederConfig;
     final SparkMaxConfig agitatorConfig;
-    final SparkMaxConfig shooterConfig;
 
     final RelativeEncoder intakeEncoder;
     final RelativeEncoder feederEncoder;
     final RelativeEncoder agitatorEncoder;
-    final RelativeEncoder shooterEncoder;
 
     final SparkClosedLoopController intakeController;
     final SparkClosedLoopController feederController;
     final SparkClosedLoopController agitatorController;
-    final SparkClosedLoopController shooterController;
 
-    public LauncherHardwareRev(int intakeId, int feederId, int agitatorId, int shooterId) {
+    public BallPathHardwareRev(int intakeId, int feederId, int agitatorId) {
 
         // create configurations
         intakeConfig = new SparkMaxConfig();
         feederConfig = new SparkMaxConfig();
         agitatorConfig = new SparkMaxConfig();
-        shooterConfig = new SparkMaxConfig();
 
         // create yon motors
         // the intake motor generally wants to spin the opposite direction
@@ -61,19 +55,16 @@ public class LauncherHardwareRev implements LauncherHardware{
         intakeMotor = createMotor(intakeId, intakeConfig, !INVERTED);
         feederMotor = createMotor(feederId, feederConfig, INVERTED);
         agitatorMotor = createMotor(agitatorId, agitatorConfig, INVERTED);
-        shooterMotor = createMotor(shooterId, shooterConfig, INVERTED);
 
         // grab the encoders
         intakeEncoder = intakeMotor.getEncoder();
         feederEncoder = feederMotor.getEncoder();
         agitatorEncoder = agitatorMotor.getEncoder();
-        shooterEncoder = shooterMotor.getEncoder();
 
         // grab the PID controllers
         intakeController = intakeMotor.getClosedLoopController();
         feederController = feederMotor.getClosedLoopController();
         agitatorController = agitatorMotor.getClosedLoopController();
-        shooterController = shooterMotor.getClosedLoopController();
     }
 
     /**
@@ -107,11 +98,6 @@ public class LauncherHardwareRev implements LauncherHardware{
         return agitatorEncoder.getVelocity();
     }
 
-    @Override
-    public double getShooterVelocity() {
-        return shooterEncoder.getVelocity();
-    }
-
 //endregion
 
 //region PID configuration -----------------------------------------------------
@@ -121,22 +107,15 @@ public class LauncherHardwareRev implements LauncherHardware{
         resetPid(intakeMotor, intakeConfig, intakePid);
         resetPid(feederMotor, feederConfig, feederPid);
         resetPid(agitatorMotor, agitatorConfig, agitatorPid);
-        resetPid(shooterMotor, shooterConfig, shooterPid);
-        Util.log("[launcher] reset PID values");
+        Util.log("[ballpath] reset PID values");
     }
 
-    /**
-     * Applies closed-loop configuration to the supplied motor
-     */
     private void resetPid(SparkMax motor, SparkMaxConfig config, PIDFConfig pidf) {
-
         config.closedLoop.p(pidf.p.getAsDouble());
         config.closedLoop.i(pidf.i.getAsDouble());
         config.closedLoop.iZone(pidf.iz.getAsDouble());
         config.closedLoop.d(pidf.d.getAsDouble());
         config.closedLoop.feedForward.kV(pidf.v.getAsDouble());
-
-        // we will only rewrite the PIDF parameters
         motor.configure(config,
                 ResetMode.kNoResetSafeParameters,
                 PersistMode.kNoPersistParameters);
@@ -147,16 +126,12 @@ public class LauncherHardwareRev implements LauncherHardware{
 //region Applying RPM ----------------------------------------------------------
 
     @Override
-    public void applyRpm(double intakeRpm, double feederRpm, double agitatorRpm, double shooterRpm) {
+    public void applyRpm(double intakeRpm, double feederRpm, double agitatorRpm) {
         applyRpm(intakeController, intakeRpm);
         applyRpm(feederController, feederRpm);
         applyRpm(agitatorController, agitatorRpm);
-        applyRpm(shooterController, shooterRpm);
     }
 
-    /**
-     * Applies appropriate voltage or speed to the supplied controller
-     */
     private void applyRpm(SparkClosedLoopController pid, double rpm) {
         if (rpm == 0.0) {
             pid.setSetpoint(0.0, ControlType.kVoltage);

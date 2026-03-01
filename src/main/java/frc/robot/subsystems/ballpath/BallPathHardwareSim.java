@@ -1,14 +1,13 @@
-package frc.robot.subsystems.launcher;
+package frc.robot.subsystems.ballpath;
 
 /**
- * Implementation of {@link LauncherHardware} for running in simulation
+ * Implementation of {@link BallPathHardware} for running in simulation.
  */
-public class LauncherHardwareSim implements LauncherHardware {
+public class BallPathHardwareSim implements BallPathHardware {
 
     double intakeRpm;
     double feederRpm;
     double agitatorRpm;
-    double shooterRpm;
 
     @Override
     public double getIntakeVelocity() {
@@ -26,20 +25,13 @@ public class LauncherHardwareSim implements LauncherHardware {
     }
 
     @Override
-    public double getShooterVelocity() {
-        return shooterRpm;
-    }
-
-    @Override
     public void resetPid() {
-
     }
 
     @Override
-    public void applyRpm(double intakeRpm, double feederRpm, double agitatorRpm, double shooterRpm) {
+    public void applyRpm(double intakeRpm, double feederRpm, double agitatorRpm) {
         this.intakeRpm = intakeRpm;
         this.feederRpm = feederRpm;
         this.agitatorRpm = agitatorRpm;
-        this.shooterRpm = shooterRpm;
     }
 }
