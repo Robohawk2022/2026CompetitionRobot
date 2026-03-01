@@ -192,17 +192,20 @@ public class LimelightSubsystem extends SubsystemBase {
         // really perform the calculation; this will only trigger the
         // second and subsequent times through
         if (Double.isFinite(lastYaw)) {
-            lastYawRate = (currentYaw - lastYaw) / (currentTime - lastTime);
+            // wrap the yaw difference to (-180, 180] so crossing the ±180°
+            // boundary doesn't produce a huge spike (e.g. 179° → -179°)
+            double yawDelta = Util.degreeModulus(currentYaw - lastYaw);
+            lastYawRate = yawDelta / (currentTime - lastTime);
             LimelightHelpers.SetRobotOrientation(
                     limelightName,
-                    lastYaw,
+                    currentYaw,
                     lastYawRate, 0.0, 0.0, 0.0, 0.0);
         }
 
         // if we couldn't calculate a rate, or we did and it's too big,
         // we are spinning too fast for estimates to work
         spinningTooFast = Double.isNaN(lastYawRate)
-                || lastYawRate > maxYawRate.getAsDouble();
+                || Math.abs(lastYawRate) > maxYawRate.getAsDouble();
 
         lastYaw = currentYaw;
         lastTime = currentTime;
