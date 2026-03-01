@@ -7,6 +7,8 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.GameController;
 import frc.robot.commands.ShootingCommands;
 import frc.robot.subsystems.ballpath.BallPathHardwareSim;
@@ -21,10 +23,9 @@ import frc.robot.subsystems.swerve.TunerConstants;
 import frc.robot.util.Field;
 
 /**
- * Standalone test program that spawns the robot 8 feet from the hub center.
+ * Standalone test program that spawns the robot 8 feet from either hub.
  * <p>
- * Press A to teleport to the +45 degree position, B for -45 degrees.
- * Both positions face the hub.
+ * Use D-pad up/down (arrow keys on keyboard) to cycle through positions.
  * <p>
  * Run with: {@code ./gradlew simulateJava -Probot=SpawnTestbot}
  */
@@ -39,6 +40,10 @@ public class SpawnTestbot extends TimedRobot {
     final LimelightSubsystem limelight;
     final GameController controller;
 
+    final Pose2d[] positions;
+    final String[] labels;
+    int currentIndex = 0;
+
     public SpawnTestbot() {
 
         swerve = new SwerveSubsystem(TunerConstants.createDrivetrain());
@@ -48,19 +53,43 @@ public class SpawnTestbot extends TimedRobot {
         limelight = new LimelightSubsystem(swerve);
         controller = new GameController(0);
 
-        // spawn at the +45 degree position by default
-        swerve.resetPose(poseFromHub(45));
+        // build the 4 spawn positions
+        Translation2d blue = blueHub();
+        Translation2d red = redHub();
+        positions = new Pose2d[] {
+            poseFromHub(blue, 135),
+            poseFromHub(blue, -135),
+            poseFromHub(red, 45),
+            poseFromHub(red, -45),
+        };
+        labels = new String[] {
+            "Blue +135",
+            "Blue -135",
+            "Red +45",
+            "Red -45",
+        };
 
+        // spawn at first position
+        swerve.resetPose(positions[0]);
         // default to field-relative driving
         swerve.setDefaultCommand(swerve.teleopCommand(controller));
         shooter.setDefaultCommand(shooter.coast());
         ballPath.setDefaultCommand(ballPath.coast());
 
-        // A teleports to +45 degrees from hub, facing hub
-        controller.a().onTrue(swerve.resetPoseCommand(oldPose -> poseFromHub(45)));
+        // axis 0 above 0.98 = next position
+        new Trigger(() -> controller.getHID().getRawAxis(0) > 0.98)
+                .onTrue(Commands.runOnce(() -> {
+                    currentIndex = (currentIndex + 1) % positions.length;
+                    swerve.resetPose(positions[currentIndex]);
+                    System.out.printf(">>> Teleported to %s%n", labels[currentIndex]);
+                }));
 
-        // B teleports to -45 degrees from hub, facing hub
-        controller.b().onTrue(swerve.resetPoseCommand(oldPose -> poseFromHub(-45)));
+        // Z key (button A) = teleport to current position
+        controller.a().onTrue(Commands.runOnce(() -> {
+            swerve.resetPose(positions[currentIndex]);
+            System.out.printf(">>> Teleported to %s%n", labels[currentIndex]);
+        }));
+    }
 
         // X runs the shoot auto (drive to hub and shoot)
         controller.x().whileTrue(ShootingCommands.driveAndShootCommand(led, swerve, shooter, ballPath));
@@ -71,30 +100,33 @@ public class SpawnTestbot extends TimedRobot {
         // start zeroes heading but keeps robot position
         controller.start().onTrue(swerve.zeroHeadingCommand());
 
-        // back resets pose to origin
-        controller.back().onTrue(swerve.zeroPoseCommand());
-
-        // right bumper resets pose from vision
-        controller.rightBumper().onTrue(limelight.resetPoseFromVisionCommand());
+    /**
+     * @return the red alliance hub center (midpoint of tags 2 and 5)
+     */
+    static Translation2d redHub() {
+        Pose2d tag1 = Field.getTagPose(2);
+        Pose2d tag2 = Field.getTagPose(5);
+        return new Translation2d(
+                (tag1.getX() + tag2.getX()) / 2.0,
+                (tag1.getY() + tag2.getY()) / 2.0);
     }
 
     /**
-     * Computes a pose that is 8 feet from the hub center at the given angle,
+     * Computes a pose that is 8 feet from a hub at the given angle,
      * facing the hub.
      *
+     * @param hub the hub center position
      * @param angleDeg angle from hub center in degrees (0 = toward red wall)
      * @return the pose facing the hub
      */
-    static Pose2d poseFromHub(double angleDeg) {
-        Pose2d hub = Field.getHubCenter();
+    static Pose2d poseFromHub(Translation2d hub, double angleDeg) {
         double distMeters = Units.feetToMeters(DISTANCE_FEET);
         double angleRad = Math.toRadians(angleDeg);
 
-        // position 8 feet out from hub at the given angle
         Translation2d offset = new Translation2d(
                 distMeters * Math.cos(angleRad),
                 distMeters * Math.sin(angleRad));
-        Translation2d position = hub.getTranslation().plus(offset);
+        Translation2d position = hub.plus(offset);
 
         // face back toward the hub
         Rotation2d heading = offset.getAngle().plus(Rotation2d.k180deg);
@@ -104,7 +136,6 @@ public class SpawnTestbot extends TimedRobot {
 
     @Override
     public void robotInit() {
-        Pose2d hub = Field.getHubCenter();
         System.out.println(">>> SpawnTestbot starting...");
         System.out.printf(">>> Hub center at (%.2f, %.2f) meters%n", hub.getX(), hub.getY());
         System.out.println(">>> Spawning 8 feet from hub at +45 degrees");
@@ -115,11 +146,10 @@ public class SpawnTestbot extends TimedRobot {
         System.out.println(">>> Press START to zero heading");
         System.out.println(">>> Press BACK to reset pose to origin");
 
-        SmartDashboard.putData("Pose", builder -> {
-            builder.addDoubleProperty("X_meters", () -> swerve.getPose().getX(), null);
-            builder.addDoubleProperty("Y_meters", () -> swerve.getPose().getY(), null);
-            builder.addDoubleProperty("X_feet", () -> swerve.getPose().getX() * 3.28084, null);
-            builder.addDoubleProperty("Y_feet", () -> swerve.getPose().getY() * 3.28084, null);
+        SmartDashboard.putData("SpawnTestbot", builder -> {
+            builder.addStringProperty("Position", () -> labels[currentIndex], null);
+            builder.addDoubleProperty("X_feet", () -> Units.metersToFeet(swerve.getPose().getX()), null);
+            builder.addDoubleProperty("Y_feet", () -> Units.metersToFeet(swerve.getPose().getY()), null);
             builder.addDoubleProperty("Heading_deg", () -> swerve.getHeading().getDegrees(), null);
         });
     }

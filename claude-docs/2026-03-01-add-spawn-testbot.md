@@ -4,12 +4,12 @@
 
 ## Summary
 
-Created a testbot that spawns the robot 8 feet from the hub center. Press A for +45 degrees, B for -45 degrees. Both positions face the hub.
+Created a testbot with 4 spawn positions: 8 feet from either alliance hub at +/-45 degrees, all facing their respective hub.
 
 ## Changes Made
 
 ### Files Created
-- `src/main/java/frc/robot/testbots/SpawnTestbot.java` - Testbot with two spawn positions 8 feet from hub at +/-45 degrees, both facing the hub
+- `src/main/java/frc/robot/testbots/SpawnTestbot.java` - Testbot with 4 teleport positions across both alliance hubs
 
 ## Testing Done
 
