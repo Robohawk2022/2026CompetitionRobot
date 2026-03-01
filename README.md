@@ -26,6 +26,11 @@
     * Should spin up then engage ball path
     * Verify speeds in dashboard
 
+* Test shoot mode
+    * Holding X will run in shoot mode
+    * Should spin up then engage ball path
+    * Verify speeds in dashboard
+
 * Find your shooting distance
     * Find it
     * Measure to center of hub
@@ -34,6 +39,14 @@
     * Enable it  
     * Right stick button resets pose
     * Look for error on dashboard
+    * Check pose in AdvantageScope
+
+* Test driving to shooting pose
+    * Make sure you are set to blue alliance
+    * Make sure you've set the shot distance in preferences
+    * Reset pose from vision (confirm in AdvantageScope)
+    * Left bumper = orient only (must hold)
+    * Right bumper = orient and shoot (must hold)
     
 * Reset commands to orbit around hub and test
     * Make sure you are set to blue alliance
@@ -45,7 +58,7 @@
     * Pick one & run it
     * Watch for commands in console
     * Watch pose in AdvantageScope
-
+ 
 * Implement auto
     * Find intake poses in PP
     * Unload = shoot for a short period of time

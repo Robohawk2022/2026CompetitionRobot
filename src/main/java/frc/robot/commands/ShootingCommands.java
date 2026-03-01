@@ -173,12 +173,12 @@ public class ShootingCommands {
         // shooter wheel up to speed
         Command phaseOne = Commands.parallel(
                 orientToShoot(swerve),
-                shooter.shootCommand().withTimeout(shootSpinupTime.getAsDouble()));
+                shooter.shootCommand().until(shooter::atSpeed));
 
         // phase 2: jiggle the robot to agitate balls in the hopper, while
         // keeping the shooter spinning and feeding balls
         Command phaseTwo = Commands.parallel(
-                jiggle(swerve),
+//                jiggle(swerve),
                 shooter.shootCommand(),
                 ballPath.feedCommand());
 

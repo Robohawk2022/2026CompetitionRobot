@@ -99,8 +99,8 @@ public class RobotContainer {
         driver.y().whileTrue(ShootingCommands.jiggle(swerve));
 
         // bumpers exercise auto shooting
-//        driver.leftBumper().whileTrue(ShootingCommands.orientToShoot(swerve));
-//        driver.rightBumper().whileTrue(ShootingCommands.driveAndShootCommand(swerve, shooter, ballPath));
+        driver.leftBumper().whileTrue(ShootingCommands.orientToShoot(swerve));
+        driver.rightBumper().whileTrue(ShootingCommands.driveAndShootCommand(swerve, shooter, ballPath));
         driver.rightBumper().whileTrue(ShootingCommands.orbitCommand(
                 driver,
                 swerve,
