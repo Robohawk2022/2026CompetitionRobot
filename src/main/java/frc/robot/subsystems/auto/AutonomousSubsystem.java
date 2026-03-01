@@ -20,6 +20,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.swerve.SwerveHardwareConfig;
+import frc.robot.commands.ShootingCommands;
+import frc.robot.subsystems.ballpath.BallPathSubsystem;
+import frc.robot.subsystems.led.LEDSubsystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.util.DigitBoardProgramPicker;
 import frc.robot.util.Util;
@@ -43,13 +47,22 @@ public class AutonomousSubsystem extends SubsystemBase {
 //region Implementation --------------------------------------------------------
 
     final SwerveSubsystem swerve;
+    final ShooterSubsystem shooter;
+    final BallPathSubsystem ballPath;
+    final LEDSubsystem led;
     final DigitBoardProgramPicker picker;
     String selected;
     Command command;
 
-    public AutonomousSubsystem(SwerveSubsystem swerve) {
+    public AutonomousSubsystem(SwerveSubsystem swerve,
+                               ShooterSubsystem shooter,
+                               BallPathSubsystem ballPath,
+                               LEDSubsystem led) {
 
         this.swerve = Objects.requireNonNull(swerve);
+        this.shooter = Objects.requireNonNull(shooter);
+        this.ballPath = Objects.requireNonNull(ballPath);
+        this.led = Objects.requireNonNull(led);
         this.picker = new DigitBoardProgramPicker(
                 "Auto Program",
                 getProgramNames());
@@ -192,6 +205,14 @@ public class AutonomousSubsystem extends SubsystemBase {
             return createEmergencyCommand();
         }
 
+        else if (SHOOT_AUTO.equals(selected)) {
+
+            // code-based auto: drive 8 feet from hub and shoot
+            Util.log("[auto] running SHOOT auto (drive to hub and shoot)");
+            command = decorateAutoCommand(
+                    ShootingCommands.driveAndShootCommand(led, swerve, shooter, ballPath));
+        }
+
         else {
 
             // this loads the actual program description and links it
@@ -222,6 +243,9 @@ public class AutonomousSubsystem extends SubsystemBase {
      * and the value on the right is the actual filename of the program
      * that you edited using PathPlanner.
      */
+    /** Program name for the code-based "drive to hub and shoot" auto */
+    static final String SHOOT_AUTO = "SHOOT";
+
     private Map<String,String> getProgramNames() {
 
         // TODO we can get names from AutoBuilder - can we auto-generate codes?
@@ -229,6 +253,7 @@ public class AutonomousSubsystem extends SubsystemBase {
         // we use a LinkedHashMap so the programs will be shown in the
         // same order as below
         Map<String,String> programs = new LinkedHashMap<>();
+        programs.put("SHT", SHOOT_AUTO);
         programs.put("FLA", "FLA");
         programs.put("MLA", "MLA");
         programs.put("NLA", "NLA");

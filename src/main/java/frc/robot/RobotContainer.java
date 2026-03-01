@@ -55,7 +55,6 @@ public class RobotContainer {
         swerve.setDefaultCommand(swerve.teleopCommand(driver));
 
         limelight = new LimelightSubsystem(swerve);
-        auto = new AutonomousSubsystem(swerve);
 
         // shooter (default command is coasting)
         shooter = new ShooterSubsystem(RobotBase.isSimulation()
@@ -80,6 +79,9 @@ public class RobotContainer {
                 : new LEDHardwareBlinkin(LED_PWM_PORT));
         led.setDefaultCommand(led.idle(limelight::isBroken));
         limelight.odometryBrokenTrigger().whileTrue(led.flash(LEDSignal.ERROR));
+
+        // autonomous (needs all subsystems for shooting auto)
+        auto = new AutonomousSubsystem(swerve, shooter, ballPath, led);
 
         configureBindings();
     }
