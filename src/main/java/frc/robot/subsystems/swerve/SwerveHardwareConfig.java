@@ -54,10 +54,12 @@ public final class SwerveHardwareConfig {
 
     // manufacturer-supplied gear ratios - see https://www.swervedrivespecialties.com/products/mk5i-swerve-module
     public static final double SDS_MK5I_DRIVE_R3 = 5.2734375;
+    public static final double SDS_MK5I_DRIVE_R2 = 6.03;
+    public static final double SDS_MK5I_DRIVE_R1 = 7.03;
     public static final double SDS_MK5I_TURN = 26.09090909090909;
 
     // drive motor
-    public static final double DRIVE_GEAR_RATIO = SDS_MK5I_DRIVE_R3;
+    public static final double DRIVE_GEAR_RATIO = SDS_MK5I_DRIVE_R2;
     public static final double DRIVE_CURRENT_LIMIT_AMPS = 60.0;
 
     // turn motor
