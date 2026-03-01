@@ -8,7 +8,14 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.GameController;
+import frc.robot.commands.ShootingCommands;
+import frc.robot.subsystems.ballpath.BallPathHardwareSim;
+import frc.robot.subsystems.ballpath.BallPathSubsystem;
+import frc.robot.subsystems.led.LEDHardwareSim;
+import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.limelight.LimelightSubsystem;
+import frc.robot.subsystems.shooter.ShooterHardwareSim;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.TunerConstants;
 import frc.robot.util.Field;
@@ -26,12 +33,18 @@ public class SpawnTestbot extends TimedRobot {
     static final double DISTANCE_FEET = 8.0;
 
     final SwerveSubsystem swerve;
+    final ShooterSubsystem shooter;
+    final BallPathSubsystem ballPath;
+    final LEDSubsystem led;
     final LimelightSubsystem limelight;
     final GameController controller;
 
     public SpawnTestbot() {
 
         swerve = new SwerveSubsystem(TunerConstants.createDrivetrain());
+        shooter = new ShooterSubsystem(new ShooterHardwareSim());
+        ballPath = new BallPathSubsystem(new BallPathHardwareSim());
+        led = new LEDSubsystem(new LEDHardwareSim());
         limelight = new LimelightSubsystem(swerve);
         controller = new GameController(0);
 
@@ -40,12 +53,20 @@ public class SpawnTestbot extends TimedRobot {
 
         // default to field-relative driving
         swerve.setDefaultCommand(swerve.teleopCommand(controller));
+        shooter.setDefaultCommand(shooter.coast());
+        ballPath.setDefaultCommand(ballPath.coast());
 
         // A teleports to +45 degrees from hub, facing hub
         controller.a().onTrue(swerve.resetPoseCommand(oldPose -> poseFromHub(45)));
 
         // B teleports to -45 degrees from hub, facing hub
         controller.b().onTrue(swerve.resetPoseCommand(oldPose -> poseFromHub(-45)));
+
+        // X runs the shoot auto (drive to hub and shoot)
+        controller.x().whileTrue(ShootingCommands.driveAndShootCommand(led, swerve, shooter, ballPath));
+
+        // Y runs orient-only (drive to 8ft from hub without shooting)
+        controller.y().whileTrue(ShootingCommands.orientToShoot(led, swerve));
 
         // start zeroes heading but keeps robot position
         controller.start().onTrue(swerve.zeroHeadingCommand());
@@ -89,6 +110,8 @@ public class SpawnTestbot extends TimedRobot {
         System.out.println(">>> Spawning 8 feet from hub at +45 degrees");
         System.out.println(">>> Press A to teleport to +45 deg position");
         System.out.println(">>> Press B to teleport to -45 deg position");
+        System.out.println(">>> Hold X to run shoot auto (drive + shoot)");
+        System.out.println(">>> Hold Y to orient only (drive to 8ft from hub)");
         System.out.println(">>> Press START to zero heading");
         System.out.println(">>> Press BACK to reset pose to origin");
 
