@@ -4,12 +4,12 @@
 
 ## Summary
 
-Created a simple testbot that spawns the robot at field position (11.916, 4.035) meters.
+Created a testbot that spawns the robot 8 feet from the hub center. Press A for +45 degrees, B for -45 degrees. Both positions face the hub.
 
 ## Changes Made
 
 ### Files Created
-- `src/main/java/frc/robot/testbots/SpawnTestbot.java` - Testbot that spawns at (11.916, 4.035) with teleop driving, heading reset, and teleport-back-to-spawn controls
+- `src/main/java/frc/robot/testbots/SpawnTestbot.java` - Testbot with two spawn positions 8 feet from hub at +/-45 degrees, both facing the hub
 
 ## Testing Done
 
