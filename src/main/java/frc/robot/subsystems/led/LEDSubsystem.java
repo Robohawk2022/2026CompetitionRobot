@@ -1,6 +1,7 @@
 package frc.robot.subsystems.led;
 
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -61,5 +62,14 @@ public class LEDSubsystem extends SubsystemBase {
         Command flashOn = show(signal).withTimeout(FLASH_CYCLE_DURATION);
         Command flashOff = show(LEDSignal.OFF).withTimeout(FLASH_CYCLE_DURATION);
         return flashOff.andThen(flashOn).repeatedly();
+    }
+
+    public Command idle(BooleanSupplier error) {
+        return run(() -> {
+            LEDSignal signal = error != null && error.getAsBoolean()
+                    ? LEDSignal.ERROR
+                    : LEDSignal.heartbeat();
+            applySignal(signal);
+        });
     }
 }

@@ -78,7 +78,7 @@ public class RobotContainer {
         led = new LEDSubsystem(RobotBase.isSimulation()
                 ? new LEDHardwareSim()
                 : new LEDHardwareBlinkin(LED_PWM_PORT));
-        led.setDefaultCommand(led.show(LEDSignal.heartbeat()));
+        led.setDefaultCommand(led.idle(limelight::isBroken));
         limelight.odometryBrokenTrigger().whileTrue(led.flash(LEDSignal.ERROR));
 
         configureBindings();
