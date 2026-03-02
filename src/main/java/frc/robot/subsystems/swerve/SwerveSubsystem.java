@@ -22,7 +22,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.GameController;
 import frc.robot.commands.swerve.SwerveTeleopCommand;
 import frc.robot.commands.swerve.SwerveToHeadingCommand;
-import frc.robot.commands.swerve.SwerveToPoseCommand_GOOD;
+import frc.robot.commands.swerve.SwerveToPoseCommand;
 import frc.robot.util.Util;
 
 /**
@@ -324,7 +324,7 @@ public class SwerveSubsystem extends SubsystemBase {
      * @return the pose command
      */
     public Command driveToPoseCommand(Pose2d pose) {
-        return new SwerveToPoseCommand_GOOD(this, pose);
+        return new SwerveToPoseCommand(this, pose);
     }
 
 //endregion

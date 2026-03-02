@@ -153,11 +153,15 @@ public class SwerveToPoseCommand extends Command {
         omegaDesiredDps = rotationState.velocity;
 
         // update current state for dashboard and error calculation
-        distanceCurrentFeet = Util.feetBetween(swerve.getPose(), targetPose);
+        // project displacement from start onto the path direction to get signed 1D progress
+        Translation2d traveled = swerve.getPose()
+                .getTranslation()
+                .minus(startPose.getTranslation());
+        distanceCurrentFeet = Units.metersToFeet(traveled.dot(directionUnit));
         headingCurrentDeg = swerve.getHeading().getDegrees();
 
-        // calculate errors
-        distanceErrorFeet = distanceCurrentFeet;
+        // calculate errors (signed: positive = behind profile, negative = overshot)
+        distanceErrorFeet = distanceDesiredFeet - distanceCurrentFeet;
         headingErrorDeg = Util.degreeModulus(headingGoalDeg - headingCurrentDeg);
 
         // feedforward from profile + proportional feedback on error
@@ -190,18 +194,17 @@ public class SwerveToPoseCommand extends Command {
         if (t < translationTrapezoid.totalTime() || t < rotationTrapezoid.totalTime()) {
             return false;
         }
-        return true;
 
-        // // check position tolerance
-        // double distanceError = Util.feetBetween(swerve.getPose(), targetPose);
-        // if (distanceError > positionTolerance.getAsDouble()) {
-        //     return false;
-        // }
+         // check position tolerance
+         double distanceError = Util.feetBetween(swerve.getPose(), targetPose);
+         if (distanceError > positionTolerance.getAsDouble()) {
+             return false;
+         }
 
-        // // check heading tolerance
-        // double headingError = Math.abs(Util.degreeModulus(
-        //         targetPose.getRotation().getDegrees() - swerve.getHeading().getDegrees()));
-        // return headingError < headingTolerance.getAsDouble();
+         // check heading tolerance
+         double headingError = Math.abs(Util.degreeModulus(
+                 targetPose.getRotation().getDegrees() - swerve.getHeading().getDegrees()));
+         return headingError < headingTolerance.getAsDouble();
     }
 
     @Override
