@@ -63,7 +63,7 @@ public class RobotContainer {
         shooter = new ShooterSubsystem(RobotBase.isSimulation()
                 ? new ShooterHardwareSim()
                 : new ShooterHardwareRev(SHOOTER_CAN_ID));
-        shooter.setDefaultCommand(shooter.intakeCommand());
+        shooter.setDefaultCommand(shooter.idleCommand());
 
         // ball path (default command is coasting)
         ballPath = new BallPathSubsystem(RobotBase.isSimulation()

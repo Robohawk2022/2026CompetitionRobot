@@ -35,8 +35,6 @@ public class LauncherTestbot extends TimedRobot {
     public static final int AGITATOR_CAN_ID = RobotContainer.AGITATOR_CAN_ID; // 2;
     public static final int SHOOTER_CAN_ID = RobotContainer.SHOOTER_CAN_ID; // 35;
 
-    private ShooterSubsystem shooter;
-    private BallPathSubsystem ballPath;
     private double testRpm;
 
     @Override
@@ -49,17 +47,17 @@ public class LauncherTestbot extends TimedRobot {
         // clear stale Preferences so code defaults always win on deploy
         Preferences.removeAll();
 
-        shooter = new ShooterSubsystem(isSimulation()
+        ShooterSubsystem shooter = new ShooterSubsystem(isSimulation()
                 ? new ShooterHardwareSim()
                 : new ShooterHardwareRev(SHOOTER_CAN_ID));
 
-        ballPath = new BallPathSubsystem(isSimulation()
+        BallPathSubsystem ballPath = new BallPathSubsystem(isSimulation()
                 ? new BallPathHardwareSim()
                 : new BallPathHardwareRev(INTAKE_CAN_ID, FEEDER_CAN_ID, AGITATOR_CAN_ID));
 
         GameController controller = new GameController(0);
 
-        shooter.setDefaultCommand(shooter.coast());
+        shooter.setDefaultCommand(shooter.idleCommand());
         ballPath.setDefaultCommand(ballPath.coast());
 
         // intake: ball-path motors spin inward
@@ -75,7 +73,7 @@ public class LauncherTestbot extends TimedRobot {
 
         // stop all motors
         controller.y().onTrue(Commands.parallel(
-                shooter.coast(),
+                shooter.idleCommand(),
                 ballPath.coast()));
 
         // left bumper: run one motor at test velocity (uncomment the one you want)
@@ -99,11 +97,5 @@ public class LauncherTestbot extends TimedRobot {
     @Override
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
-    }
-
-    @Override
-    public void disabledInit() {
-        shooter.coast();
-        ballPath.coast();
     }
 }

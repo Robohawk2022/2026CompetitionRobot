@@ -36,7 +36,7 @@ public class ShootingSimTestbot extends TimedRobot {
         swerve.setDefaultCommand(new SwerveTeleopCommand(swerve, controller));
 
         shooter = new ShooterSubsystem(new ShooterHardwareSim());
-        shooter.setDefaultCommand(shooter.coast());
+        shooter.setDefaultCommand(shooter.idleCommand());
 
         ballPath = new BallPathSubsystem(new BallPathHardwareSim());
         ballPath.setDefaultCommand(ballPath.coast());

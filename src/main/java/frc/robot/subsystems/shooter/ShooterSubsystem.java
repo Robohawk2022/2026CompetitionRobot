@@ -23,16 +23,19 @@ public class ShooterSubsystem extends SubsystemBase {
 
     final ShooterHardware hardware;
     final MotorStatus shooterStatus;
+    boolean idleAtIntakeSpeed;
     boolean shooterAtSpeed;
 
     public ShooterSubsystem(ShooterHardware hardware) {
         this.hardware = hardware;
         this.shooterStatus = new MotorStatus();
         this.shooterAtSpeed = false;
+        this.idleAtIntakeSpeed = false;
 
         SmartDashboard.putData("ShooterSubsystem", builder -> {
             shooterStatus.addToBuilder("ShooterMotor", builder);
             builder.addBooleanProperty("ShooterMotor/AtSpeed?", () -> shooterAtSpeed, null);
+            builder.addBooleanProperty("ShooterMotor/IdleAtIntakeSpeed?", () -> idleAtIntakeSpeed, val -> idleAtIntakeSpeed = val);
             builder.addDoubleProperty("ShooterMotor/Amps", hardware::getShooterAmps, null);
         });
     }
@@ -68,10 +71,18 @@ public class ShooterSubsystem extends SubsystemBase {
 //region Command factories -----------------------------------------------------
 
     /**
-     * @return a command that will stop applying output to the shooter motor
+     * @return a command that will run the shooter at its "idle" speed;
+     * at the beginning of the match this is 0, but as soon as it's spun up
+     * for any purpose, it will idle at intake speed
      */
-    public Command coast() {
-        return velocityCommand(0.0);
+    public Command idleCommand() {
+        return run(() -> {
+            double desiredRpm = idleAtIntakeSpeed
+                    ? intakeRpm.getAsDouble()
+                    : 0.0;
+            shooterStatus.desiredRpm = desiredRpm;
+            hardware.applyRpm(desiredRpm);
+        });
     }
 
     /**
