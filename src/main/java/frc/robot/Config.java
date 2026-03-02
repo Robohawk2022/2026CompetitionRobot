@@ -225,6 +225,8 @@ public interface Config {
         BallPathSpeeds intakeSpeeds = new BallPathSpeeds("BallHandling/IntakeSpeeds", 3000.0, 3000.0, 0.0);
         BallPathSpeeds ejectSpeeds = new BallPathSpeeds("BallHandling/EjectSpeeds", 3000.0, 3000.0, 0.0);
         BallPathSpeeds feedSpeeds = new BallPathSpeeds("BallHandling/FeedSpeeds", 3000.0, 3000.0, 1000.0);
+        DoubleSupplier feedPulseOn = pref("BallHandling/PulseTimes/FeedPulseOn", 2.0);
+        DoubleSupplier feedPulseOff = pref("BallHandling/PulseTimes/FeedPulseOff", 2.0);
 
         /** Stall detection */
         DoubleSupplier stallSpeed = pref("BallPath/StallSpeed", 30.0);

@@ -8,6 +8,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import static frc.robot.Config.BallPath.ejectSpeeds;
+import static frc.robot.Config.BallPath.feedPulseOff;
+import static frc.robot.Config.BallPath.feedPulseOn;
 import static frc.robot.Config.BallPath.feedSpeeds;
 import static frc.robot.Config.BallPath.intakeSpeeds;
 import static frc.robot.Config.BallPath.stallSpeed;
@@ -116,6 +118,23 @@ public class BallPathSubsystem extends SubsystemBase {
                 feedSpeeds.intakeRpm.getAsDouble(),
                 feedSpeeds.feederRpm.getAsDouble(),
                 feedSpeeds.agitatorRpm.getAsDouble()));
+    }
+
+    /**
+     * @return a command that "pulses" feeding, alternating between on and
+     * off to try and get balls to settle in a predictable position for
+     * more accurate shooting
+     */
+    public Command feedPulseCommand() {
+
+        // run motors during the "on" period
+        Command on = feedCommand().withTimeout(feedPulseOn.getAsDouble());
+
+        // coast motors during the "off" period
+        Command off = coast().withTimeout(feedPulseOff.getAsDouble());
+
+        // pulse mode is just doing that repeatedly
+        return on.andThen(off).repeatedly();
     }
 
 //endregion
