@@ -1,69 +1,69 @@
 package frc.robot.subsystems.limelight;
 
-import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.Config.Limelight;
 import frc.robot.subsystems.limelight.LimelightHelpers.PoseEstimate;
+import frc.robot.subsystems.limelight.PosePipeline.Algorithm;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
-import frc.robot.util.Field;
-import frc.robot.util.Field.HubSide;
 import frc.robot.util.Util;
 
 import java.util.Objects;
 
-import static frc.robot.Config.Limelight.closeRange;
 import static frc.robot.Config.Limelight.enabled;
 import static frc.robot.Config.Limelight.limelightName;
 import static frc.robot.Config.Limelight.maxPoseJumpFeet;
 import static frc.robot.Config.Limelight.maxYawRate;
 
 /**
- * Subsystem that uses the Limelight to:
+ * Subsystem that uses the Limelight to generate pose estimates. Notes:
  * <ul>
  *
- *     <li>Generate pose estimates during <code>periodic</code> and, if
- *     they pass relevant quality checks, feed them to a consumer (e.g. the
- *     swerve drive)</li>
+ *     <li>We will use pose estimates from either the MegaTag1 or MegaTag2
+ *     algorithms, but not both. If both are available, we'll take MegaTag2.
+ *     </li>
  *
- *     <li>Use Limelight's targeting pipeline to report on the physical
- *     position of a single target as a {@link LimelightTarget} (with the
- *     option to restrict to a single AprilTag of interest)</li>
+ *     <li>If the pose estimate is too far from the robot's current pose
+ *     estimate, we will not use it for fused estimation. It can, however,
+ *     be used to reset the robot's pose. This is super-helpful e.g. on
+ *     practice fields.</li>
+ *
+ *     <li>If MegaTag2 supplies us with a good estimate at least once, and
+ *     then starts providing estimates which are too far away from the
+ *     robot's current pose, we will keep track of that and recommend a
+ *     reset.</li>
  *
  * </ul>
  */
 public class LimelightSubsystem extends SubsystemBase {
 
     /**
-     * If our vision estimates are continuously too far from the odometry
+     * If MegaTag2 estimates are continuously too far from the robot's pose
      * for this amount of time, we will consider odometry "broken"
      */
-    public static final double BROKEN_TIMEOUT = 4.0;
+    public static final double POSE_JUMP_TIMEOUT = 4.0;
 
-    /** Enable verbose logging for debugging */
+    /**
+     * Enable verbose logging for debugging
+     */
     static final boolean verboseLogging = true;
 
     final SwerveSubsystem swerve;
-    final LimelightResults results;
     final Debouncer debouncer;
+    PosePipeline megaTag1;
+    PosePipeline megaTag2;
+    String poseAlgorithm;
     double lastTime;
     double lastYaw;
     double lastYawRate;
     boolean spinningTooFast;
-    Pose2d latestEstimate;
-    Pose2d latestTagPose;
+    boolean poseResetRecommended;
     boolean poseResetRequested;
-    boolean estimateSeemsTrustworthy;
-    boolean estimateSuccessful;
-    boolean isBroken;
+    boolean fusedAtLeastOnce;
 
     /**
      * Creates a {@link LimelightSubsystem}
@@ -73,52 +73,41 @@ public class LimelightSubsystem extends SubsystemBase {
     public LimelightSubsystem(SwerveSubsystem swerve) {
 
         this.swerve = Objects.requireNonNull(swerve);
-        this.results = new LimelightResults();
-        this.debouncer = new Debouncer(BROKEN_TIMEOUT, DebounceType.kRising);
-        this.latestEstimate = null;
-        this.latestTagPose = null;
+        this.debouncer = new Debouncer(POSE_JUMP_TIMEOUT, DebounceType.kRising);
+        this.megaTag1 = new PosePipeline(limelightName, Algorithm.MegaTag1);
+        this.megaTag2 = new PosePipeline(limelightName, Algorithm.MegaTag2);
+        this.lastTime = Double.NaN;
+        this.lastYaw = Double.NaN;
+        this.lastYawRate = Double.NaN;
+        this.spinningTooFast = false;
         this.poseResetRequested = false;
-        this.estimateSuccessful = false;
-        this.isBroken = false;
+        this.fusedAtLeastOnce = false;
+        this.poseAlgorithm = "";
 
         SmartDashboard.putData("LimelightSubsystem", builder -> {
-            builder.addBooleanProperty("Broken?", () -> isBroken, null);
-            builder.addBooleanProperty("HasEstimate?", () -> estimateSuccessful, null);
-            builder.addBooleanProperty("ResetPose?", () -> poseResetRequested, val -> poseResetRequested = val);
             builder.addBooleanProperty("TooFast?", () -> spinningTooFast, null);
+            builder.addBooleanProperty("ResetRecommended?", () -> poseResetRecommended, null);
+            builder.addBooleanProperty("ForceReset?", () -> poseResetRequested, val -> poseResetRequested = val);
+            builder.addStringProperty("PoseAlgorithm", () -> poseAlgorithm, null);
             if (verboseLogging) {
-                results.addToDashboard(builder);
+                megaTag1.addToBuilder(builder);
+                megaTag2.addToBuilder(builder);
             }
         });
     }
 
-    /**
-     * @return do we consider odometry to be broken?
-     */
-    public boolean isBroken() {
-        return isBroken;
+    public boolean isPoseResetRecommended() {
+        return poseResetRecommended;
     }
-
-//region Periodic --------------------------------------------------------------
 
     @Override
     public void periodic() {
-
-        // if we're enabled, update all of our information
         if (enabled.getAsBoolean()) {
             Pose2d currentPose = swerve.getPose();
             updateYawRate(currentPose);
             updatePoseEstimate(currentPose);
-        } else {
-            latestEstimate = null;
         }
-
-        // publish poses
-        Util.publishPose("VisionPose", latestEstimate);
-        Util.publishPose("TagForEstimate", latestTagPose);
     }
-
-//endregion
 
 //region Yaw rate --------------------------------------------------------------
 
@@ -137,9 +126,11 @@ public class LimelightSubsystem extends SubsystemBase {
         // really perform the calculation; this will only trigger the
         // second and subsequent times through
         if (Double.isFinite(lastYaw)) {
+
             // wrap the yaw difference to (-180, 180] so crossing the ±180°
             // boundary doesn't produce a huge spike (e.g. 179° → -179°)
             double yawDelta = Util.degreeModulus(currentYaw - lastYaw);
+
             lastYawRate = yawDelta / (currentTime - lastTime);
             LimelightHelpers.SetRobotOrientation(
                     limelightName,
@@ -161,140 +152,90 @@ public class LimelightSubsystem extends SubsystemBase {
 //region Pose estimate ---------------------------------------------------------
 
     /**
-     * Calculates a pose estimate using the LL MegaTag2 algorithm, passes it
-     * through some quality gates, and possibly supplies it to the drive.
+     * Calculates a pose estimate. We will update both algorithms but only
+     * supply one estimate to the swerve drive. We prefer MegaTag2 if it's
+     * available.
      */
     private void updatePoseEstimate(Pose2d currentPose) {
 
-        latestEstimate = null;
-        latestTagPose = null;
-        estimateSuccessful = false;
-
-        // if we're spinning too fast, there's nothing to do
+        // if we're spinning too fast, we won't bother with this
         if (spinningTooFast) {
             return;
         }
 
-        // grab the estimate; if there isn't one, we're done
-        PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightName);
-        if (estimate == null || estimate.pose == null) {
-            results.noEstimate();
-            return;
+        // update the two pipelines
+        megaTag1.update(currentPose);
+        megaTag2.update(currentPose);
+
+        // determine whether we have an estimate we can use for fused
+        // estimation (prefer MegaTag2 if available)
+        if (attemptFusedEstimation(megaTag2, currentPose)) {
+            poseAlgorithm = "MT2";
+            fusedAtLeastOnce = true;
+        } else if (attemptFusedEstimation(megaTag1, currentPose)) {
+            poseAlgorithm = "MT1";
+        } else {
+            poseAlgorithm = "";
         }
 
-        // if the estimate somehow isn't based on fiducials, we won't use it
-        // (this would be really weird and is more of a sanity check)
-        if (estimate.rawFiducials == null || estimate.rawFiducials.length < 1) {
-            results.noTags();
-            return;
-        }
-
-        // if the tag being used for the estimate wouldn't be visible from the
-        // estimated pose, there's obviously something wrong
-        if (tagNotVisibleFromPose(estimate)) {
-            results.tagNotVisible();
-            return;
-        }
-
-        // if the pose is outside the field, there's no use dealing with it
-        if (Field.isOutsideField(estimate.pose)) {
-            results.poseOutsideField();
-            return;
-        }
-
-        // if the pose is too far from the current pose, we don't submit it ...
-        // UNLESS a pose reset has been requested
-        // we'll remember where the latest estimate and latest tag pose are
-        latestEstimate = estimate.pose;
-        latestTagPose = Field.getTagPose(estimate.rawFiducials[0].id);
-
-        // if we're resetting the robot's pose, we will do that now with the
-        // estimate we have; we will perform a sanity check on it first
+        // if a pose reset was requested and we have a pose available,
+        // let's do it (again, we prefer MegaTag2 if possible)
         if (poseResetRequested) {
-            swerve.resetPose(estimate.pose);
-            poseResetRequested = false;
+            attemptPoseReset(megaTag2);
         }
-
-        // perform basic sanity check
-        estimateSeemsTrustworthy = tagNotVisibleFromPose(estimate);
-
-        // if the pose is too far from the current pose, we don't submit it;
-        // this might be a sign that odometry is broken
-        if (Util.feetBetween(currentPose, estimate.pose) > maxPoseJumpFeet.getAsDouble()) {
-            results.poseJumpTooBig();
-            isBroken = debouncer.calculate(true);
-            return;
+        if (poseResetRequested) {
+            attemptPoseReset(megaTag1);
         }
-
-        // huzzah! we have an estimate
-        isBroken = debouncer.calculate(false);
-
-        // let's figure out our confidence level
-        boolean multiTag = estimate.rawFiducials.length > 1;
-        boolean nearDistance = Units.metersToFeet(estimate.avgTagDist) < closeRange.getAsDouble();
-        Vector<N3> confidence;
-
-        // close-up multi-tag estimates are the bomb!
-        if (multiTag && nearDistance) {
-            results.highConfidence();
-            confidence = Limelight.highConfidence;
-        }
-
-        // multi-tag and far off, or close by, are ok
-        else if (multiTag || nearDistance) {
-            results.mediumConfidence();
-            confidence = Limelight.mediumConfidence;
-        }
-
-        // all others are low-confidence
-        else {
-            results.lowConfidence();
-            confidence = Limelight.lowConfidence;
-        }
-
-        // we're good to go!
-        swerve.submitVisionEstimate(estimate.pose, estimate.timestampSeconds, confidence);
-        estimateSuccessful = true;
-        latestTagPose = Field.getTagPose(estimate.rawFiducials[0].id);
     }
 
-//endregion
-
-//region Sanity checking -------------------------------------------------------
-
     /**
-     * Simple sanity check for LL pose estimates: if the pose is on the
-     * opposite side of the hub from the tag that it's based on, something
-     * is obviously wonky
+     * Attempts to update fused pose estimation with the supplied pipeline
+     * @return true if it works; false otherwise
      */
-    private boolean tagNotVisibleFromPose(PoseEstimate estimate) {
+    private boolean attemptFusedEstimation(PosePipeline pipeline, Pose2d currentPose) {
 
-        HubSide hubSide = Field.getHubSide(estimate.rawFiducials[0].id);
-
-        // if the estimate isn't based on a hub tag, we don't have an opinion
-        // on visibility
-        if (hubSide == null) {
+        PoseEstimate estimate = pipeline.getLatestEstimate();
+        if (estimate == null) {
             return false;
         }
 
-        // in each case, we expect the estimated robot pose to be in the same
-        // rough "zone" as the tag that was used to generate it
-        return switch (hubSide) {
-            case NORTH -> Field.isNorthSide(estimate.pose);
-            case SOUTH -> Field.isSouthSide(estimate.pose);
-            case NEUTRAL -> Field.isNeutralZone(estimate.pose);
-            case ALLIANCE -> Field.isAllianceZone(estimate.pose);
-        };
+        // if the pose estimate is too far from the robot's current pose, we
+        // don't want to use it.
+        boolean poseJumpTooFar = Util.feetBetween(currentPose, estimate.pose) > maxPoseJumpFeet.getAsDouble();
+
+        // if we've had at least one usable pose estimate from MegaTag2, and now
+        // we're getting bad ones, this is a sign that odometry has drifted in
+        // a match. if this persists, we will recommend a pose reset.
+        if (pipeline == megaTag2) {
+            poseResetRecommended = debouncer.calculate(fusedAtLeastOnce && poseJumpTooFar);
+        }
+
+        if (poseJumpTooFar) {
+            return false;
+        }
+
+        swerve.submitVisionEstimate(
+                estimate.pose,
+                estimate.timestampSeconds,
+                pipeline.getLatestConfidence());
+        return true;
     }
 
+    /**
+     * Uses the latest estimate on the supplied pipeline to forcibly reset
+     * the swerve drive's pose
+     */
+    private void attemptPoseReset(PosePipeline pipeline) {
+        PoseEstimate estimate = pipeline.getLatestEstimate();
+        if (estimate != null) {
+            swerve.resetPose(pipeline.getLatestEstimate().pose);
+            poseResetRequested = false;
+        }
+    }
 
 //endregion
 
 //region Commands --------------------------------------------------------------
-
-    public Trigger odometryBrokenTrigger() {
-        return new Trigger(this::isBroken);
-    }
 
     public Command resetPoseFromVisionCommand() {
         return runOnce(() -> poseResetRequested = true);

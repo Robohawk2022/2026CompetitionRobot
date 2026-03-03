@@ -75,13 +75,11 @@ public class RobotContainer {
         ballPath.setDefaultCommand(ballPath.coast());
 
         // LED
-        //  - default command is showing range to shooter
-        //  - as long as odometry is broken, flash the error signal
+        //  - default command will flash when odometry drifts
         led = new LEDSubsystem(RobotBase.isSimulation()
                 ? new LEDHardwareSim()
                 : new LEDHardwareBlinkin(LED_PWM_PORT));
-        led.setDefaultCommand(led.idle(limelight::isBroken));
-        limelight.odometryBrokenTrigger().whileTrue(led.flash(LEDSignal.ERROR));
+        led.setDefaultCommand(led.idle(limelight::isPoseResetRecommended));
 
         configureBindings();
     }

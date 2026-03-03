@@ -1,6 +1,5 @@
 package frc.robot.commands;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -9,21 +8,14 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.GameController;
-import frc.robot.commands.swerve.SwerveOrbitCommand;
-import frc.robot.commands.swerve.SwerveToHeadingCommand;
 import frc.robot.subsystems.ballpath.BallPathSubsystem;
 import frc.robot.subsystems.led.LEDSignal;
 import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.util.Field;
-import frc.robot.util.Util;
-
-import java.util.function.BooleanSupplier;
 
 import static frc.robot.Config.BallHandling.shootDistanceFeet;
-import static frc.robot.Config.BallHandling.shootDistanceTolerance;
 import static frc.robot.Config.SwerveAuto.openHopperSecs;
 import static frc.robot.Config.SwerveAuto.openHopperVelocity;
 
@@ -148,92 +140,4 @@ public class ShootingCommands {
                     swerve.driveToPoseCommand(new Pose2d(targetTranslation, targetHeading)));
         });
     }
-
-    /**
-     * Creates a command that drives to the far shooting distance from the hub
-     * and fires. The robot drives along the line from its current position
-     * toward the hub, stopping at the configured distance, then shoots.
-     *
-     * @param swerve the swerve subsystem
-     * @param shooter the shooter subsystem
-     * @param ballPath the ball-path subsystem
-     * @return a command that drives to shooting position and shoots
-     */
-    public static Command driveAndShootCommand(LEDSubsystem led,
-                                               SwerveSubsystem swerve,
-                                               ShooterSubsystem shooter,
-                                               BallPathSubsystem ballPath) {
-
-        // phase 1: drive the robot into shooting position and drive the
-        // shooter wheel up to speed
-        Command phaseOne = Commands.parallel(
-                orientToShoot(led, swerve),
-                shooter.shootCommand().until(shooter::atSpeed));
-
-        // phase 2: jiggle the robot to agitate balls in the hopper, while
-        // keeping the shooter spinning and feeding balls
-        Command phaseTwo = Commands.parallel(
-//                jiggle(swerve),
-                led.flash(LEDSignal.CELEBRATION),
-                shooter.shootCommand(),
-                ballPath.feedCommand());
-
-        return phaseOne.andThen(phaseTwo);
-    }
-
-    /**
-     * Jiggle the robot while spinning up the shooter and feeding balls.
-     */
-    public static Command unload(LEDSubsystem led,
-                                 SwerveSubsystem swerve,
-                                 ShooterSubsystem shooter,
-                                 BallPathSubsystem ballPath) {
-        return Commands.parallel(
-                shootMode(led, ballPath, shooter),
-                jiggle(swerve));
-    }
-
-    public static Command orbitCommand(GameController controller, SwerveSubsystem swerve) {
-        return orbitCommand(controller, swerve, null);
-    }
-
-    /**
-     * Creates an orbit drive command that orbits around the hub.
-     * <p>
-     * This is a compound command that:
-     * <ol>
-     *   <li>Determines the location of the alliance hub</li>
-     *   <li>Rotates to face the hub using {@link SwerveToHeadingCommand}</li>
-     *   <li>Orbits the hub using {@link SwerveOrbitCommand}</li>
-     * </ol>
-     *
-     * @param controller the game controller for driver input
-     * @return the orbit command sequence
-     * @see SwerveOrbitCommand
-     */
-    public static Command orbitCommand(GameController controller, SwerveSubsystem swerve, Pose2d center) {
-        return swerve.defer(() -> {
-
-            // if we already have a center of rotation, use that;
-            // otherwise use the center of the hub
-            Pose2d hubCenter = center == null
-                    ? Field.getHubCenter()
-                    : center;
-
-            // calculate heading to face the hub from current position
-            Rotation2d headingToHub = hubCenter.getTranslation()
-                    .minus(swerve.getPose().getTranslation())
-                    .getAngle();
-
-            Util.log("[swerve] orbit: hub at %s, heading %.1f deg",
-                    hubCenter, headingToHub.getDegrees());
-
-            // sequence: rotate to face hub, then orbit
-            return Commands.sequence(
-                    new SwerveToHeadingCommand(swerve, headingToHub),
-                    new SwerveOrbitCommand(swerve, controller, center)
-            );
-        });
-    }
-
 }

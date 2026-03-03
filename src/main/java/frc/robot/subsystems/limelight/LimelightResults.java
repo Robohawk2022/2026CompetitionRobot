@@ -4,6 +4,8 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 
 public class LimelightResults {
 
+    long ambiguous;
+    long tooFar;
     long noEstimate;
     long noTags;
     long tagNotVisible;
@@ -23,6 +25,16 @@ public class LimelightResults {
         builder.addIntegerProperty("Results/ConfLow", () -> lowConfidence, null);
         builder.addIntegerProperty("Results/ConfMed", () -> mediumConfidence, null);
         builder.addIntegerProperty("Results/ConfHigh", () -> highConfidence, null);
+    }
+
+    public void ambiguous() {
+        ambiguous++;
+        validEstimate = false;
+    }
+
+    public void tooFar() {
+        tooFar++;
+        validEstimate = false;
     }
 
     public void noEstimate() {

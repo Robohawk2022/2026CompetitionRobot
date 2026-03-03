@@ -137,10 +137,10 @@ public interface Config {
         DoubleSupplier maxYawRate = pref("Limelight/MaxYawRate", 720.0);
 
         /** Confidence levels (lower numbers mean higher confidence) */
-        // X, Y in meters; Theta in radians (0.5 rad ≈ 28°, 0.3 rad ≈ 17°, 0.1 rad ≈ 6°)
-        Vector<N3> lowConfidence = VecBuilder.fill(2.0, 2.0, 0.5);
-        Vector<N3> mediumConfidence = VecBuilder.fill(0.9, 0.9, 0.3);
-        Vector<N3> highConfidence = VecBuilder.fill(0.5, 0.5, 0.1);
+        Vector<N3> lowConfidence = VecBuilder.fill(2.0, 2.0, 9999999.0);
+        Vector<N3> mediumConfidence = VecBuilder.fill(0.9, 0.9, 9999999.0);
+        Vector<N3> highConfidence = VecBuilder.fill(0.5, 0.5, 9999999.0);
+        Vector<N3> megaTag1Confidence = VecBuilder.fill(0.5, 0.5, 9999999.0);
 
         /** Maximum pose jump (vision corrections larger than this are rejected) */
         DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 2.0);

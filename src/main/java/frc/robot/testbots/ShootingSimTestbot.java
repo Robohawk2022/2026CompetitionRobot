@@ -46,7 +46,6 @@ public class ShootingSimTestbot extends TimedRobot {
 
         controller.a().onTrue(ShootingCommands.orientToShoot(led, swerve));
         controller.b().whileTrue(ShootingCommands.jiggle(swerve));
-        controller.x().whileTrue(ShootingCommands.driveAndShootCommand(led, swerve, shooter, ballPath));
         controller.y().onTrue(swerve.resetPoseCommand(oldPose -> Pose2d.kZero));
     }
 
