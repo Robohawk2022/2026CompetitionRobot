@@ -15,6 +15,7 @@ import frc.robot.Config.Limelight;
 import frc.robot.subsystems.limelight.LimelightHelpers.PoseEstimate;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.util.Field;
+import frc.robot.util.Field.HubSide;
 import frc.robot.util.Util;
 
 import java.util.Objects;
@@ -51,7 +52,6 @@ public class LimelightSubsystem extends SubsystemBase {
     static final boolean verboseLogging = true;
 
     final SwerveSubsystem swerve;
-    final LimelightTarget latestTarget;
     final LimelightResults results;
     final Debouncer debouncer;
     double lastTime;
@@ -60,10 +60,9 @@ public class LimelightSubsystem extends SubsystemBase {
     boolean spinningTooFast;
     Pose2d latestEstimate;
     Pose2d latestTagPose;
-    long restrictedTag;
-    boolean forceResetPose;
+    boolean poseResetRequested;
+    boolean estimateSeemsTrustworthy;
     boolean estimateSuccessful;
-    boolean resetPose;
     boolean isBroken;
 
     /**
@@ -74,24 +73,20 @@ public class LimelightSubsystem extends SubsystemBase {
     public LimelightSubsystem(SwerveSubsystem swerve) {
 
         this.swerve = Objects.requireNonNull(swerve);
-        this.latestTarget = new LimelightTarget();
         this.results = new LimelightResults();
         this.debouncer = new Debouncer(BROKEN_TIMEOUT, DebounceType.kRising);
         this.latestEstimate = null;
         this.latestTagPose = null;
-        this.forceResetPose = false;
+        this.poseResetRequested = false;
         this.estimateSuccessful = false;
         this.isBroken = false;
 
         SmartDashboard.putData("LimelightSubsystem", builder -> {
             builder.addBooleanProperty("Broken?", () -> isBroken, null);
             builder.addBooleanProperty("HasEstimate?", () -> estimateSuccessful, null);
-            builder.addBooleanProperty("HasTarget?", latestTarget::isValid, null);
-            builder.addBooleanProperty("ResetPose?", () -> forceResetPose, val -> forceResetPose = val);
-            builder.addIntegerProperty("RestrictedTag", () -> restrictedTag, null);
+            builder.addBooleanProperty("ResetPose?", () -> poseResetRequested, val -> poseResetRequested = val);
             builder.addBooleanProperty("TooFast?", () -> spinningTooFast, null);
             if (verboseLogging) {
-                latestTarget.addToDashboard(builder);
                 results.addToDashboard(builder);
             }
         });
@@ -104,25 +99,6 @@ public class LimelightSubsystem extends SubsystemBase {
         return isBroken;
     }
 
-    /**
-     * Indicates that only one specific AprilTag should be used for the
-     * {@link LimelightTarget}; all other tags should be ignored
-     * @param id the tag of interest
-     */
-    public void setRestrictedTag(int id) {
-        restrictedTag = id;
-        LimelightHelpers.setPriorityTagID(limelightName, id);
-    }
-
-    /**
-     * Clears the "target tag" designation
-     * TODO is this the right way to do this?
-     */
-    public void clearRestrictedTag() {
-        restrictedTag = -1L;
-        LimelightHelpers.setPriorityTagID(limelightName, -1);
-    }
-
 //region Periodic --------------------------------------------------------------
 
     @Override
@@ -131,46 +107,15 @@ public class LimelightSubsystem extends SubsystemBase {
         // if we're enabled, update all of our information
         if (enabled.getAsBoolean()) {
             Pose2d currentPose = swerve.getPose();
-            updateTargeting();
             updateYawRate(currentPose);
             updatePoseEstimate(currentPose);
         } else {
             latestEstimate = null;
-            latestTarget.invalidate();
         }
 
         // publish poses
-        Util.publishPose("TagForTargeting", latestTarget.getTagPose());
         Util.publishPose("VisionPose", latestEstimate);
         Util.publishPose("TagForEstimate", latestTagPose);
-    }
-
-//endregion
-
-//region Targeting -------------------------------------------------------------
-
-    /**
-     * Updates targeting information if it's available
-     */
-    private void updateTargeting() {
-
-        // check if we even have a target acquired
-        if (!LimelightHelpers.getTV(limelightName)) {
-            latestTarget.invalidate();
-            return;
-        }
-
-        // we want the horizontal offset to be negative when the tag is to the
-        // left (so positive motion will decrease it). this is the opposite of
-        // how the camera reports it, so we will negate it before returning
-        double ho = -LimelightHelpers.getTX(limelightName);
-
-        // other data can be consumed as provided
-        double vo = LimelightHelpers.getTY(limelightName);
-        double ta = LimelightHelpers.getTA(limelightName);
-        int tid = (int) LimelightHelpers.getFiducialID(limelightName);
-
-        latestTarget.set(ta, ho, vo, tid);
     }
 
 //endregion
@@ -244,19 +189,17 @@ public class LimelightSubsystem extends SubsystemBase {
             return;
         }
 
-        latestEstimate = estimate.pose;
+        // if the tag being used for the estimate wouldn't be visible from the
+        // estimated pose, there's obviously something wrong
+        if (tagNotVisibleFromPose(estimate)) {
+            results.tagNotVisible();
+            return;
+        }
 
         // if the pose is outside the field, there's no use dealing with it
         if (Field.isOutsideField(estimate.pose)) {
             results.poseOutsideField();
             return;
-        }
-
-        // if we're resetting the robot's pose, we will do that now with the
-        // estimate we have
-        if (forceResetPose) {
-            swerve.resetPose(estimate.pose);
-            forceResetPose = false;
         }
 
         // if the pose is too far from the current pose, we don't submit it ...
@@ -265,12 +208,15 @@ public class LimelightSubsystem extends SubsystemBase {
         latestEstimate = estimate.pose;
         latestTagPose = Field.getTagPose(estimate.rawFiducials[0].id);
 
-        // if we're forced a pose reset, we'll do it here (before we check
-        // how far we are from the current pose)
-        if (resetPose) {
-            swerve.resetPose(latestEstimate);
-            resetPose = false;
+        // if we're resetting the robot's pose, we will do that now with the
+        // estimate we have; we will perform a sanity check on it first
+        if (poseResetRequested) {
+            swerve.resetPose(estimate.pose);
+            poseResetRequested = false;
         }
+
+        // perform basic sanity check
+        estimateSeemsTrustworthy = tagNotVisibleFromPose(estimate);
 
         // if the pose is too far from the current pose, we don't submit it;
         // this might be a sign that odometry is broken
@@ -314,14 +260,44 @@ public class LimelightSubsystem extends SubsystemBase {
 
 //endregion
 
-//region Commands ---------------------------------------------------------
+//region Sanity checking -------------------------------------------------------
+
+    /**
+     * Simple sanity check for LL pose estimates: if the pose is on the
+     * opposite side of the hub from the tag that it's based on, something
+     * is obviously wonky
+     */
+    private boolean tagNotVisibleFromPose(PoseEstimate estimate) {
+
+        HubSide hubSide = Field.getHubSide(estimate.rawFiducials[0].id);
+
+        // if the estimate isn't based on a hub tag, we don't have an opinion
+        // on visibility
+        if (hubSide == null) {
+            return false;
+        }
+
+        // in each case, we expect the estimated robot pose to be in the same
+        // rough "zone" as the tag that was used to generate it
+        return switch (hubSide) {
+            case NORTH -> Field.isNorthSide(estimate.pose);
+            case SOUTH -> Field.isSouthSide(estimate.pose);
+            case NEUTRAL -> Field.isNeutralZone(estimate.pose);
+            case ALLIANCE -> Field.isAllianceZone(estimate.pose);
+        };
+    }
+
+
+//endregion
+
+//region Commands --------------------------------------------------------------
 
     public Trigger odometryBrokenTrigger() {
         return new Trigger(this::isBroken);
     }
 
     public Command resetPoseFromVisionCommand() {
-        return runOnce(() -> forceResetPose = true);
+        return runOnce(() -> poseResetRequested = true);
     }
 
 //endregion

@@ -6,6 +6,7 @@ public class LimelightResults {
 
     long noEstimate;
     long noTags;
+    long tagNotVisible;
     long poseOutsideField;
     long poseJumpTooBig;
     long lowConfidence;
@@ -15,6 +16,7 @@ public class LimelightResults {
 
     public void addToDashboard(SendableBuilder builder) {
         builder.addIntegerProperty("Results/ErrNoEstimate", () -> noEstimate, null);
+        builder.addIntegerProperty("Results/ErrTagNotVisible", () -> tagNotVisible, null);
         builder.addIntegerProperty("Results/ErrNoTags", () -> noEstimate, null);
         builder.addIntegerProperty("Results/ErrOutsideField", () -> poseOutsideField, null);
         builder.addIntegerProperty("Results/ErrTooFar", () -> poseJumpTooBig, null);
@@ -30,6 +32,11 @@ public class LimelightResults {
     
     public void noTags() {
         noTags++;
+        validEstimate = false;
+    }
+
+    public void tagNotVisible() {
+        tagNotVisible++;
         validEstimate = false;
     }
     

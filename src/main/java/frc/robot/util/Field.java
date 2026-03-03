@@ -11,6 +11,7 @@ import edu.wpi.first.math.util.Units;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -177,6 +178,24 @@ public class Field {
 //region Game-specific locations -----------------------------------------------
 
     /**
+     * Represents one of the sides of the hub. Each side knows which AprilTags
+     * may be mounted on it.
+     */
+    public enum HubSide {
+
+        NORTH(Set.of(5, 8, 18, 27)),
+        SOUTH(Set.of(2, 11, 21, 24)),
+        NEUTRAL(Set.of(3, 4, 19, 20)),
+        ALLIANCE(Set.of(9, 10, 25, 26));
+
+        public final Set<Integer> tags;
+
+        HubSide(Set<Integer> tags) {
+            this.tags = tags;
+        }
+    }
+
+    /**
      * Returns the center of the hub (tower) for the current alliance.
      * <p>
      * For 2026, the hub center is calculated as the midpoint between two
@@ -205,6 +224,49 @@ public class Field {
                 (tag1.getX() + tag2.getX()) / 2.0,
                 (tag1.getY() + tag2.getY()) / 2.0,
                 Rotation2d.kZero);
+    }
+
+    /**
+     * @return which wall of the arena does the supplied hub tag face;
+     * null if it is not a hub tag
+     */
+    public static HubSide getHubSide(int id) {
+        for (HubSide side : HubSide.values()) {
+            if (side.tags.contains(id)) {
+                return side;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @return true if the supplied pose on the "north" side of the field,
+     * false otherwise
+     */
+    public static boolean isNorthSide(Pose2d pose) {
+        return Units.metersToInches(pose.getY()) < 158.84;
+    }
+
+    /**
+     * @return opposite of {@link #isNorthSide(Pose2d)}
+     */
+    public static boolean isSouthSide(Pose2d pose) {
+        return !isNorthSide(pose);
+    }
+
+    /**
+     * @return if the supplied pose is in the neutral zone; false otherwise
+     */
+    public static boolean isNeutralZone(Pose2d pose) {
+        return Units.metersToInches(pose.getX()) > 182.11
+                || Units.metersToInches(pose.getX()) < 469.11;
+    }
+
+    /**
+     * @return opposite of {@link #isNeutralZone(Pose2d)}
+     */
+    public static boolean isAllianceZone(Pose2d pose) {
+        return !isNeutralZone(pose);
     }
 
 //endregion
