@@ -116,6 +116,13 @@ public class ShooterSubsystem extends SubsystemBase {
         return defer(() -> velocityCommand(shootRpm.getAsDouble()));
     }
 
+    /**
+     * @return a command that will explicitly set the idle speed to intake speed
+     */
+    public Command idleAtIntakeSpeedCommand() {
+        return runOnce(() -> idleRpm = intakeRpm.getAsDouble());
+    }
+
 //endregion
 
 //region Helper ----------------------------------------------------------------
