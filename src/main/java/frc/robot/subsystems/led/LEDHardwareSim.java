@@ -9,31 +9,19 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class LEDHardwareSim implements LEDHardware {
 
-    private LEDSignal currentSignal = LEDSignal.OFF;
-
     /**
      * Creates the simulated LED hardware.
      */
     public LEDHardwareSim() {
-        // Initialize dashboard display
-        SmartDashboard.putString("LED/SimSignal", "OFF");
-        SmartDashboard.putNumber("LED/SimBlinkinCode", 0.99);
+        applySignal(LEDSignal.ALL_OFF);
     }
 
     @Override
     public void applySignal(LEDSignal signal) {
         if (signal == null) {
-            signal = LEDSignal.OFF;
+            signal = LEDSignal.ALL_OFF;
         }
-        currentSignal = signal;
-
-        // Post to dashboard for visualization
         SmartDashboard.putString("LED/SimSignal", signal.name());
         SmartDashboard.putNumber("LED/SimBlinkinCode", signal.getBlinkinCode());
-    }
-
-    @Override
-    public LEDSignal getCurrentSignal() {
-        return currentSignal;
     }
 }

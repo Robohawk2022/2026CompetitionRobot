@@ -1,7 +1,7 @@
 package frc.robot.subsystems.led;
 
 import java.util.Objects;
-import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -16,7 +16,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
  *   <li>Distance-to-hub indicator (green = in range, red = out of range)</li>
  * </ol>
  * <p>
- * Use {@link #flash(LEDSignal, double)} to temporarily override the distance
+ * Use {@link #flash(LEDSignal)} to temporarily override the distance
  * display with a higher-priority signal.
  */
 public class LEDSubsystem extends SubsystemBase {
@@ -33,8 +33,8 @@ public class LEDSubsystem extends SubsystemBase {
     public LEDSubsystem(LEDHardware hardware) {
 
         this.hardware = Objects.requireNonNull(hardware);
-        this.currentSignal = LEDSignal.OFF;
-        applySignal(LEDSignal.OFF);
+        this.currentSignal = LEDSignal.IDLE;
+        applySignal(LEDSignal.IDLE);
 
         // Dashboard telemetry
         SmartDashboard.putData(getName(), builder -> {
@@ -60,16 +60,14 @@ public class LEDSubsystem extends SubsystemBase {
      */
     public Command flash(LEDSignal signal) {
         Command flashOn = show(signal).withTimeout(FLASH_CYCLE_DURATION);
-        Command flashOff = show(LEDSignal.OFF).withTimeout(FLASH_CYCLE_DURATION);
+        Command flashOff = show(LEDSignal.ALL_OFF).withTimeout(FLASH_CYCLE_DURATION);
         return flashOff.andThen(flashOn).repeatedly();
     }
 
-    public Command idle(BooleanSupplier error) {
-        return run(() -> {
-            LEDSignal signal = error != null && error.getAsBoolean()
-                    ? LEDSignal.ERROR
-                    : LEDSignal.heartbeat();
-            applySignal(signal);
-        });
+    /**
+     * @return a command that will show a signal determined by the supplier
+     */
+    public Command show(Supplier<LEDSignal> supplier) {
+        return run(() -> applySignal(supplier.get()));
     }
 }

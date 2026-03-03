@@ -23,81 +23,51 @@ public enum LEDSignal {
     // Robot state signals - map meanings to patterns
     //=======================================================================
 
-    /** Robot is enabled but nothing active */
+    /**
+     * Idle (enabled but nothing is happening)
+     */
     IDLE(BlinkinCode.SOLID_HOT_PINK),
 
-    /** Shooter at target speed, ready to fire */
+    /**
+     * Idle in shooting range
+     */
+    SHOOTABLE(BlinkinCode.SOLID_GREEN),
+
+    /**
+     * Idle, not shootable, pose reset requested
+     */
+    POSE_RESET(BlinkinCode.STROBE_RED),
+
+    /**
+     * Shooter is spinning up to a target speed
+     */
     SPINNING_UP(BlinkinCode.SOLID_YELLOW),
 
-    /** Shooter at target speed, ready to fire */
-    READY_TO_SHOOT(BlinkinCode.RAINBOW_PARTY),
+    /**
+     * Shoot mode is active
+     */
+    SHOOTING(BlinkinCode.RAINBOW_PARTY),
 
-    /** Error / fault condition */
-    ERROR(BlinkinCode.STROBE_RED),
-
-    /** Vision searching for target */
-    AIMING(BlinkinCode.BREATH_BLUE),
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /** Robot is disabled/idle */
-    DISABLED(BlinkinCode.BREATH_GRAY),
-
-    /** Intake is running (actively collecting) */
+    /**
+     * Intake mode is active
+     */
     INTAKING(BlinkinCode.SOLID_GREEN),
 
-    /** Intake is full / hopper full (stall detected) */
-    INTAKE_FULL(BlinkinCode.STROBE_RED),
+    /**
+     * Vision searching for target
+     */
+    AIMING(BlinkinCode.BREATH_BLUE),
 
-    /** Ejecting game pieces */
-    EJECTING(BlinkinCode.SOLID_ORANGE),
+    /**
+     * All LEDs off
+     */
+    ALL_OFF(BlinkinCode.SOLID_BLACK),
 
-    /** Robot is in shooting range - close distance */
-    SHOOT_RANGE_CLOSE(BlinkinCode.SOLID_GREEN),
-
-    /** Robot is in shooting range - medium distance */
-    SHOOT_RANGE_MEDIUM(BlinkinCode.SOLID_YELLOW),
-
-    /** Robot is in shooting range - far distance */
-    SHOOT_RANGE_FAR(BlinkinCode.SOLID_RED),
-
-    /** Vision target acquired */
-    TARGET_LOCKED(BlinkinCode.SOLID_LIME),
-
-    /** Vision searching for target */
-    TARGET_SEARCHING(BlinkinCode.BREATH_BLUE),
-
-    /** Autonomous mode active */
-    AUTO_MODE(BlinkinCode.RAINBOW_RAINBOW),
-
-    /** Endgame warning (last 20 seconds) */
-    ENDGAME_WARNING(BlinkinCode.STROBE_BLUE),
-
-    /** Climbing sequence active */
-    CLIMBING(BlinkinCode.COLOR_WAVES_PARTY),
-
-    /** Alliance color - Red */
-    ALLIANCE_RED(BlinkinCode.HEARTBEAT_RED),
-
-    /** Alliance color - Blue */
-    ALLIANCE_BLUE(BlinkinCode.HEARTBEAT_BLUE),
-
-    /** Celebration / scoring confirmed */
-    CELEBRATION(BlinkinCode.RAINBOW_PARTY),
-
-    /** All LEDs off */
-    OFF(BlinkinCode.SOLID_BLACK);
+    /**
+     * Alliance signals
+     */
+    ALLIANCE_RED(BlinkinCode.SOLID_RED),
+    ALLIANCE_BLUE(BlinkinCode.SOLID_BLUE);
 
     //=======================================================================
     // Implementation
@@ -120,12 +90,6 @@ public enum LEDSignal {
     // REV Blinkin color/pattern codes
     // Reference: https://www.revrobotics.com/content/docs/REV-11-1105-UM.pdf
     //=======================================================================
-
-    public static LEDSignal heartbeat() {
-        return Util.isRedAlliance()
-                ? ALLIANCE_RED
-                : ALLIANCE_BLUE;
-    }
 
     /**
      * Constants for REV Blinkin LED controller codes.

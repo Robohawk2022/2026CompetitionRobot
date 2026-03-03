@@ -242,7 +242,7 @@ public interface Config {
         /** Distance & spin up time for shooting */
         DoubleSupplier shootDistanceFeet = pref("BallHandling/ShootDistance", 8.0);
         DoubleSupplier shootDistanceTolerance = pref("BallHandling/ShootDistanceTolerance", 0.5);
-        DoubleSupplier shootSpinupTime = pref("BallHandling/ShootSpinupTime", 1.0);
+        DoubleSupplier shootAngleTolerance = pref("BallHandling/ShootAngleTolerance", 3.0);
     }
 
 //endregion

@@ -17,16 +17,4 @@ public interface LEDHardware {
      * @param signal the signal to display
      */
     void applySignal(LEDSignal signal);
-
-    /**
-     * @return the currently applied signal, or null if none
-     */
-    LEDSignal getCurrentSignal();
-
-    /**
-     * Turns off the LEDs.
-     */
-    default void off() {
-        applySignal(LEDSignal.OFF);
-    }
 }

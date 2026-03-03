@@ -1,11 +1,13 @@
 package frc.robot.commands;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.ballpath.BallPathSubsystem;
@@ -14,8 +16,11 @@ import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.util.Field;
+import frc.robot.util.Util;
 
+import static frc.robot.Config.BallHandling.shootAngleTolerance;
 import static frc.robot.Config.BallHandling.shootDistanceFeet;
+import static frc.robot.Config.BallHandling.shootDistanceTolerance;
 import static frc.robot.Config.SwerveAuto.openHopperSecs;
 import static frc.robot.Config.SwerveAuto.openHopperVelocity;
 
@@ -53,7 +58,7 @@ public class ShootingCommands {
                 shooter.shootCommand().until(shooter::atSpeed));
 
         Command step2 = Commands.parallel(
-                led.flash(LEDSignal.CELEBRATION),
+                led.show(LEDSignal.SHOOTING),
                 shooter.shootCommand(),
                 ballPath.feedCommand());
 
@@ -139,5 +144,38 @@ public class ShootingCommands {
                     led.flash(LEDSignal.AIMING),
                     swerve.driveToPoseCommand(new Pose2d(targetTranslation, targetHeading)));
         });
+    }
+
+    /**
+     * @return true if the current pose of the robot has it (a) facing the
+     * center of the hub within
+     */
+    public static boolean isInShootingPosition(SwerveSubsystem swerve) {
+
+        Pose2d hubCenter = Field.getHubCenter();
+        Pose2d robotPose = swerve.getPose();
+
+        // current angle and distance to the hub
+        double distanceCurrent = Util.feetBetween(hubCenter, robotPose);
+        double angleCurrent = hubCenter.getTranslation()
+                .minus(robotPose.getTranslation())
+                .getAngle().minus(robotPose.getRotation())
+                .getDegrees();
+        SmartDashboard.putNumber("Targeting/Distance", distanceCurrent);
+        SmartDashboard.putNumber("Targeting/Angle", angleCurrent);
+
+        // if we're too far from the hub, we're not in position
+        if (!MathUtil.isNear(
+                shootDistanceFeet.getAsDouble(),
+                distanceCurrent,
+                shootDistanceTolerance.getAsDouble())) {
+            return false;
+        }
+
+        // if we're not pointing at the hub, we're not in range
+        return MathUtil.isNear(
+                0.0,
+                angleCurrent,
+                shootAngleTolerance.getAsDouble());
     }
 }

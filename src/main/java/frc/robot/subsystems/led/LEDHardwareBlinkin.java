@@ -13,7 +13,6 @@ import edu.wpi.first.wpilibj.motorcontrol.Spark;
 public class LEDHardwareBlinkin implements LEDHardware {
 
     private final Spark blinkin;
-    private LEDSignal currentSignal = LEDSignal.OFF;
 
     /**
      * Creates the Blinkin hardware on the specified PWM port.
@@ -27,14 +26,8 @@ public class LEDHardwareBlinkin implements LEDHardware {
     @Override
     public void applySignal(LEDSignal signal) {
         if (signal == null) {
-            signal = LEDSignal.OFF;
+            signal = LEDSignal.ALL_OFF;
         }
-        currentSignal = signal;
         blinkin.set(signal.getBlinkinCode());
-    }
-
-    @Override
-    public LEDSignal getCurrentSignal() {
-        return currentSignal;
     }
 }

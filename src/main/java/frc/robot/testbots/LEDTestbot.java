@@ -28,7 +28,7 @@ public class LEDTestbot extends TimedRobot {
         led = new LEDSubsystem(isSimulation()
                 ? new LEDHardwareSim()
                 : new LEDHardwareBlinkin(LED_PWM_PORT));
-        led.setDefaultCommand(led.show(LEDSignal.OFF));
+        led.setDefaultCommand(led.show(LEDSignal.ALL_OFF));
 
         GameController controller = new GameController(0);
 
@@ -38,8 +38,7 @@ public class LEDTestbot extends TimedRobot {
 
         // Button bindings for common signals
         controller.a().whileTrue(led.show(LEDSignal.INTAKING));
-        controller.b().whileTrue(led.show(LEDSignal.INTAKE_FULL));
-        controller.x().whileTrue(led.show(LEDSignal.READY_TO_SHOOT));
+        controller.x().whileTrue(led.show(LEDSignal.SHOOTABLE));
         controller.y().whileTrue(led.defer(() -> led.show(signalChooser.getSelected())));
     }
 
@@ -60,11 +59,6 @@ public class LEDTestbot extends TimedRobot {
     }
 
     @Override
-    public void disabledInit() {
-        led.show(LEDSignal.DISABLED);
-    }
-
-    @Override
     public void teleopInit() {
 
         // on teleop init, flash the alliance color for 3 seconds
@@ -74,10 +68,5 @@ public class LEDTestbot extends TimedRobot {
         CommandScheduler
                 .getInstance()
                 .schedule(led.flash(signal).withTimeout(3.0));
-    }
-
-    @Override
-    public void autonomousInit() {
-        led.show(LEDSignal.AUTO_MODE);
     }
 }

@@ -79,9 +79,22 @@ public class RobotContainer {
         led = new LEDSubsystem(RobotBase.isSimulation()
                 ? new LEDHardwareSim()
                 : new LEDHardwareBlinkin(LED_PWM_PORT));
-        led.setDefaultCommand(led.idle(limelight::isPoseResetRecommended));
+        led.setDefaultCommand(led.show(this::idleLedSignalCalculator));
 
         configureBindings();
+    }
+
+    /**
+     * @return default signal for LED subsystem
+     */
+    public LEDSignal idleLedSignalCalculator() {
+        if (ShootingCommands.isInShootingPosition(swerve)) {
+            return LEDSignal.SHOOTABLE;
+        } else if (limelight.isPoseResetRecommended()) {
+            return LEDSignal.POSE_RESET;
+        } else {
+            return LEDSignal.IDLE;
+        }
     }
 
     public Command getAutonomousCommand() {
