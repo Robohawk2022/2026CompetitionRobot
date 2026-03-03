@@ -29,6 +29,8 @@ import static frc.robot.Config.SwerveAuto.openHopperVelocity;
  */
 public class ShootingCommands {
 
+    public static final boolean VERBOSE = false;
+
     /**
      * Spin up the shooter to intake speed then run the ball path in
      * intake mode
@@ -157,25 +159,28 @@ public class ShootingCommands {
 
         // current angle and distance to the hub
         double distanceCurrent = Util.feetBetween(hubCenter, robotPose);
+        double distanceTarget = shootDistanceFeet.getAsDouble();
+        double distanceTolerance = shootDistanceTolerance.getAsDouble();
+
         double angleCurrent = hubCenter.getTranslation()
                 .minus(robotPose.getTranslation())
                 .getAngle().minus(robotPose.getRotation())
                 .getDegrees();
-        SmartDashboard.putNumber("Targeting/Distance", distanceCurrent);
-        SmartDashboard.putNumber("Targeting/Angle", angleCurrent);
+        double angleTarget = Rotation2d.k180deg.getDegrees();
+        double angleTolerance = shootAngleTolerance.getAsDouble();
 
-        // if we're too far from the hub, we're not in position
-        if (!MathUtil.isNear(
-                shootDistanceFeet.getAsDouble(),
-                distanceCurrent,
-                shootDistanceTolerance.getAsDouble())) {
-            return false;
+        if (VERBOSE) {
+            Util.publishPose("TargetingHub", hubCenter);
+            SmartDashboard.putNumber("Targeting/DistanceCurrent", distanceCurrent);
+            SmartDashboard.putNumber("Targeting/DistanceTarget", distanceTarget);
+            SmartDashboard.putNumber("Targeting/DistanceTolerance", distanceTolerance);
+            SmartDashboard.putNumber("Targeting/AngleCurrent", angleCurrent);
+            SmartDashboard.putNumber("Targeting/AngleTarget", angleTarget);
+            SmartDashboard.putNumber("Targeting/AngleTolerance", angleTolerance);
         }
 
-        // if we're not pointing at the hub, we're not in range
-        return MathUtil.isNear(
-                0.0,
-                angleCurrent,
-                shootAngleTolerance.getAsDouble());
+        // if we're too far from the hub, we're not in position
+        return MathUtil.isNear(distanceTarget, distanceCurrent, distanceTolerance)
+            && MathUtil.isNear(angleTarget, angleCurrent, angleTolerance);
     }
 }

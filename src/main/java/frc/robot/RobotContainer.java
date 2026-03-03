@@ -36,13 +36,13 @@ public class RobotContainer {
     public static final int AGITATOR_CAN_ID = 2;
     public static final int SHOOTER_CAN_ID = 35;
 
-    final GameController driver;
-    final SwerveSubsystem swerve;
-    final LimelightSubsystem limelight;
-    final AutonomousSubsystem auto;
-    final ShooterSubsystem shooter;
-    final BallPathSubsystem ballPath;
-    final LEDSubsystem led;
+    public final GameController driver;
+    public final SwerveSubsystem swerve;
+    public final LimelightSubsystem limelight;
+    public final AutonomousSubsystem auto;
+    public final ShooterSubsystem shooter;
+    public final BallPathSubsystem ballPath;
+    public final LEDSubsystem led;
 
     public RobotContainer() {
 
@@ -57,7 +57,6 @@ public class RobotContainer {
         swerve.setDefaultCommand(swerve.teleopCommand(driver));
 
         limelight = new LimelightSubsystem(swerve);
-        auto = new AutonomousSubsystem(swerve);
 
         // shooter (default command is coasting)
         shooter = new ShooterSubsystem(RobotBase.isSimulation()
@@ -79,7 +78,13 @@ public class RobotContainer {
         led = new LEDSubsystem(RobotBase.isSimulation()
                 ? new LEDHardwareSim()
                 : new LEDHardwareBlinkin(LED_PWM_PORT));
-        led.setDefaultCommand(led.show(this::idleLedSignalCalculator));
+        led.setDefaultCommand(led.show(() -> idleLedSignalCalculator(swerve, limelight)));
+
+        auto = new AutonomousSubsystem(
+                swerve,
+                shooter,
+                ballPath,
+                led);
 
         configureBindings();
     }
@@ -87,7 +92,7 @@ public class RobotContainer {
     /**
      * @return default signal for LED subsystem
      */
-    public LEDSignal idleLedSignalCalculator() {
+    public static LEDSignal idleLedSignalCalculator(SwerveSubsystem swerve, LimelightSubsystem limelight) {
         if (ShootingCommands.isInShootingPosition(swerve)) {
             return LEDSignal.SHOOTABLE;
         } else if (limelight.isPoseResetRecommended()) {

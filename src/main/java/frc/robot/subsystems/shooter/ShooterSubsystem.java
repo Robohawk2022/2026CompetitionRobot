@@ -66,6 +66,13 @@ public class ShooterSubsystem extends SubsystemBase {
         return shooterAtSpeed;
     }
 
+    /**
+     * Zero out the idle speed
+     */
+    public void resetIdleSpeed() {
+        idleRpm = 0.0;
+    }
+
 //endregion
 
 //region Command factories -----------------------------------------------------

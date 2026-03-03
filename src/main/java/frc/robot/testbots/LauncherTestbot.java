@@ -10,9 +10,13 @@ import frc.robot.RobotContainer;
 import frc.robot.subsystems.ballpath.BallPathHardwareRev;
 import frc.robot.subsystems.ballpath.BallPathHardwareSim;
 import frc.robot.subsystems.ballpath.BallPathSubsystem;
+import frc.robot.subsystems.led.LEDHardwareBlinkin;
+import frc.robot.subsystems.led.LEDHardwareSim;
+import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.shooter.ShooterHardwareRev;
 import frc.robot.subsystems.shooter.ShooterHardwareSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
+import frc.robot.commands.ShootingCommands;
 
 /**
  * Standalone test program for the Shooter + BallPath subsystems.
@@ -55,21 +59,23 @@ public class LauncherTestbot extends TimedRobot {
                 ? new BallPathHardwareSim()
                 : new BallPathHardwareRev(INTAKE_CAN_ID, FEEDER_CAN_ID, AGITATOR_CAN_ID));
 
+        LEDSubsystem led = new LEDSubsystem(isSimulation()
+                ? new LEDHardwareSim()
+                : new LEDHardwareBlinkin(RobotContainer.LED_PWM_PORT));
+
         GameController controller = new GameController(0);
 
         shooter.setDefaultCommand(shooter.idleCommand());
         ballPath.setDefaultCommand(ballPath.coast());
 
         // intake: ball-path motors spin inward
-        controller.a().whileTrue(ballPath.intakeCommand());
+        controller.a().whileTrue(ShootingCommands.intakeMode(led, ballPath, shooter));
 
         // eject: ball-path motors spin outward
         controller.b().whileTrue(ballPath.ejectCommand());
 
         // shoot: shooter spins up + ball-path feeds
-        controller.x().whileTrue(Commands.parallel(
-                shooter.shootCommand(),
-                ballPath.feedCommand()));
+        controller.x().whileTrue(ShootingCommands.shootMode(led, ballPath, shooter));
 
         // stop all motors
         controller.y().onTrue(Commands.parallel(

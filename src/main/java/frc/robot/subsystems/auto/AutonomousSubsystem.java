@@ -19,6 +19,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.commands.ShootingCommands;
+import frc.robot.subsystems.ballpath.BallPathSubsystem;
+import frc.robot.subsystems.led.LEDSignal;
+import frc.robot.subsystems.led.LEDSubsystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.SwerveHardwareConfig;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.util.DigitBoardProgramPicker;
@@ -43,13 +48,22 @@ public class AutonomousSubsystem extends SubsystemBase {
 //region Implementation --------------------------------------------------------
 
     final SwerveSubsystem swerve;
+    final ShooterSubsystem shooter;
+    final BallPathSubsystem ballPath;
+    final LEDSubsystem led;
     final DigitBoardProgramPicker picker;
     String selected;
     Command command;
 
-    public AutonomousSubsystem(SwerveSubsystem swerve) {
+    public AutonomousSubsystem(SwerveSubsystem swerve,
+                               ShooterSubsystem shooter,
+                               BallPathSubsystem ballPath,
+                               LEDSubsystem led) {
 
         this.swerve = Objects.requireNonNull(swerve);
+        this.shooter = Objects.requireNonNull(shooter);
+        this.ballPath = Objects.requireNonNull(ballPath);
+        this.led = Objects.requireNonNull(led);
         this.picker = new DigitBoardProgramPicker(
                 "Auto Program",
                 getProgramNames());
@@ -189,7 +203,7 @@ public class AutonomousSubsystem extends SubsystemBase {
         if (selected == null) {
             Util.log("[auto] NO SELECTED PROGRAM!!!");
             swerve.resetPose(createEmergencyStartPose());
-            return createEmergencyCommand();
+            return createEmergencyCommand(led);
         }
 
         else {
@@ -239,7 +253,7 @@ public class AutonomousSubsystem extends SubsystemBase {
     }
 
     /*
-     * TODO create all your named commands
+     * TODO review all named commands
      *
      * This is where you register all the "named commands" that are used
      * by your different autonomous programs
@@ -248,34 +262,42 @@ public class AutonomousSubsystem extends SubsystemBase {
 
         Util.log("[auto] Registering named commands");
 
-        // you will have to create commands that do real things like
-        // shooting and scoring if you want to use them in your autos
-        NamedCommands.registerCommand("Unload", Commands.print("*** Unload ***"));
-        NamedCommands.registerCommand("DriveToLeftIntake", Commands.print("*** DriveToLeftIntake ***"));
-        NamedCommands.registerCommand("DriveToRightIntake", Commands.print("*** DriveToRightIntake ***"));
+        // unload the hopper
+        NamedCommands.registerCommand("Unload",
+                ShootingCommands.shootMode(led, ballPath, shooter));
+
+        // open the hopper
+        NamedCommands.registerCommand("OpenHopper",
+                ShootingCommands.openHopper(swerve));
+
+        // orient to shoot
+        // NOTE: This will wind up in the robot's position not matching up
+        // with where PathPlanner "thinks" you are. Subsequent paths may not
+        // work the way you expect.
+        NamedCommands.registerCommand("OrientToShoot",
+                ShootingCommands.orientToShoot(led, swerve));
     }
 
     /*
-     * TODO do you need to "decorate" your auto program?
-     *
      * In previous years we've had to do some "mandatory" startup tasks,
      * like lowering an arm or moving the position of a held gamepiece.
      * We did this by taking the Command created by PathPlanner and adding
      * stuff to the beginning or end.
      */
     private Command decorateAutoCommand(Command autoCommand) {
-        // wrap with a command that requires swerve so the teleop command gets interrupted
-        Command requireSwerve = Commands.runOnce(() -> {
-            String alliance = Util.isRedAlliance() ? "RED" : "BLUE";
-            Util.log("[auto] starting auto as %s alliance", alliance);
-        }, swerve);
+
+        Command showAlliance = led.flash(Util.isRedAlliance()
+                    ? LEDSignal.ALLIANCE_RED
+                    : LEDSignal.ALLIANCE_BLUE);
+
         Command logComplete = Commands.print("[auto] done with auto");
-        return requireSwerve.andThen(autoCommand).andThen(logComplete);
+
+        return showAlliance
+                .andThen(autoCommand)
+                .andThen(logComplete);
     }
 
     /*
-     * TODO create an emergency auto program
-     *
      * If the autonomous routine gets buggered up, what do you want the
      * robot to do? Sitting still might be one option, but you might also
      * have some of that "mandatory" stuff to do. Or you might want to try
@@ -283,8 +305,10 @@ public class AutonomousSubsystem extends SubsystemBase {
      *
      * @see #createEmergencyStartPose()
      */
-    private Command createEmergencyCommand() {
-        return Commands.print("[auto] oh, dang, something went wrong!");
+    private Command createEmergencyCommand(LEDSubsystem led) {
+        Command log = Commands.print("[auto] oh, dang, something went wrong!");
+        Command blink = led.show(LEDSignal.OH_CRAP_AUTO);
+        return log.alongWith(blink);
     }
 
     /*

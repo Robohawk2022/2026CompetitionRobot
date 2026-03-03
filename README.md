@@ -1,82 +1,59 @@
 # TEST PLAN
 
-[x] Tune the new shooter wheel
-    * Holding B will run shooter wheel only
-    * Speeds in ShooterSubsystem
-    * Look for "at speed" on the dashboard
-
-[x] Test swerve modes
-    * Left trigger = sniper
-    * Right trigger = turbo
-
-* Test swerve orbit
-    * Right bumper = orbit starting position
-        * Will rotate to face position
-        * Right stick = spin around
-        * Left stick = forward/back
-        * Left stick button zeros pose
-
-[x] Test opening the hopper
-    * Prefs are in SwerveAuto 
-    * Start button runs routine     
-
-[x] Test jiggle
-    * Y will jiggle 
-
-[x] Test intake mode
-    * Holding A will run in take mode
-    * Should spin up then engage ball path
-    * Verify speeds in dashboard
-
-[x] Test shoot mode
-    * Holding X will run in shoot mode
-    * Should spin up then engage ball path
-    * Verify speeds in dashboard
-
-* Find your shooting distance
-    * Find it
-    * Measure to center of hub
-
-[x] Test vision
-    * Enable it  
-    * Right stick button resets pose
-    * Look for error on dashboard
-    * Check pose in AdvantageScope
-
-* Test driving to shooting pose
-    * Make sure you are set to blue alliance
-    * Make sure you've set the shot distance in preferences
-    * Reset pose from vision (confirm in AdvantageScope)
-    * Left bumper = orient only (must hold)
-    * Right bumper = orient and shoot (must hold)
+* Test shooter spin up
+    * On teleop enable, it shouldn't move
+    * Hold left trigger
+        * LED should flash yellow
+        * Should go to intake speed
+        * LED should show solid green
+    * Release left trigger
+        * LED should go back to pink
+        * Should remain at intake speed
+    * Hold right trigger
+        * LED should flash yellow
+        * Should go to shoot speed
+        * LED should show rainbow party
+    * Release left trigger
+        * LED should go back to pink
+        * Should go back to intake speed
+    * Disable teleop
+        * Wheel should spin down to 0
+    * Re-enable teleop
+        * It shouldn't move (rinse and repeat)
 
 * Run auto
+    * Review AutonomousSubsystem.getProgramNames to make sure they are registered
+    * Review AutonomousSubsystem.registerNamedCommands to make sure required commands exist
     * Pick one & run it
     * Watch for commands in console
     * Watch pose in AdvantageScope
- 
-* Implement auto
-    * Find intake poses in PP
-    * Unload = shoot for a short period of time
-    * DriveToXxx = swerve to pose command
 
-* Reset commands to orbit around hub and test
-    * Make sure you are set to blue alliance
-    * Reset pose from vision (confirm in AdvantageScope)
-    * Drive to shooting position
-    * Orbit around hub
+* Test shooting LED signal
+    * With a good pose ... 
+    * Drive into a shooting position
+    * LED should show green
+    * Check to see how "fiddly" it is and tune
+        * BallHandling/ShootDistance
+        * BallHandling/ShootDistanceTolerance
+        * BallHandling/ShootAngleTolerance
 
-* Drive over the hump a bunch of times and see how badly it throws off the
-vision vs odometry. Same thing if we "surf" over a bunch of balls.  (Theory:
-if we do this one too many times, we may need to manually reset the odometry
-during a match.)
+* Test positioning
+    * Update controller mapping to include ShootingCommands.orientToShoot
+    * With a good pose ...
+    * Drive close to the hub
+    * Trigger the command and see if the robot drives to shooting position
+    * Once it stops, LEDe should show solid green
 
-* Drive over the hump a bunch of times and see how badly it throws off the
-vision vs odometry. (Theory: if we do this one too many times, we may need
-to manually reset the odometry during a match.)
-
-# OPEN QUESTIONS
-
-* Is there some kind of manual targeting mode, as a fallback in case the 
-odometry doesn't work?
-
+* Test vision
+    * Enable Limelight
+    * Drive to where you can see a tag
+    * Use NetworkTables & AdvantageScope to visualize
+        * MegaTag1-RobotPose
+        * MegaTag2-RobotPose
+            * Should be near robot's current pose on the field 
+        * MegaTag1-TagPose
+        * MegaTag2-TagPose
+            * Should show you where the tag is  
+    * Click to reset from vision pose
+        * Watch the robot's position jump in AdvantageScope
+        * Drive around and luxuriate

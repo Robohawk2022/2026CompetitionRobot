@@ -50,6 +50,8 @@ public class PosePipeline {
 
     final String limelightName;
     final Algorithm algorithm;
+    final String estimatePoseKey;
+    final String tagPoseKey;
 
     // counters for the various different results of the pipeline
     long noEstimate;
@@ -75,6 +77,8 @@ public class PosePipeline {
         this.algorithm = Objects.requireNonNull(algorithm);
         this.latestEstimate = null;
         this.latestConfidence = null;
+        this.estimatePoseKey = algorithm.name()+"-RobotPose";
+        this.tagPoseKey = algorithm.name()+"-TagPose";
     }
 
     public void addToBuilder(SendableBuilder builder) {
@@ -106,6 +110,16 @@ public class PosePipeline {
      */
     public PoseEstimate getLatestEstimate() {
         return latestEstimate;
+    }
+
+    /**
+     * @return the pose of the tag used for the most recent estimate (null
+     * if there isn't one)
+     */
+    public Pose2d getTagPose() {
+        return latestEstimate == null
+                ? null
+                : Field.getTagPose(latestEstimate.rawFiducials[0].id);
     }
 
     /**
@@ -157,7 +171,8 @@ public class PosePipeline {
         }
 
         // publish the pose for debugging
-        Util.publishPose(algorithm.name(), estimate.pose);
+        Util.publishPose(estimatePoseKey, estimate.pose);
+        Util.publishPose(tagPoseKey, Field.getTagPose(estimate.rawFiducials[0].id));
 
         // if the hub would obscure the tag from view, this is obviously
         // not a good estimate and should ignore it (this is an error condition

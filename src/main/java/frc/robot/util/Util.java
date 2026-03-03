@@ -350,7 +350,7 @@ public class Util {
      * @return the distance between the two poses in meters
      */
     public static double metersBetween(Pose2d start, Pose2d end) {
-        return start.minus(end).getTranslation().getNorm();
+        return start.getTranslation().getDistance(end.getTranslation());
     }
 
     /**

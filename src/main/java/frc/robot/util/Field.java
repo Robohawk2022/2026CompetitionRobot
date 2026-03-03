@@ -195,6 +195,9 @@ public class Field {
         }
     }
 
+    static Pose2d blueHubCenter = null;
+    static Pose2d redHubCenter = null;
+
     /**
      * Returns the center of the hub (tower) for the current alliance.
      * <p>
@@ -209,21 +212,36 @@ public class Field {
      */
     public static Pose2d getHubCenter() {
 
+        boolean isRed = Util.isRedAlliance();
+
         Pose2d tag1;
         Pose2d tag2;
-
-        if (Util.isRedAlliance()) {
+        if (isRed) {
+            if (redHubCenter != null) {
+                return redHubCenter;
+            }
             tag1 = getTagPose(2);
             tag2 = getTagPose(5);
         } else {
+            if (blueHubCenter != null) {
+                return blueHubCenter;
+            }
             tag1 = getTagPose(18);
             tag2 = getTagPose(21);
         }
 
-        return new Pose2d(
+        Pose2d center = new Pose2d(
                 (tag1.getX() + tag2.getX()) / 2.0,
                 (tag1.getY() + tag2.getY()) / 2.0,
                 Rotation2d.kZero);
+
+        if (isRed) {
+            redHubCenter = center;
+        } else {
+            blueHubCenter = center;
+        }
+
+        return center;
     }
 
     /**

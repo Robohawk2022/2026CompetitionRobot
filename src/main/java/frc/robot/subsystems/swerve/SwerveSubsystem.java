@@ -15,7 +15,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
-
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -144,14 +144,18 @@ public class SwerveSubsystem extends SubsystemBase {
      * @return the current robot heading from the gyro
      */
     public Rotation2d getHeading() {
-        return drivetrain.getState().Pose.getRotation();
+        return RobotBase.isSimulation()
+                ? deadReckoner.getPose().getRotation()
+                : drivetrain.getState().Pose.getRotation();
     }
 
     /**
      * @return the current estimated pose (odometry fused with vision)
      */
     public Pose2d getPose() {
-        return drivetrain.getState().Pose;
+        return RobotBase.isSimulation()
+                ? deadReckoner.getPose()
+                : drivetrain.getState().Pose;
     }
 
     /**

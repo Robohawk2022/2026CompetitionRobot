@@ -1,7 +1,5 @@
 package frc.robot.subsystems.led;
 
-import frc.robot.util.Util;
-
 /**
  * LED signals that map robot states to REV Blinkin pattern codes.
  * <p>
@@ -36,7 +34,7 @@ public enum LEDSignal {
     /**
      * Idle, not shootable, pose reset requested
      */
-    POSE_RESET(BlinkinCode.STROBE_RED),
+    POSE_RESET(BlinkinCode.STROBE_WHITE),
 
     /**
      * Shooter is spinning up to a target speed
@@ -67,7 +65,12 @@ public enum LEDSignal {
      * Alliance signals
      */
     ALLIANCE_RED(BlinkinCode.SOLID_RED),
-    ALLIANCE_BLUE(BlinkinCode.SOLID_BLUE);
+    ALLIANCE_BLUE(BlinkinCode.SOLID_BLUE),
+
+    /**
+     * Something went wrong with auto setup
+     */
+    OH_CRAP_AUTO(BlinkinCode.SOLID_GOLD);
 
     //=======================================================================
     // Implementation
