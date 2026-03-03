@@ -38,6 +38,7 @@ import static frc.robot.Config.PathPlanner.debugLogging;
 import static frc.robot.Config.PathPlanner.maxSpeed;
 import static frc.robot.Config.PathPlanner.rotationP;
 import static frc.robot.Config.PathPlanner.translationP;
+import static frc.robot.Config.PathPlanner.unloadSecs;
 
 /**
  * Subsystem that manages a set of declared autonomous programs and allows
@@ -264,7 +265,8 @@ public class AutonomousSubsystem extends SubsystemBase {
 
         // unload the hopper
         NamedCommands.registerCommand("Unload",
-                ShootingCommands.shootMode(led, ballPath, shooter));
+                ShootingCommands.shootMode(led, ballPath, shooter)
+                        .withTimeout(unloadSecs.getAsDouble()));
 
         // open the hopper
         NamedCommands.registerCommand("OpenHopper",
