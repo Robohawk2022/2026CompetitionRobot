@@ -116,7 +116,7 @@ public interface Config {
         /** Enable PathPlanner debug logging */
         BooleanSupplier debugLogging = pref("PathPlanner/Debug?", true);
 
-        /** Enable PathPlanner debug logging */
+        /** How long do we spend unloading the hopper? */
         DoubleSupplier unloadSecs = pref("PathPlanner/UnloadSecs", 4.0);
 
     }
