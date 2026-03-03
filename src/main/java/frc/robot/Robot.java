@@ -11,11 +11,11 @@ import frc.robot.util.CommandLogger;
 
 public class Robot extends TimedRobot {
 
-    private final RobotContainer m_robotContainer;
-    private Command m_autonomousCommand;
+    private final RobotContainer container;
+    private Command autoCommand;
 
     public Robot() {
-        m_robotContainer = new RobotContainer();
+        container = new RobotContainer();
     }
 
     @Override
@@ -24,24 +24,13 @@ public class Robot extends TimedRobot {
         CommandLogger.pollButtons();
     }
 
-    @Override
-    public void disabledInit() {
-    }
-
-    @Override
-    public void disabledPeriodic() {
-    }
-
-    @Override
-    public void disabledExit() {
-    }
+//region Auto ------------------------------------------------------------------
 
     @Override
     public void autonomousInit() {
-        m_autonomousCommand = m_robotContainer.getAutonomousCommand();
-
-        if (m_autonomousCommand != null) {
-            CommandScheduler.getInstance().schedule(m_autonomousCommand);
+        autoCommand = container.getAutonomousCommand();
+        if (autoCommand != null) {
+            CommandScheduler.getInstance().schedule(autoCommand);
         }
     }
 
@@ -49,14 +38,14 @@ public class Robot extends TimedRobot {
     public void autonomousPeriodic() {
     }
 
-    @Override
-    public void autonomousExit() {
-    }
+//endregion
+
+//region Teleop ----------------------------------------------------------------
 
     @Override
     public void teleopInit() {
-        if (m_autonomousCommand != null) {
-            m_autonomousCommand.cancel();
+        if (autoCommand != null) {
+            autoCommand.cancel();
         }
     }
 
@@ -64,9 +53,9 @@ public class Robot extends TimedRobot {
     public void teleopPeriodic() {
     }
 
-    @Override
-    public void teleopExit() {
-    }
+//endregion
+
+//region Other -----------------------------------------------------------------
 
     @Override
     public void testInit() {
@@ -78,6 +67,6 @@ public class Robot extends TimedRobot {
     }
 
     @Override
-    public void testExit() {
+    public void disabledPeriodic() {
     }
 }

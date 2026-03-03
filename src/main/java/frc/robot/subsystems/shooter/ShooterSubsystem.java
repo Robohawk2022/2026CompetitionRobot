@@ -23,19 +23,19 @@ public class ShooterSubsystem extends SubsystemBase {
 
     final ShooterHardware hardware;
     final MotorStatus shooterStatus;
-    boolean idleAtIntakeSpeed;
+    double idleRpm;
     boolean shooterAtSpeed;
 
     public ShooterSubsystem(ShooterHardware hardware) {
         this.hardware = hardware;
         this.shooterStatus = new MotorStatus();
         this.shooterAtSpeed = false;
-        this.idleAtIntakeSpeed = false;
+        this.idleRpm = 0.0;
 
         SmartDashboard.putData("ShooterSubsystem", builder -> {
             shooterStatus.addToBuilder("ShooterMotor", builder);
             builder.addBooleanProperty("ShooterMotor/AtSpeed?", () -> shooterAtSpeed, null);
-            builder.addBooleanProperty("ShooterMotor/IdleAtIntakeSpeed?", () -> idleAtIntakeSpeed, val -> idleAtIntakeSpeed = val);
+            builder.addDoubleProperty("ShooterMotor/IdleRpm", () -> idleRpm, null);
             builder.addDoubleProperty("ShooterMotor/Amps", hardware::getShooterAmps, null);
         });
     }
@@ -77,11 +77,8 @@ public class ShooterSubsystem extends SubsystemBase {
      */
     public Command idleCommand() {
         return run(() -> {
-            double desiredRpm = idleAtIntakeSpeed
-                    ? intakeRpm.getAsDouble()
-                    : 0.0;
-            shooterStatus.desiredRpm = desiredRpm;
-            hardware.applyRpm(desiredRpm);
+            shooterStatus.desiredRpm = idleRpm;
+            hardware.applyRpm(idleRpm);
         });
     }
 
@@ -92,6 +89,13 @@ public class ShooterSubsystem extends SubsystemBase {
     public Command velocityCommand(double rpm) {
         return startRun(
                 () -> {
+
+                    // this is what ensures that, after the first time we're
+                    // spun up, we will always maintain intake velocity
+                    if (idleRpm == 0.0) {
+                        idleRpm = intakeRpm.getAsDouble();
+                    }
+
                     shooterStatus.desiredRpm = rpm;
                     hardware.resetPid();
                 },

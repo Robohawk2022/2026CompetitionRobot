@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -28,6 +27,7 @@ import frc.robot.subsystems.swerve.TunerConstants;
 
 public class RobotContainer {
 
+    // flip this to reset all preferences once the robot starts up
     public static boolean RESET_PREFS = false;
 
     public static final int LED_PWM_PORT = 0;
@@ -87,7 +87,8 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-        return Commands.none(); // auto.generateCommand();
+//        return auto.generateCommand();
+        return Commands.print("skipping auto (for now)");
     }
 
     private void configureBindings() {
@@ -101,7 +102,6 @@ public class RobotContainer {
         driver.x().whileTrue(ShootingCommands.jiggle(swerve));
 
         driver.start().whileTrue(swerve.driveToHeadingCommand(Rotation2d.k180deg));
-            //ShootingCommands.orientToShoot(led, swerve));
 
         // sticks reset pose
         driver.leftStick().onTrue(swerve.zeroPoseCommand());
