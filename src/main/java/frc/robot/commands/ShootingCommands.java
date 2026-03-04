@@ -37,9 +37,14 @@ public class ShootingCommands {
      */
     public static Command intakeMode(LEDSubsystem led, BallPathSubsystem ballPath, ShooterSubsystem shooter) {
 
+        // the LED and shooter commands will run forever. the last one will
+        // pause to let the shooter change target speeds, and then quit when
+        // it's at the new target. the whole thing ends when the shooter is
+        // at speed.
         Command step1 = Commands.race(
                 led.flash(LEDSignal.SPINNING_UP),
-                shooter.intakeCommand().until(shooter::atSpeed));
+                shooter.intakeCommand().until(shooter::atSpeed),
+                Commands.waitSeconds(0.5).andThen(Commands.waitUntil(shooter::atSpeed)));
 
         Command step2 = Commands.parallel(
                 led.flash(LEDSignal.INTAKING),
@@ -55,9 +60,14 @@ public class ShootingCommands {
      */
     public static Command shootMode(LEDSubsystem led, BallPathSubsystem ballPath, ShooterSubsystem shooter) {
 
+        // the LED and shooter commands will run forever. the last one will
+        // pause to let the shooter change target speeds, and then quit when
+        // it's at the new target. the whole thing ends when the shooter is
+        // at speed.
         Command step1 = Commands.race(
                 led.flash(LEDSignal.SPINNING_UP),
-                shooter.shootCommand().until(shooter::atSpeed));
+                shooter.shootCommand().until(shooter::atSpeed),
+                Commands.waitSeconds(0.5).andThen(Commands.waitUntil(shooter::atSpeed)));
 
         Command step2 = Commands.parallel(
                 led.show(LEDSignal.SHOOTING),
