@@ -29,7 +29,7 @@ import static frc.robot.Config.SwerveAuto.openHopperVelocity;
  */
 public class ShootingCommands {
 
-    public static final boolean VERBOSE = false;
+    public static final boolean VERBOSE = true;
 
     /**
      * Spin up the shooter to intake speed then run the ball path in

@@ -102,7 +102,9 @@ public class ShooterSubsystem extends SubsystemBase {
                     if (idleRpm == 0.0) {
                         idleRpm = intakeRpm.getAsDouble();
                     }
-
+                    if(shooterStatus.desiredRpm != rpm) {
+                        shooterAtSpeed = false;
+                    }
                     shooterStatus.desiredRpm = rpm;
                     hardware.resetPid();
                 },
