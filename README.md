@@ -63,3 +63,59 @@
     * Click to reset from vision pose
         * Watch the robot's position jump in AdvantageScope
         * Drive around and luxuriate
+
+# NOTES ON TESTING AUTO
+
+## Robot measurements & configuration
+
+We need to verify a few measurements and make sure they are registered in
+the right places. In general:
+
+* The Swerve Drive cares about the gearing on the wheels, current limits for
+motors, and the position of the wheels relative to the center of the robot.
+That stuff is all in `SwerveHardwareConfig`.
+
+* The PathPlanner library (which runs the autonomous routine during the match)
+is configured in `AutonomousSubsystem`. It reuses some of those configuration
+properties. It *also* cares about stuff like the robot's weight and moment
+of inertia (MOI); for simplicity we store that stuff in `SwerveHardwareConfig`
+as well.
+
+* The PathPlanner GUI wants to know that stuff PLUS information about the
+geometry of the bumpers, so it can accurately draw the robot on the field.
+That information is stored in "Robot Config" in the application's settings.
+
+* PathPlanner GUI also has some "speed limits" under "App Settings". It
+lets you specify a maximum translation and rotation velocity and acceleration.
+
+## Common gotchas
+
+* The GUI is a little buggy with "linked waypoints". I notice that sometimes
+they will get reset. I usually make it a habit to visually inspect the 
+autonomous routines and make sure they "look right" before deploying to the
+robot if I'm going to run autos.
+
+* There's also nothing that will prevent you from naming a command in the
+GUI that isn't registered in the `AutonomousSubsystem`. Make sure all the
+commands you want to use are registered there - deployment is a good time
+to check that, as well.
+
+* Before you run your auto program, make sure you know which alliance
+you think you are, and which one the Driver Station thinks you are. (You
+probably always want to run as blue for now.) The impact could be wonky 
+pose reports in the dashboard.
+
+* If the robot doesn't move at all, something is wrong. Make sure your 
+program is actually running (the `AutonomousSubsystem` will log the start
+and end of the program to the console).
+
+* Another thing that can prevent the robot from running is if a Command
+accidentally runs forever. If the robot seems frozen, make sure you don't
+have a runaway command. You can always add timeouts to Commands as you
+register them.
+
+* If the robot doesn't accurately follow the path, you may need tuning.
+There are separate kP parameters for translation and rotation when 
+running an auto path. They are declared in `Config`:
+  * `PathPlanner/Translation/kP`
+  * `PathPlanner/Rotation/kP`
