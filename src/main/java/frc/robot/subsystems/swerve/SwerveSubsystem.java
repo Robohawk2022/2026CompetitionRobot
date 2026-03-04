@@ -115,15 +115,6 @@ public class SwerveSubsystem extends SubsystemBase {
         // We just need to publish visualization data
         Pose2d pose = getPose();
         Util.publishPose("FusedPose", pose);
-
-        // publish position prominently for Shuffleboard
-        SmartDashboard.putNumber("Pose X (ft)", Units.metersToFeet(pose.getX()));
-        SmartDashboard.putNumber("Pose Y (ft)", Units.metersToFeet(pose.getY()));
-        SmartDashboard.putNumber("Pose Heading (deg)", pose.getRotation().getDegrees());
-
-        // publish pose for PathPlanner telemetry (meters, radians)
-        SmartDashboard.putNumberArray("PathPlanner/OdometryPose",
-            new double[] { pose.getX(), pose.getY(), pose.getRotation().getRadians() });
     }
 
     @Override

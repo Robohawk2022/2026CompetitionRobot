@@ -113,6 +113,15 @@ public class PosePipeline {
     }
 
     /**
+     * @return the latest robot pose estimate (null if there isn't one)
+     */
+    public Pose2d getRobotPose() {
+        return latestEstimate == null
+                ? null
+                : latestEstimate.pose;
+    }
+
+    /**
      * @return the pose of the tag used for the most recent estimate (null
      * if there isn't one)
      */
@@ -170,10 +179,6 @@ public class PosePipeline {
             }
         }
 
-        // publish the pose for debugging
-        Util.publishPose(estimatePoseKey, estimate.pose);
-        Util.publishPose(tagPoseKey, Field.getTagPose(estimate.rawFiducials[0].id));
-
         // if the hub would obscure the tag from view, this is obviously
         // not a good estimate and should ignore it (this is an error condition
         // we've noticed in practice)
@@ -219,12 +224,14 @@ public class PosePipeline {
 
         // in each case, we expect the estimated robot pose to be in the same
         // rough "zone" as the tag that was used to generate it
-        return switch (hubSide) {
+        boolean visible = switch (hubSide) {
             case NORTH -> Field.isNorthSide(estimate.pose);
             case SOUTH -> Field.isSouthSide(estimate.pose);
             case NEUTRAL -> Field.isNeutralZone(estimate.pose);
             case ALLIANCE -> Field.isAllianceZone(estimate.pose);
         };
+
+        return !visible;
     }
 
     /**

@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.limelight.LimelightHelpers.PoseEstimate;
 import frc.robot.subsystems.limelight.PosePipeline.Algorithm;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.util.Field;
 import frc.robot.util.Util;
 
 import java.util.Objects;
@@ -166,6 +167,14 @@ public class LimelightSubsystem extends SubsystemBase {
         // update the two pipelines
         megaTag1.update(currentPose);
         megaTag2.update(currentPose);
+
+        // publish poses
+        if (verboseLogging) {
+            Util.publishPose("MegaTag1-Robot", megaTag1.getRobotPose());
+            Util.publishPose("MegaTag1-Tag", megaTag1.getTagPose());
+            Util.publishPose("MegaTag2-Robot", megaTag2.getRobotPose());
+            Util.publishPose("MegaTag2-Tag", megaTag2.getTagPose());
+        }
 
         // determine whether we have an estimate we can use for fused
         // estimation (prefer MegaTag2 if available)

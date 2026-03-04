@@ -277,7 +277,7 @@ public class Field {
      */
     public static boolean isNeutralZone(Pose2d pose) {
         return Units.metersToInches(pose.getX()) > 182.11
-                || Units.metersToInches(pose.getX()) < 469.11;
+                && Units.metersToInches(pose.getX()) < 469.11;
     }
 
     /**

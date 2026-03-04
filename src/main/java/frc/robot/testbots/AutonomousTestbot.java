@@ -57,12 +57,13 @@ public class AutonomousTestbot extends TimedRobot {
 
         controller.a().whileTrue(ShootingCommands.intakeMode(led, ballPath, shooter));
         controller.b().whileTrue(ShootingCommands.shootMode(led, ballPath, shooter));
-        controller.b().whileTrue(ShootingCommands.orientToShoot(led, swerve));
+        controller.x().whileTrue(ShootingCommands.orientToShoot(led, swerve));
+        controller.y().whileTrue(auto.generateCommand());
     }
 
     @Override
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
-        // limelightSim.update(swerve.getPose());
+         limelightSim.update(swerve.getPose());
     }
 }
