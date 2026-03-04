@@ -14,6 +14,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -127,8 +128,9 @@ public class AutonomousSubsystem extends SubsystemBase {
         // and actually applies them to drive the robot around; if the
         // robot isn't moving at all, start debugging here
         BiConsumer<ChassisSpeeds,DriveFeedforwards> output = (s, f) -> {
-            SmartDashboard.putNumber("PP_X", s.vxMetersPerSecond);
-            SmartDashboard.putNumber("PP_Y", s.vyMetersPerSecond);
+            SmartDashboard.putNumber("PathPlanner/SpeedX", Units.metersToFeet(s.vxMetersPerSecond));
+            SmartDashboard.putNumber("PathPlanner/SpeedY", Units.metersToFeet(s.vyMetersPerSecond));
+            SmartDashboard.putNumber("PathPlanner/SpeedOmega", Units.radiansToDegrees(s.omegaRadiansPerSecond));
             swerve.driveRobotRelative("path-planner", s);
         };
 
@@ -160,31 +162,15 @@ public class AutonomousSubsystem extends SubsystemBase {
      * for visualization in PathPlanner and other tools.
      */
     private void configureLogging() {
-        // publish target pose for PathPlanner visualization
-        PathPlannerLogging.setLogTargetPoseCallback(pose -> {
-            SmartDashboard.putNumberArray("PathPlanner/TargetPose",
-                new double[] { pose.getX(), pose.getY(), pose.getRotation().getRadians() });
-            Util.log("[auto] target pose: %s", pose);
-        });
-
-        // publish active path for PathPlanner visualization
-        PathPlannerLogging.setLogActivePathCallback(path -> {
-            double[] pathArray = new double[path.size() * 3];
-            for (int i = 0; i < path.size(); i++) {
-                Pose2d pose = path.get(i);
-                pathArray[i * 3] = pose.getX();
-                pathArray[i * 3 + 1] = pose.getY();
-                pathArray[i * 3 + 2] = pose.getRotation().getRadians();
-            }
-            SmartDashboard.putNumberArray("PathPlanner/ActivePath", pathArray);
-            Util.log("[auto] active path: %s", path);
-        });
 
         // publish current pose for PathPlanner visualization
         PathPlannerLogging.setLogCurrentPoseCallback(pose -> {
-            SmartDashboard.putNumberArray("PathPlanner/CurrentPose",
-                new double[] { pose.getX(), pose.getY(), pose.getRotation().getRadians() });
-            Util.log("[auto] current pose: %s", pose);
+            Util.publishPose("PathPlanner-Current", pose);
+        });
+
+        // publish target pose for PathPlanner visualization
+        PathPlannerLogging.setLogTargetPoseCallback(pose -> {
+            Util.publishPose("PathPlanner-Target", pose);
         });
     }
 
@@ -202,12 +188,18 @@ public class AutonomousSubsystem extends SubsystemBase {
     public Command generateCommand() {
 
         if (selected == null) {
+            Util.log("[auto] =================================================");
             Util.log("[auto] NO SELECTED PROGRAM!!!");
+            Util.log("[auto] =================================================");
             swerve.resetPose(createEmergencyStartPose());
             return createEmergencyCommand(led);
         }
 
         else {
+
+            Util.log("[auto] =================================================");
+            Util.log("[auto] %s", selected);
+            Util.log("[auto] =================================================");
 
             // this loads the actual program description and links it
             // up with all the other configurations
@@ -288,15 +280,13 @@ public class AutonomousSubsystem extends SubsystemBase {
      */
     private Command decorateAutoCommand(Command autoCommand) {
 
-        Command showAlliance = led.flash(Util.isRedAlliance()
-                    ? LEDSignal.ALLIANCE_RED
-                    : LEDSignal.ALLIANCE_BLUE);
+        String msg = """
+                [auto] ================================================
+                [auto] done with auto
+                [auto] ================================================""";
 
-        Command logComplete = Commands.print("[auto] done with auto");
-
-        return showAlliance
-                .andThen(autoCommand)
-                .andThen(logComplete);
+        return autoCommand
+                .andThen(Commands.print(msg));
     }
 
     /*
@@ -308,7 +298,11 @@ public class AutonomousSubsystem extends SubsystemBase {
      * @see #createEmergencyStartPose()
      */
     private Command createEmergencyCommand(LEDSubsystem led) {
-        Command log = Commands.print("[auto] oh, dang, something went wrong!");
+        String msg = """
+                [auto] ================================================
+                [auto] OH, CRAP, SOMETHING WENT WRONG
+                [auto] ================================================""";
+        Command log = Commands.print(msg);
         Command blink = led.show(LEDSignal.OH_CRAP_AUTO);
         return log.alongWith(blink);
     }

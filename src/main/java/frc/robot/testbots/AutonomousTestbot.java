@@ -1,6 +1,7 @@
 package frc.robot.testbots;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.GameController;
@@ -10,7 +11,6 @@ import frc.robot.subsystems.auto.AutonomousSubsystem;
 import frc.robot.subsystems.ballpath.BallPathHardwareSim;
 import frc.robot.subsystems.ballpath.BallPathSubsystem;
 import frc.robot.subsystems.led.LEDHardwareSim;
-import frc.robot.subsystems.led.LEDSignal;
 import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.limelight.LimelightSim;
 import frc.robot.subsystems.limelight.LimelightSubsystem;
@@ -28,6 +28,7 @@ public class AutonomousTestbot extends TimedRobot {
     final AutonomousSubsystem auto;
     final LimelightSubsystem limelight;
     final LimelightSim limelightSim;
+    Command autoCommand;
 
     public AutonomousTestbot() {
 
@@ -58,12 +59,24 @@ public class AutonomousTestbot extends TimedRobot {
         controller.a().whileTrue(ShootingCommands.intakeMode(led, ballPath, shooter));
         controller.b().whileTrue(ShootingCommands.shootMode(led, ballPath, shooter));
         controller.x().whileTrue(ShootingCommands.orientToShoot(led, swerve));
-        controller.y().whileTrue(auto.generateCommand());
     }
 
     @Override
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
          limelightSim.update(swerve.getPose());
+    }
+
+    @Override
+    public void autonomousInit() {
+        autoCommand = auto.generateCommand();
+        CommandScheduler.getInstance().schedule(autoCommand);
+    }
+
+    @Override
+    public void autonomousExit() {
+        if (autoCommand != null) {
+            autoCommand.cancel();;
+        }
     }
 }

@@ -103,8 +103,8 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-//        return auto.generateCommand();
-        return Commands.print("skipping auto (for now)");
+       return auto.generateCommand();
+        // return Commands.print("skipping auto (for now)");
     }
 
     private void configureBindings() {
