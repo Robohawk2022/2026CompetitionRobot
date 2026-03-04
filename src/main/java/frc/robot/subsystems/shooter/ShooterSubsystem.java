@@ -30,7 +30,7 @@ public class ShooterSubsystem extends SubsystemBase {
         this.hardware = hardware;
         this.shooterStatus = new MotorStatus();
         this.shooterAtSpeed = false;
-        this.idleRpm = 0.0;
+        this.idleRpm = intakeRpm.getAsDouble();
 
         SmartDashboard.putData("ShooterSubsystem", builder -> {
             shooterStatus.addToBuilder("ShooterMotor", builder);
@@ -64,13 +64,6 @@ public class ShooterSubsystem extends SubsystemBase {
      */
     public boolean shooterAtSpeed() {
         return shooterAtSpeed;
-    }
-
-    /**
-     * Zero out the idle speed
-     */
-    public void resetIdleSpeed() {
-        idleRpm = 0.0;
     }
 
 //endregion
@@ -123,13 +116,6 @@ public class ShooterSubsystem extends SubsystemBase {
      */
     public Command shootCommand() {
         return defer(() -> velocityCommand(shootRpm.getAsDouble()));
-    }
-
-    /**
-     * @return a command that will explicitly set the idle speed to intake speed
-     */
-    public Command idleAtIntakeSpeedCommand() {
-        return runOnce(() -> idleRpm = intakeRpm.getAsDouble());
     }
 
 //endregion

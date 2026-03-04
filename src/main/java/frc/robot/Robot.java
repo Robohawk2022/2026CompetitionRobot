@@ -53,11 +53,6 @@ public class Robot extends TimedRobot {
     public void teleopPeriodic() {
     }
 
-    @Override
-    public void teleopExit() {
-        container.shooter.resetIdleSpeed();
-    }
-
 //endregion
 
 //region Other -----------------------------------------------------------------
