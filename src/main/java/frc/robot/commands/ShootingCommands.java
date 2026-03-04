@@ -191,6 +191,6 @@ public class ShootingCommands {
 
         // if we're too far from the hub, we're not in position
         return MathUtil.isNear(distanceTarget, distanceCurrent, distanceTolerance)
-            && MathUtil.isNear(angleTarget, angleCurrent, angleTolerance);
+            && MathUtil.isNear(angleTarget, angleCurrent, angleTolerance, -180.0, 180.0);
     }
 }
