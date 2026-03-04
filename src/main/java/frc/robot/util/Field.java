@@ -199,8 +199,14 @@ public class Field {
     static Pose2d redHubCenter = null;
 
     /**
-     * Returns the center of the hub (tower) for the current alliance.
-     * <p>
+     * @return the pose at the center of the hub for the current alliance
+     */
+    public static Pose2d getHubCenter() {
+        return getHubCenter(Util.isRedAlliance());
+    }
+
+    /**
+     * Returns the center of the hub (tower) for the specified alliance.
      * For 2026, the hub center is calculated as the midpoint between two
      * AprilTags on opposite sides of the hub:
      * <ul>
@@ -208,15 +214,13 @@ public class Field {
      *   <li>Blue alliance: tags 18 and 21</li>
      * </ul>
      *
-     * @return the pose at the center of the hub for the current alliance
+     * @return the pose at the center of the hub for the specified alliance
      */
-    public static Pose2d getHubCenter() {
-
-        boolean isRed = Util.isRedAlliance();
+    public static Pose2d getHubCenter(boolean red) {
 
         Pose2d tag1;
         Pose2d tag2;
-        if (isRed) {
+        if (red) {
             if (redHubCenter != null) {
                 return redHubCenter;
             }
@@ -235,7 +239,7 @@ public class Field {
                 (tag1.getY() + tag2.getY()) / 2.0,
                 Rotation2d.kZero);
 
-        if (isRed) {
+        if (red) {
             redHubCenter = center;
         } else {
             blueHubCenter = center;

@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "NearLeftToShoot"
+            "pathName": "NearLeftToMiddleShoot"
           }
         },
         {
@@ -17,9 +17,9 @@
           }
         },
         {
-          "type": "named",
+          "type": "path",
           "data": {
-            "name": "DriveToLeftIntake"
+            "pathName": "MiddleShootToIntake"
           }
         }
       ]

@@ -236,12 +236,8 @@ public class AutonomousSubsystem extends SubsystemBase {
         // we use a LinkedHashMap so the programs will be shown in the
         // same order as below
         Map<String,String> programs = new LinkedHashMap<>();
-        programs.put("FLA", "FLA");
-        programs.put("MLA", "MLA");
-        programs.put("NLA", "NLA");
-        programs.put("FRA", "FRA");
-        programs.put("MRA", "MRA");
-        programs.put("NRA", "NRA");
+        programs.put("NONE", "None");
+        programs.put("TEST", "Test");
         return programs;
     }
 
