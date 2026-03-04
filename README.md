@@ -21,6 +21,12 @@
     * Re-enable teleop
         * It shouldn't move (rinse and repeat)
 
+* Prep for auto testing
+    * Confirm all measurements
+        * Weight and module position measurements in SwerveHardwareConfig
+        * Weight, module position and bumper measurements in PathPlanner
+    * Visually inspect paths with new measurements
+
 * Run auto
     * Review AutonomousSubsystem.getProgramNames to make sure they are registered
     * Review AutonomousSubsystem.registerNamedCommands to make sure required commands exist
