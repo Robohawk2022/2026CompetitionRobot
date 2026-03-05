@@ -3,26 +3,20 @@ package frc.robot;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
-import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.Vector;
-import edu.wpi.first.math.numbers.N3;
-
 import static frc.robot.util.Util.pref;
 
 public interface Config {
-
-//region Logging ---------------------------------------------------------------
-
+    
     interface Logging {
 
         /** Master switch for all verbose logging (overrides individual settings when false) */
-        BooleanSupplier verboseEnabled = pref("Logging/VerboseEnabled?", true);
+        BooleanSupplier verboseEnabled = pref("Logging/VerboseEnabled?", false);
 
         /** Log controller button presses and stick values */
-        BooleanSupplier controllerLogging = pref("Logging/Controller?", true);
+        BooleanSupplier controllerLogging = pref("Logging/Controller?", false);
 
         /** Log command scheduling and lifecycle events */
-        BooleanSupplier commandLogging = pref("Logging/Commands?", true);
+        BooleanSupplier commandLogging = pref("Logging/Commands?", false);
 
         /** Log every command execute call (very verbose, use sparingly) */
         BooleanSupplier commandExecuteLogging = pref("Logging/CommandExecute?", false);
@@ -32,31 +26,29 @@ public interface Config {
          * Respects the master switch.
          */
         static boolean isEnabled(BooleanSupplier category) {
-            return verboseEnabled.getAsBoolean() && category.getAsBoolean();
-        }
+                return verboseEnabled.getAsBoolean() && category.getAsBoolean();
+            }
     }
-
-//endregion
 
 //region Swerve (Teleop) -------------------------------------------------------
 
     interface SwerveTeleop {
 
         /** Maximum speeds */
-        DoubleSupplier maxTranslate = pref("SwerveTeleop/MaxTranslateFPS", 7.0);
-        DoubleSupplier maxRotate = pref("SwerveTeleop/MaxRotateDPS", 120.0);
+        DoubleSupplier maxTranslate = pref("SwerveTeleop/MaxTranslateFPS", 10.0);
+        DoubleSupplier maxRotate = pref("SwerveTeleop/MaxRotateDPS", 160.0);
         DoubleSupplier maxOrbit = pref("SwerveTeleop/MaxOrbitFPS", 15.0);
 
         /** Speed mode factors (turbo/sniper) */
-        DoubleSupplier sniperFactor = pref("SwerveTeleop/SniperFactor", 0.5);
-        DoubleSupplier turboFactor = pref("SwerveTeleop/TurboFactor", 2.0);
+        DoubleSupplier sniperFactor = pref("SwerveTeleop/SniperFactor", 0.25);
+        DoubleSupplier turboFactor = pref("SwerveTeleop/TurboFactor", 1.5);
         BooleanSupplier applySniperToRotation = pref("SwerveTeleop/SniperRotation?", true);
 
         /** Driver relative mode */
-        BooleanSupplier driverRelative = pref("SwerveTeleop/DriverRelative?", false);
+        BooleanSupplier driverRelative = pref("SwerveTeleop/DriverRelative?", true);
 
         /** Joystick deadband & exponent */
-        DoubleSupplier deadband = pref("SwerveTeleop/Deadband", 0.1);
+        DoubleSupplier deadband = pref("SwerveTeleop/Deadband", 0.3);
         DoubleSupplier exponent = pref("SwerveTeleop/Exponent", 2.0);
 
         /** Use XBox mapping */
@@ -81,19 +73,19 @@ public interface Config {
         DoubleSupplier maxTranslationAcceleration = pref("SwerveAuto/MaxTranslationFPSS", 7.0);
 
         /** Proportional gain for translation feedback (units: 1/sec) */
-        DoubleSupplier translationKp = pref("SwerveAuto/TranslationKp", 0.0);
+        DoubleSupplier translationKp = pref("SwerveAuto/TranslationKp", 1.0);
 
         /** Tolerance for position commands in feet */
         DoubleSupplier positionTolerance = pref("SwerveAuto/PositionToleranceFeet", 0.1);
 
         /** Maximum rotation velocity in degrees per second */
-        DoubleSupplier maxRotationVelocity = pref("SwerveAuto/MaxRotationDPS", 90.0);
+        DoubleSupplier maxRotationVelocity = pref("SwerveAuto/MaxRotationDPS", 360.0);
 
         /** Maximum rotation acceleration in degrees per second squared */
-        DoubleSupplier maxRotationAcceleration = pref("SwerveAuto/MaxRotationDPSS", 180.0);
+        DoubleSupplier maxRotationAcceleration = pref("SwerveAuto/MaxRotationDPSS", 720.0);
 
         /** Proportional gain for rotation feedback (units: 1/sec) */
-        DoubleSupplier rotationKp = pref("SwerveAuto/RotationKp", 0.0);
+        DoubleSupplier rotationKp = pref("SwerveAuto/RotationKp", 1.0);
 
         /** Tolerance for heading commands in degrees */
         DoubleSupplier headingTolerance = pref("SwerveAuto/HeadingToleranceDeg", 2.0);
@@ -110,8 +102,8 @@ public interface Config {
         DoubleSupplier maxSpeed = pref("PathPlanner/MaxSpeed", 3.5);
 
         /** Gains for path following */
-        DoubleSupplier translationP = pref("PathPlanner/Translation/kP", 10.0);
-        DoubleSupplier rotationP = pref("PathPlanner/Rotation/kP", 7.0);
+        DoubleSupplier translationP = pref("PathPlanner/Translation/kP", 0.0);
+        DoubleSupplier rotationP = pref("PathPlanner/Rotation/kP", 0.0);
 
         /** Enable PathPlanner debug logging */
         BooleanSupplier debugLogging = pref("PathPlanner/Debug?", true);
@@ -138,12 +130,6 @@ public interface Config {
 
         /** Maximum yaw rate for MegaTag2 estimates (degrees per second) */
         DoubleSupplier maxYawRate = pref("Limelight/MaxYawRate", 720.0);
-
-        /** Confidence levels (lower numbers mean higher confidence) */
-        Vector<N3> lowConfidence = VecBuilder.fill(2.0, 2.0, 9999999.0);
-        Vector<N3> mediumConfidence = VecBuilder.fill(0.9, 0.9, 9999999.0);
-        Vector<N3> highConfidence = VecBuilder.fill(0.5, 0.5, 9999999.0);
-        Vector<N3> megaTag1Confidence = VecBuilder.fill(0.5, 0.5, 9999999.0);
 
         /** Maximum pose jump (vision corrections larger than this are rejected) */
         DoubleSupplier maxPoseJumpFeet = pref("Limelight/MaxPoseJumpFeet", 2.0);
@@ -199,14 +185,14 @@ public interface Config {
     interface Shooter {
 
         /** PID configuration for the shooter motor */
-        PIDFConfig shooterPid = new PIDFConfig("ShooterSubsystem/ShooterMotor", 0.001, 0.0, 20.0, 0.0, 0.0002);
+        PIDFConfig shooterPid = new PIDFConfig("ShooterSubsystem/ShooterMotor", 0.002, 0.0, 0.0, 0.0, 0.0002);
 
         /** Target RPM for shooting */
-        DoubleSupplier shootRpm = pref("Shooter/ShootRpm", 3000.0);
+        DoubleSupplier shootRpm = pref("Shooter/ShootRpm", 2675.0);
         DoubleSupplier intakeRpm = pref("Shooter/IntakeRpm", 1000.0);
 
         /** How close to target RPM counts as "at speed" */
-        DoubleSupplier shootSpeedTolerance = pref("Shooter/ShootSpeedTolerance", 50.0);
+        DoubleSupplier shootSpeedTolerance = pref("Shooter/ShootSpeedTolerance", 100.0);
 
         /** Stall detection */
         DoubleSupplier stallSpeed = pref("Shooter/StallSpeed", 30.0);
@@ -220,20 +206,18 @@ public interface Config {
     interface BallPath {
 
         /** PID configuration for ball-path motors */
-        PIDFConfig intakePid = new PIDFConfig("BallPathSubsystem/IntakeMotor", 0.00001, 0.0, 20.0, 0.0, 0.00017);
-        PIDFConfig feederPid = new PIDFConfig("BallPathSubsystem/FeederMotor", 0.00001, 0.0, 20.0, 0.0, 0.00017);
-        PIDFConfig agitatorPid = new PIDFConfig("BallPathSubsystem/AgitatorMotor", 0.00001, 0.0, 20.0, 0.0, 0.00017);
+        PIDFConfig intakePid = new PIDFConfig("BallPathSubsystem/IntakeMotor", 0.00004, 0.0, 0.0, 0.0, 0.00017);
+        PIDFConfig feederPid = new PIDFConfig("BallPathSubsystem/FeederMotor", 0.00004, 0.0, 0.0, 0.0, 0.00017);
+        PIDFConfig agitatorPid = new PIDFConfig("BallPathSubsystem/AgitatorMotor", 0.00004, 0.0, 0.0, 0.0, 0.00017);
 
         /** Target speeds for various modes */
         BallPathSpeeds intakeSpeeds = new BallPathSpeeds("BallHandling/IntakeSpeeds", 3000.0, 3000.0, 0.0);
         BallPathSpeeds ejectSpeeds = new BallPathSpeeds("BallHandling/EjectSpeeds", 3000.0, 3000.0, 0.0);
-        BallPathSpeeds feedSpeeds = new BallPathSpeeds("BallHandling/FeedSpeeds", 3000.0, 3000.0, 1000.0);
-        DoubleSupplier feedPulseOn = pref("BallHandling/PulseTimes/FeedPulseOn", 2.0);
-        DoubleSupplier feedPulseOff = pref("BallHandling/PulseTimes/FeedPulseOff", 2.0);
+        BallPathSpeeds feedSpeeds = new BallPathSpeeds("BallHandling/FeedSpeeds", 4000.0, 4000.0, 1000.0);
 
         /** Stall detection */
-        DoubleSupplier stallSpeed = pref("BallPath/StallSpeed", 30.0);
-        DoubleSupplier stallTime = pref("BallPath/StallTime", 1.0);
+        DoubleSupplier stallSpeed = pref("BallHandling/StallSpeed", 30.0);
+        DoubleSupplier stallTime = pref("BallHandling/StallTime", 1.0);
     }
 
 //endregion
@@ -243,9 +227,9 @@ public interface Config {
     interface BallHandling {
 
         /** Distance & spin up time for shooting */
-        DoubleSupplier shootDistanceFeet = pref("BallHandling/ShootDistance", 8.0);
+        DoubleSupplier shootDistanceFeet = pref("BallHandling/ShootDistance", 5.42);
         DoubleSupplier shootDistanceTolerance = pref("BallHandling/ShootDistanceTolerance", 0.5);
-        DoubleSupplier shootAngleTolerance = pref("BallHandling/ShootAngleTolerance", 3.0);
+        DoubleSupplier shootAngleTolerance = pref("BallHandling/ShootAngleTolerance", 5.0);
     }
 
 //endregion
