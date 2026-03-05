@@ -154,7 +154,7 @@ public class AutonomousSubsystem extends SubsystemBase {
                 // if we are the red team, PP should flip the path for us
                 Util::isRedAlliance,
 
-                this);
+                swerve);
     }
 
     /**
