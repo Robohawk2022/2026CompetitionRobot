@@ -120,8 +120,8 @@ public class RobotContainer {
         driver.start().whileTrue(swerve.driveToHeadingCommand(Rotation2d.k180deg));
 
         // sticks reset pose
-        driver.leftStick().onTrue(swerve.zeroPoseCommand());
-        driver.rightStick().onTrue(limelight.resetPoseFromVisionCommand());
+        driver.povUp().onTrue(swerve.zeroPoseCommand());
+        driver.povDown().onTrue(limelight.resetPoseFromVisionCommand());
 
         // driver.start().onTrue(ShootingCommands.openHopper(swerve));
        // driver.start().onTrue(getAutonomousCommand());
