@@ -149,11 +149,7 @@ public class AutonomousSubsystem extends SubsystemBase {
                 output,
                 controller,
                 config,
-
-                // PP plans are drawn from the perspective of the blue team;
-                // if we are the red team, PP should flip the path for us
                 Util::isRedAlliance,
-
                 swerve);
     }
 
@@ -252,24 +248,10 @@ public class AutonomousSubsystem extends SubsystemBase {
      * by your different autonomous programs
      */
     private void registerNamedCommands() {
-
         Util.log("[auto] Registering named commands");
-
-        // unload the hopper
         NamedCommands.registerCommand("Unload",
                 ShootingCommands.shootMode(led, ballPath, shooter)
                         .withTimeout(unloadSecs.getAsDouble()));
-
-        // open the hopper
-        NamedCommands.registerCommand("OpenHopper",
-                ShootingCommands.openHopper(swerve));
-
-        // orient to shoot
-        // NOTE: This will wind up in the robot's position not matching up
-        // with where PathPlanner "thinks" you are. Subsequent paths may not
-        // work the way you expect.
-        NamedCommands.registerCommand("OrientToShoot",
-                ShootingCommands.orientToShoot(led, swerve));
     }
 
     /*
