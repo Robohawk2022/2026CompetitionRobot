@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.303,
-        "y": 3.03
+        "x": 1.5790000000000002,
+        "y": 3.0300000000000002
       },
       "isLocked": false,
       "linkedName": "InnerRightStart"
@@ -20,8 +20,8 @@
         "y": 2.86
       },
       "prevControl": {
-        "x": 3.636776695296637,
-        "y": 3.036776695296637
+        "x": 2.7528932188134525,
+        "y": 2.1528932188134524
       },
       "nextControl": null,
       "isLocked": false,
