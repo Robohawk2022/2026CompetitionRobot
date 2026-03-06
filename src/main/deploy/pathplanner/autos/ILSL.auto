@@ -1,0 +1,31 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "InnerLeftToLeftShoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Unload"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "LeftShootToLeftIntake"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

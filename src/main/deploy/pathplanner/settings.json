@@ -2,7 +2,12 @@
   "robotWidth": 0.914,
   "robotLength": 0.775,
   "holonomicMode": true,
-  "pathFolders": [],
+  "pathFolders": [
+    "StartLeftShootMiddle",
+    "StartLeftShootLeft",
+    "StartRightShootMiddle",
+    "StartRightShootRight"
+  ],
   "autoFolders": [],
   "defaultMaxVel": 3.0,
   "defaultMaxAccel": 3.0,

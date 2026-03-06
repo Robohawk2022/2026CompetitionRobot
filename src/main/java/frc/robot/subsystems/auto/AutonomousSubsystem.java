@@ -236,7 +236,12 @@ public class AutonomousSubsystem extends SubsystemBase {
         // we use a LinkedHashMap so the programs will be shown in the
         // same order as below
         Map<String,String> programs = new LinkedHashMap<>();
-        programs.put("TEST", "Test");
+        programs.put("OL--", "OL");
+        programs.put("ILSL", "ILSL");
+        programs.put("ILSM", "ILSM");
+        programs.put("IRSM", "IRSM");
+        programs.put("IRSR", "IRSR");
+        programs.put("OR--", "OR");
         return programs;
     }
 
@@ -313,8 +318,8 @@ public class AutonomousSubsystem extends SubsystemBase {
      */
     private Pose2d createEmergencyStartPose() {
 
-        // example: assume the robot starts facing away from
-        // the alliance wall (blue is 0, red is 180)
+        // assume the intake side of the robot is facing the
+        // alliance wall
         return Util.isRedAlliance()
                 ? new Pose2d(0.0, 0.0, Rotation2d.k180deg)
                 : Pose2d.kZero;

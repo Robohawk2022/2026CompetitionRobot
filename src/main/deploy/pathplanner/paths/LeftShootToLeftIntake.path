@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.191,
-        "y": 4.03
+        "x": 3.46,
+        "y": 5.2
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.191,
-        "y": 4.03
+        "x": 3.283223304703363,
+        "y": 5.376776695296637
       },
       "isLocked": false,
-      "linkedName": "MiddleShoot"
+      "linkedName": "LeftShoot"
     },
     {
       "anchor": {
-        "x": 3.482534521702683,
-        "y": 2.8115723383941873
+        "x": 4.8315987952088,
+        "y": 5.804501596290082
       },
       "prevControl": {
-        "x": 2.9059077970729326,
-        "y": 3.280942866727598
+        "x": 4.46506031675289,
+        "y": 5.812874720357942
       },
       "nextControl": {
-        "x": 4.059161246332437,
-        "y": 2.3422018100607764
+        "x": 5.293706692712851,
+        "y": 5.793945305515812
       },
       "isLocked": false,
       "linkedName": null
@@ -33,11 +33,11 @@
     {
       "anchor": {
         "x": 7.032021702682564,
-        "y": 2.505702659277198
+        "y": 5.554
       },
       "prevControl": {
-        "x": 5.261949632078987,
-        "y": 2.593261747857676
+        "x": 6.0714566695601855,
+        "y": 5.4576651792644695
       },
       "nextControl": null,
       "isLocked": false,
@@ -46,8 +46,16 @@
   ],
   "rotationTargets": [
     {
-      "waypointRelativePos": 1.17,
+      "waypointRelativePos": 0.04,
       "rotationDegrees": 135.0
+    },
+    {
+      "waypointRelativePos": 0.98,
+      "rotationDegrees": 135.0
+    },
+    {
+      "waypointRelativePos": 1.95,
+      "rotationDegrees": 0.0
     }
   ],
   "constraintZones": [],
@@ -63,13 +71,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 179.65813408407578
+    "rotation": 0.2507262173255552
   },
   "reversed": false,
-  "folder": null,
+  "folder": "StartLeftShootLeft",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -179.94323639800123
+    "rotation": 132.12537326402426
   },
   "useDefaultConstraints": true
 }

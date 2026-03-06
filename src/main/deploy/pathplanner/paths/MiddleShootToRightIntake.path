@@ -1,0 +1,83 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 2.98,
+        "y": 4.03
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 2.637729456018519,
+        "y": 3.3245035445601854
+      },
+      "isLocked": false,
+      "linkedName": "MiddleShoot"
+    },
+    {
+      "anchor": {
+        "x": 2.98,
+        "y": 2.735714626736111
+      },
+      "prevControl": {
+        "x": 2.4033732753702495,
+        "y": 3.205085155069522
+      },
+      "nextControl": {
+        "x": 3.5566267246297536,
+        "y": 2.2663440984027003
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 7.032021702682564,
+        "y": 2.505702659277198
+      },
+      "prevControl": {
+        "x": 5.261949632078987,
+        "y": 2.593261747857676
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": "RightIntake"
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 1.17,
+      "rotationDegrees": 135.0
+    },
+    {
+      "waypointRelativePos": 1.6790090460526312,
+      "rotationDegrees": 135.0
+    },
+    {
+      "waypointRelativePos": 1.92,
+      "rotationDegrees": 0.0
+    }
+  ],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 0.2507262173255552
+  },
+  "reversed": false,
+  "folder": "StartRightShootMiddle",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": -179.94323639800123
+  },
+  "useDefaultConstraints": true
+}

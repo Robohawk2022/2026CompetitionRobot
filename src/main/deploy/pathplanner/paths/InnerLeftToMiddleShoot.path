@@ -4,40 +4,24 @@
     {
       "anchor": {
         "x": 3.579,
-        "y": 3.03
+        "y": 5.03
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.2239229671897287,
-        "y": 2.9546219686162636
+        "x": 2.079,
+        "y": 5.03
       },
       "isLocked": false,
-      "linkedName": "NearLeftStart"
+      "linkedName": "InnerLeftStart"
     },
     {
       "anchor": {
-        "x": 2.318216833095578,
-        "y": 2.9287446504992873
-      },
-      "prevControl": {
-        "x": 2.525235378031383,
-        "y": 2.592339514978602
-      },
-      "nextControl": {
-        "x": 2.187192476679495,
-        "y": 3.1416592296754233
-      },
-      "isLocked": false,
-      "linkedName": null
-    },
-    {
-      "anchor": {
-        "x": 2.191,
+        "x": 2.98,
         "y": 4.03
       },
       "prevControl": {
-        "x": 2.150014265335235,
-        "y": 3.7180028530670475
+        "x": 2.73,
+        "y": 4.03
       },
       "nextControl": null,
       "isLocked": false,
@@ -61,7 +45,7 @@
     "rotation": -179.94323639800123
   },
   "reversed": false,
-  "folder": null,
+  "folder": "StartLeftShootMiddle",
   "idealStartingState": {
     "velocity": 0,
     "rotation": -179.710326200426
