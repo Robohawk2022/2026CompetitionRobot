@@ -188,7 +188,7 @@ public interface Config {
         PIDFConfig shooterPid = new PIDFConfig("ShooterSubsystem/ShooterMotor", 0.002, 0.0, 0.0, 0.0, 0.0002);
 
         /** Target RPM for shooting */
-        DoubleSupplier shootRpm = pref("Shooter/ShootRpm", 2675.0);
+        DoubleSupplier shootRpm = pref("Shooter/ShootRpm", 3300.0); // 2675.0
         DoubleSupplier intakeRpm = pref("Shooter/IntakeRpm", 1000.0);
 
         /** How close to target RPM counts as "at speed" */
