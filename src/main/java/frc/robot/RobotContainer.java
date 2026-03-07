@@ -61,7 +61,8 @@ public class RobotContainer {
         // shooter (default command is coasting)
         shooter = new ShooterSubsystem(RobotBase.isSimulation()
                 ? new ShooterHardwareSim()
-                : new ShooterHardwareRev(SHOOTER_CAN_ID));
+                : new ShooterHardwareRev(SHOOTER_CAN_ID),
+                driver.y());
         shooter.setDefaultCommand(shooter.idleCommand());
 
         // ball path (default command is coasting)

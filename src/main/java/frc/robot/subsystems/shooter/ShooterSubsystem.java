@@ -14,6 +14,8 @@ import static frc.robot.Config.Shooter.shootSpeedTolerance;
 import static frc.robot.Config.Shooter.stallSpeed;
 import static frc.robot.Config.Shooter.stallTime;
 
+import java.util.function.BooleanSupplier;
+
 /**
  * Shooter subsystem — controls the single shooter motor that launches balls.
  */
@@ -23,18 +25,28 @@ public class ShooterSubsystem extends SubsystemBase {
 
     final ShooterHardware hardware;
     final MotorStatus shooterStatus;
+    final BooleanSupplier speedUp;
     double idleRpm;
     boolean shooterAtSpeed;
 
-    public ShooterSubsystem(ShooterHardware hardware) {
+    public ShooterSubsystem(
+        ShooterHardware hardware) {
+            this(hardware, () -> false);
+        }
+
+    public ShooterSubsystem(
+        ShooterHardware hardware,
+        BooleanSupplier speedUp) {
         this.hardware = hardware;
         this.shooterStatus = new MotorStatus();
+        this.speedUp = speedUp;
         this.shooterAtSpeed = false;
         this.idleRpm = intakeRpm.getAsDouble();
 
         SmartDashboard.putData("ShooterSubsystem", builder -> {
             shooterStatus.addToBuilder("ShooterMotor", builder);
             builder.addBooleanProperty("ShooterMotor/AtSpeed?", () -> shooterAtSpeed, null);
+            builder.addBooleanProperty("ShooterMotor/SpeedUp?", speedUp, null);
             builder.addDoubleProperty("ShooterMotor/IdleRpm", () -> idleRpm, null);
             builder.addDoubleProperty("ShooterMotor/Amps", hardware::getShooterAmps, null);
         });
@@ -98,10 +110,13 @@ public class ShooterSubsystem extends SubsystemBase {
                     if(shooterStatus.desiredRpm != rpm) {
                         shooterAtSpeed = false;
                     }
-                    shooterStatus.desiredRpm = rpm;
                     hardware.resetPid();
                 },
-                () -> hardware.applyRpm(rpm));
+                () -> {
+                    double apply = rpm + (speedUp.getAsBoolean() ? 1000.0 : 0.0);
+                    shooterStatus.desiredRpm = apply;
+                    hardware.applyRpm(apply);
+                });
     }
 
     /**

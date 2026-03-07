@@ -138,8 +138,8 @@ public class AutonomousSubsystem extends SubsystemBase {
         // supplied course; if the robot isn't moving accurately, start
         // debugging here
         PathFollowingController controller = new PPHolonomicDriveController(
-                new PIDConstants(translationP.getAsDouble(), 0.0, 0.0),
-                new PIDConstants(rotationP.getAsDouble(), 0.0, 0.0));
+                new PIDConstants(0.0 /* translationP.getAsDouble() */, 0.0, 0.0),
+                new PIDConstants(0.0 /* rotationP.getAsDouble() */, 0.0, 0.0));
 
         Util.log("[auto] configuring AutoBuilder");
         AutoBuilder.configure(
