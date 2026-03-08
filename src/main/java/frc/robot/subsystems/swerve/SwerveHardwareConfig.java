@@ -17,10 +17,10 @@ public final class SwerveHardwareConfig {
     //==========================================================================
 
     /** Robot mass including bumpers and battery */
-    public static final double ROBOT_MASS_KG = 36.3; // est. 80 lbs
+    public static final double ROBOT_MASS_KG = 41.05; // est. 90.5 lbs
 
     /** Robot moment of inertia (kg*m^2) - estimate or calculate from CAD */
-    public static final double ROBOT_MOI = 4.35; // basic estimate
+    public static final double ROBOT_MOI = 4.91; // basic estimate
 
     // guess on COF based on https://www.chiefdelphi.com/t/what-is-the-coefficient-of-friction-of-the-new-swerve-drive-specialties-molded-spike-grip-wheels/512813
     public static final double WHEEL_COF = 2.255;

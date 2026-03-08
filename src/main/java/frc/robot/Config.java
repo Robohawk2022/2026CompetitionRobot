@@ -188,7 +188,7 @@ public interface Config {
         PIDFConfig shooterPid = new PIDFConfig("ShooterSubsystem/ShooterMotor", 0.002, 0.0, 0.0, 0.0, 0.0002);
 
         /** Target RPM for shooting */
-        DoubleSupplier shootRpm = pref("Shooter/ShootRpm", 2675.0);
+        DoubleSupplier shootRpm = pref("Shooter/ShootRpm", 3300.0);
         DoubleSupplier intakeRpm = pref("Shooter/IntakeRpm", 1000.0);
 
         /** How close to target RPM counts as "at speed" */
@@ -211,7 +211,7 @@ public interface Config {
         PIDFConfig agitatorPid = new PIDFConfig("BallPathSubsystem/AgitatorMotor", 0.00004, 0.0, 0.0, 0.0, 0.00017);
 
         /** Target speeds for various modes */
-        BallPathSpeeds intakeSpeeds = new BallPathSpeeds("BallHandling/IntakeSpeeds", 3000.0, 3000.0, 0.0);
+        BallPathSpeeds intakeSpeeds = new BallPathSpeeds("BallHandling/IntakeSpeeds", 3373.0, 3000.0, 0.0);
         BallPathSpeeds ejectSpeeds = new BallPathSpeeds("BallHandling/EjectSpeeds", 3000.0, 3000.0, 0.0);
         BallPathSpeeds feedSpeeds = new BallPathSpeeds("BallHandling/FeedSpeeds", 4000.0, 4000.0, 1000.0);
 
