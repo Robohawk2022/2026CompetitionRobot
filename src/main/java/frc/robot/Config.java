@@ -211,7 +211,7 @@ public interface Config {
         PIDFConfig agitatorPid = new PIDFConfig("BallPathSubsystem/AgitatorMotor", 0.00004, 0.0, 0.0, 0.0, 0.00017);
 
         /** Target speeds for various modes */
-        BallPathSpeeds intakeSpeeds = new BallPathSpeeds("BallHandling/IntakeSpeeds", 3000.0, 3000.0, 0.0);
+        BallPathSpeeds intakeSpeeds = new BallPathSpeeds("BallHandling/IntakeSpeeds", 3373.0, 3000.0, 0.0);
         BallPathSpeeds ejectSpeeds = new BallPathSpeeds("BallHandling/EjectSpeeds", 3000.0, 3000.0, 0.0);
         BallPathSpeeds feedSpeeds = new BallPathSpeeds("BallHandling/FeedSpeeds", 4000.0, 4000.0, 1000.0);
 
