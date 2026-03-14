@@ -22,8 +22,15 @@ import frc.robot.subsystems.limelight.LimelightSubsystem;
 import frc.robot.subsystems.shooter.ShooterHardwareRev;
 import frc.robot.subsystems.shooter.ShooterHardwareSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
+import frc.robot.subsystems.power.PowerHardwareSim;
+import frc.robot.subsystems.power.PowerHardwareWPILib;
+import frc.robot.subsystems.power.PowerSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.TunerConstants;
+
+import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
+
+import java.util.Map;
 
 public class RobotContainer {
 
@@ -35,6 +42,7 @@ public class RobotContainer {
     public static final int FEEDER_CAN_ID = 9;
     public static final int AGITATOR_CAN_ID = 2;
     public static final int SHOOTER_CAN_ID = 35;
+    public static final int PDH_CAN_ID = 1;
 
     public final GameController driver;
     public final SwerveSubsystem swerve;
@@ -43,6 +51,7 @@ public class RobotContainer {
     public final ShooterSubsystem shooter;
     public final BallPathSubsystem ballPath;
     public final LEDSubsystem led;
+    public final PowerSubsystem power;
 
     public RobotContainer() {
 
@@ -80,6 +89,17 @@ public class RobotContainer {
                 ? new LEDHardwareSim()
                 : new LEDHardwareBlinkin(LED_PWM_PORT));
         led.setDefaultCommand(led.show(() -> idleLedSignalCalculator(swerve, limelight)));
+
+        // power monitoring
+        power = new PowerSubsystem(RobotBase.isSimulation()
+                ? new PowerHardwareSim()
+                : new PowerHardwareWPILib(PDH_CAN_ID, ModuleType.kRev),
+                Map.of(
+                        SHOOTER_CAN_ID, "Shooter",
+                        INTAKE_CAN_ID, "Intake",
+                        FEEDER_CAN_ID, "Feeder",
+                        AGITATOR_CAN_ID, "Agitator"
+                ));
 
         auto = new AutonomousSubsystem(
                 swerve,

@@ -222,6 +222,16 @@ public interface Config {
 
 //endregion
 
+//region Power -----------------------------------------------------------------
+
+    interface Power {
+
+        /** How many top-drawing channels to display on dashboard */
+        DoubleSupplier topChannelCount = pref("Power/TopChannelCount", 3.0);
+    }
+
+//endregion
+
 //region BallHandling (shooting coordination) ----------------------------------
 
     interface BallHandling {
