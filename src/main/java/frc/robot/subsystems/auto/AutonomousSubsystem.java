@@ -238,6 +238,7 @@ public class AutonomousSubsystem extends SubsystemBase {
         programs.put("IRSM", "IRSM");
         programs.put("IRSR", "IRSR");
         programs.put("OR--", "OR");
+        programs.put("TEST", "TEST");
         return programs;
     }
 
