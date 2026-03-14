@@ -255,6 +255,9 @@ public class AutonomousSubsystem extends SubsystemBase {
                 ShootingCommands.intakeMode(led, ballPath, shooter)
                         .withTimeout(3.5));
 
+        NamedCommands.registerCommand("UntimedIntake",
+                ShootingCommands.intakeMode(led, ballPath, shooter));
+
         NamedCommands.registerCommand("Unload",
                 ShootingCommands.shootMode(led, ballPath, shooter)
                         .withTimeout(5.7));
