@@ -103,7 +103,7 @@ public interface Config {
 
         /** Gains for path following */
         DoubleSupplier translationP = pref("PathPlanner/Translation/kP", 0.0);
-        DoubleSupplier rotationP = pref("PathPlanner/Rotation/kP", 0.0);
+        DoubleSupplier rotationP = pref("PathPlanner/Rotation/kP", 3.0);
 
         /** Enable PathPlanner debug logging */
         BooleanSupplier debugLogging = pref("PathPlanner/Debug?", true);

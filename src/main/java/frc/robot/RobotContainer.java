@@ -51,7 +51,7 @@ public class RobotContainer {
     public final ShooterSubsystem shooter;
     public final BallPathSubsystem ballPath;
     public final LEDSubsystem led;
-    public final PowerSubsystem power;
+    // public final PowerSubsystem power;
 
     public RobotContainer() {
 
@@ -91,15 +91,15 @@ public class RobotContainer {
         led.setDefaultCommand(led.show(() -> idleLedSignalCalculator(swerve, limelight)));
 
         // power monitoring
-        power = new PowerSubsystem(RobotBase.isSimulation()
-                ? new PowerHardwareSim()
-                : new PowerHardwareWPILib(PDH_CAN_ID, ModuleType.kRev),
-                Map.of(
-                        SHOOTER_CAN_ID, "Shooter",
-                        INTAKE_CAN_ID, "Intake",
-                        FEEDER_CAN_ID, "Feeder",
-                        AGITATOR_CAN_ID, "Agitator"
-                ));
+        // power = new PowerSubsystem(RobotBase.isSimulation()
+        //         ? new PowerHardwareSim()
+        //         : new PowerHardwareWPILib(PDH_CAN_ID, ModuleType.kRev),
+        //         Map.of(
+        //                 SHOOTER_CAN_ID, "Shooter",
+        //                 INTAKE_CAN_ID, "Intake",
+        //                 FEEDER_CAN_ID, "Feeder",
+        //                 AGITATOR_CAN_ID, "Agitator"
+        //         ));
 
         auto = new AutonomousSubsystem(
                 swerve,

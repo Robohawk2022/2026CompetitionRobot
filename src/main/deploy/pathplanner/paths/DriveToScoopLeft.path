@@ -8,24 +8,24 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 4.828541445974577,
-        "y": 5.518924567443503
+        "x": 4.828537786458598,
+        "y": 5.518933919942358
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 5.93011398746469,
-        "y": 5.900986272951977
+        "x": 5.746961483594864,
+        "y": 6.046961483594864
       },
       "prevControl": {
-        "x": 5.29087675450212,
-        "y": 5.5141342801024
+        "x": 5.107724250632295,
+        "y": 5.660109490745287
       },
       "nextControl": {
-        "x": 6.451453696835328,
-        "y": 6.2164893367940985
+        "x": 6.268301192965502,
+        "y": 6.362464547436986
       },
       "isLocked": false,
       "linkedName": null
@@ -62,6 +62,10 @@
   ],
   "rotationTargets": [
     {
+      "waypointRelativePos": 0.16,
+      "rotationDegrees": 135.0
+    },
+    {
       "waypointRelativePos": 1.3,
       "rotationDegrees": 0.0
     }
@@ -70,9 +74,9 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 2.0,
+    "maxVelocity": 3.0,
     "maxAcceleration": 2.0,
-    "maxAngularVelocity": 180.0,
+    "maxAngularVelocity": 360.0,
     "maxAngularAcceleration": 360.0,
     "nominalVoltage": 12.0,
     "unlimited": false
@@ -85,7 +89,7 @@
   "folder": "MoonShot",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -0.039664640345139585
+    "rotation": 180.0
   },
   "useDefaultConstraints": true
 }

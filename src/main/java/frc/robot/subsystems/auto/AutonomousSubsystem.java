@@ -136,8 +136,8 @@ public class AutonomousSubsystem extends SubsystemBase {
         // supplied course; if the robot isn't moving accurately, start
         // debugging here
         PathFollowingController controller = new PPHolonomicDriveController(
-                new PIDConstants(0.0 /* translationP.getAsDouble() */, 0.0, 0.0),
-                new PIDConstants(0.0 /* rotationP.getAsDouble() */, 0.0, 0.0));
+                new PIDConstants(1.0 /* translationP.getAsDouble() */, 0.0, 0.0),
+                new PIDConstants(1.0 /* rotationP.getAsDouble() */, 0.0, 0.0));
 
         Util.log("[auto] configuring AutoBuilder");
         AutoBuilder.configure(
@@ -230,6 +230,7 @@ public class AutonomousSubsystem extends SubsystemBase {
         // we use a LinkedHashMap so the programs will be shown in the
         // same order as below
         Map<String,String> programs = new LinkedHashMap<>();
+        programs.put("MOON", "MOON");
         programs.put("OL--", "OL");
         programs.put("ILSL", "ILSL");
         programs.put("ILSM", "ILSM");
@@ -237,7 +238,6 @@ public class AutonomousSubsystem extends SubsystemBase {
         programs.put("IRSR", "IRSR");
         programs.put("OR--", "OR");
         programs.put("TEST", "TEST");
-        programs.put("MOON", "MOON");
         return programs;
     }
 
@@ -257,7 +257,7 @@ public class AutonomousSubsystem extends SubsystemBase {
 
         NamedCommands.registerCommand("Unload",
                 ShootingCommands.shootMode(led, ballPath, shooter)
-                        .withTimeout(unloadSecs.getAsDouble()));
+                        .withTimeout(5.7));
     }
 
     /*
