@@ -66,7 +66,7 @@ public final class SwerveHardwareConfig {
     public static final double TURN_GEAR_RATIO =  SDS_MK5I_TURN;
     public static final double TURN_CURRENT_LIMIT_AMPS = 60.0;
 
-    public static final double MAX_MOTOR_RPM = 6380.0;  // Kraken X60 free speed
+    public static final double MAX_MOTOR_RPM = 6000.0;  // Kraken X60 free speed
     public static final double MAX_WHEEL_SPEED_MPS = (MAX_MOTOR_RPM / 60.0) * WHEEL_CIRCUMFERENCE_METERS / DRIVE_GEAR_RATIO;
 
     //===========================================================================
@@ -95,10 +95,10 @@ public final class SwerveHardwareConfig {
     // PID TUNING
     //==========================================================================
 
-    public static final double DRIVE_KP = 0.1;
+    public static final double DRIVE_KP = 3.0;
     public static final double DRIVE_KV = 0.124;
 
-    public static final double TURN_KP = 6.0;
+    public static final double TURN_KP = 50.0;
     public static final double TURN_KD = 0.5;
     public static final double TURN_KS = 0.1;
     public static final double TURN_KV = 2.49;

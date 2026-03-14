@@ -69,7 +69,7 @@ public class TunerConstants {
     public static final CANBus kCANBus = new CANBus("", "./logs/example.hoot");
 
     // Theoretical free speed at 12V (Kraken X60 with MK5i R3 gearing)
-    public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(5.85);
+    public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(5.29);
 
     // Coupling ratio: every 1 rotation of azimuth results in this many drive motor turns
     private static final double kCoupleRatio = 3.375;
