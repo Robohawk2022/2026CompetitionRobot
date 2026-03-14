@@ -84,9 +84,12 @@ public class SwerveSubsystem extends SubsystemBase {
                 builder.addDoubleProperty("PoseX", () -> Units.metersToFeet(getPose().getX()), null);
                 builder.addDoubleProperty("PoseY", () -> Units.metersToFeet(getPose().getY()), null);
                 builder.addDoubleProperty("PoseOmega", () -> getHeading().getDegrees(), null);
-                builder.addDoubleProperty("SpeedX", () -> Units.metersToFeet(latestSpeed.vxMetersPerSecond), null);
-                builder.addDoubleProperty("SpeedY", () -> Units.metersToFeet(latestSpeed.vyMetersPerSecond), null);
-                builder.addDoubleProperty("SpeedOmega", () -> Units.radiansToDegrees(latestSpeed.omegaRadiansPerSecond), null);
+                builder.addDoubleProperty("SpeedOmegaCurrent", () -> Units.radiansToDegrees(getCurrentSpeeds().omegaRadiansPerSecond), null);
+                builder.addDoubleProperty("SpeedOmegaDesired", () -> Units.radiansToDegrees(latestSpeed.omegaRadiansPerSecond), null);
+                builder.addDoubleProperty("SpeedXCurrent", () -> Units.metersToFeet(getCurrentSpeeds().vxMetersPerSecond), null);
+                builder.addDoubleProperty("SpeedXDesired", () -> Units.metersToFeet(latestSpeed.vxMetersPerSecond), null);
+                builder.addDoubleProperty("SpeedYCurrent", () -> Units.metersToFeet(getCurrentSpeeds().vyMetersPerSecond), null);
+                builder.addDoubleProperty("SpeedYDesired", () -> Units.metersToFeet(latestSpeed.vyMetersPerSecond), null);
                 builder.addIntegerProperty("VisionPoseCount", () -> visionPoseCount, null);
 
                 // per-module drive motor current
