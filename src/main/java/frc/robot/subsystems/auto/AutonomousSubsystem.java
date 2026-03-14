@@ -262,6 +262,12 @@ public class AutonomousSubsystem extends SubsystemBase {
         NamedCommands.registerCommand("Unload",
                 ShootingCommands.shootMode(led, ballPath, shooter)
                         .withTimeout(5.7));
+
+        NamedCommands.registerCommand("WiggleLikeAWorm",
+                ShootingCommands.jiggle(swerve));
+
+        NamedCommands.registerCommand("SitStill",
+                swerve.driveAtSpeedCommand("stop", Util.ZERO_SPEED));
     }
 
     /*
