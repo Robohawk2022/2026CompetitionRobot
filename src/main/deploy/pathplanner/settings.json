@@ -3,8 +3,9 @@
   "robotLength": 0.775,
   "holonomicMode": true,
   "pathFolders": [
-    "StartLeftShootMiddle",
+    "MoonShot",
     "StartLeftShootLeft",
+    "StartLeftShootMiddle",
     "StartRightShootMiddle",
     "StartRightShootRight"
   ],

@@ -37,8 +37,6 @@ import java.util.function.BiConsumer;
 
 import static frc.robot.Config.PathPlanner.debugLogging;
 import static frc.robot.Config.PathPlanner.maxSpeed;
-import static frc.robot.Config.PathPlanner.rotationP;
-import static frc.robot.Config.PathPlanner.translationP;
 import static frc.robot.Config.PathPlanner.unloadSecs;
 
 /**
@@ -239,6 +237,7 @@ public class AutonomousSubsystem extends SubsystemBase {
         programs.put("IRSR", "IRSR");
         programs.put("OR--", "OR");
         programs.put("TEST", "TEST");
+        programs.put("MOON", "MOON");
         return programs;
     }
 
@@ -249,7 +248,13 @@ public class AutonomousSubsystem extends SubsystemBase {
      * by your different autonomous programs
      */
     private void registerNamedCommands() {
+
         Util.log("[auto] Registering named commands");
+
+        NamedCommands.registerCommand("TimedIntake",
+                ShootingCommands.intakeMode(led, ballPath, shooter)
+                        .withTimeout(3.5));
+
         NamedCommands.registerCommand("Unload",
                 ShootingCommands.shootMode(led, ballPath, shooter)
                         .withTimeout(unloadSecs.getAsDouble()));
