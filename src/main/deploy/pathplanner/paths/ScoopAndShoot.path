@@ -64,12 +64,12 @@
     },
     {
       "anchor": {
-        "x": 3.46,
-        "y": 5.2
+        "x": 2.995,
+        "y": 5.247
       },
       "prevControl": {
-        "x": 3.225882828845428,
-        "y": 5.287687799439723
+        "x": 2.7608828288454283,
+        "y": 5.334687799439723
       },
       "nextControl": null,
       "isLocked": false,
@@ -90,7 +90,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 132.12537326402426
+    "rotation": 135.0
   },
   "reversed": false,
   "folder": "MoonShot",

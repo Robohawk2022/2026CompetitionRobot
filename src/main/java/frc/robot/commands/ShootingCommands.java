@@ -67,7 +67,7 @@ public class ShootingCommands {
         Command step1 = Commands.race(
                 led.flash(LEDSignal.SPINNING_UP),
                 shooter.shootCommand().until(shooter::atSpeed),
-                Commands.waitSeconds(0.5).andThen(Commands.waitUntil(shooter::atSpeed)));
+                Commands.waitSeconds(2.0).andThen(Commands.waitUntil(shooter::atSpeed)));
 
         Command step2 = Commands.parallel(
                 led.show(LEDSignal.SHOOTING),
