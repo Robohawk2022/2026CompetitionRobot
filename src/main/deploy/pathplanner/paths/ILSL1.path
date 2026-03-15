@@ -48,7 +48,7 @@
   "folder": "ILSL",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -0.039664640345139585
+    "rotation": 180.0
   },
   "useDefaultConstraints": false
 }
