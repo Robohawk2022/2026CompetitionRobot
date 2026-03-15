@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -106,6 +107,10 @@ public class RobotContainer {
                 shooter,
                 ballPath,
                 led);
+
+        if (!RobotBase.isSimulation()) {
+            CameraServer.startAutomaticCapture();
+        }
 
         configureBindings();
     }
