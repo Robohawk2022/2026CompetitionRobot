@@ -4,6 +4,7 @@
   "holonomicMode": true,
   "pathFolders": [
     "MoonShot",
+    "Depot",
     "StartLeftShootLeft",
     "StartLeftShootMiddle",
     "StartRightShootMiddle",

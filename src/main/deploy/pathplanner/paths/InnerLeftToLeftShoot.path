@@ -16,12 +16,12 @@
     },
     {
       "anchor": {
-        "x": 2.995,
-        "y": 5.247
+        "x": 3.234,
+        "y": 5.416
       },
       "prevControl": {
-        "x": 2.287893218813453,
-        "y": 5.954106781186548
+        "x": 2.526893218813453,
+        "y": 6.123106781186548
       },
       "nextControl": null,
       "isLocked": false,
@@ -42,7 +42,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 135.0
+    "rotation": 132.12537326402426
   },
   "reversed": false,
   "folder": "StartLeftShootLeft",
