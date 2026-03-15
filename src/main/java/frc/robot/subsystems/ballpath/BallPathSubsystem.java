@@ -1,5 +1,6 @@
 package frc.robot.subsystems.ballpath;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -39,6 +40,7 @@ public class BallPathSubsystem extends SubsystemBase {
             builder.addDoubleProperty("IntakeMotor/Amps", hardware::getIntakeAmps, null);
             builder.addDoubleProperty("FeederMotor/Amps", hardware::getFeederAmps, null);
             builder.addDoubleProperty("AgitatorMotor/Amps", hardware::getAgitatorAmps, null);
+            builder.addBooleanProperty("AtSpeed?", this::intakeAndFeederAtSpeed, null);
         });
     }
 
@@ -56,6 +58,13 @@ public class BallPathSubsystem extends SubsystemBase {
         return intakeStatus.stalled
                 || feederStatus.stalled
                 || agitatorStatus.stalled;
+    }
+
+    /**
+     * @return are the intake and feeder at target speed
+     */
+    public boolean intakeAndFeederAtSpeed() {
+        return intakeStatus.atSpeed() && feederStatus.atSpeed();
     }
 
 //endregion
@@ -118,6 +127,17 @@ public class BallPathSubsystem extends SubsystemBase {
                 feedSpeeds.agitatorRpm.getAsDouble()));
     }
 
+    /**
+     * @return a command that will run the ball-path motors for just the
+     * intake and feeder, to prep for shooting
+     */
+    public Command spinUpForFeedingCommand() {
+        return defer(() -> velocityCommand(
+                feedSpeeds.intakeRpm.getAsDouble(),
+                feedSpeeds.feederRpm.getAsDouble(),
+                0.0));
+    }
+
 //endregion
 
 //region Helper ----------------------------------------------------------------
@@ -163,6 +183,14 @@ public class BallPathSubsystem extends SubsystemBase {
                 this.errorRpm = 0.0;
                 this.stalled = false;
             }
+        }
+
+        /**
+         * @return do we have a desired RPM and, if so, are we within 50 rpm?
+         */
+        public boolean atSpeed() {
+            return desiredRpm != 0.0
+                    && MathUtil.isNear(0.0, errorRpm, 50.0);
         }
     }
 

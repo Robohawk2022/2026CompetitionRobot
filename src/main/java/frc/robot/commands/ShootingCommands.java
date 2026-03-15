@@ -60,15 +60,16 @@ public class ShootingCommands {
      */
     public static Command shootMode(LEDSubsystem led, BallPathSubsystem ballPath, ShooterSubsystem shooter) {
 
-        // the LED and shooter commands will run forever. the last one will
-        // pause to let the shooter change target speeds, and then quit when
-        // it's at the new target. the whole thing ends when the shooter is
-        // at speed.
+        // starts by spinning up the shooter, intake and feed motors
+        // (but NOT the agitator); we will do this until the shooter
+        // has been at speed for a moment
         Command step1 = Commands.race(
-                led.flash(LEDSignal.SPINNING_UP),
-                shooter.shootCommand().until(shooter::atSpeed),
-                Commands.waitSeconds(2.0).andThen(Commands.waitUntil(shooter::atSpeed)));
+                led.show(LEDSignal.SPINNING_UP),
+                shooter.shootCommand(),
+                ballPath.spinUpForFeedingCommand(),
+                Commands.waitUntil(shooter::atSpeed).andThen(Commands.waitSeconds(0.5)));
 
+        // commence feeding and shooting until interrupted
         Command step2 = Commands.parallel(
                 led.show(LEDSignal.SHOOTING),
                 shooter.shootCommand(),
