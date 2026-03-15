@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "InnerLeftToLeftShoot"
+            "pathName": "ILSL1"
           }
         },
         {
@@ -19,7 +19,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "LeftShootToLeftIntake"
+            "pathName": "ILSL2"
           }
         }
       ]

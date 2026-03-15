@@ -230,15 +230,11 @@ public class AutonomousSubsystem extends SubsystemBase {
         // we use a LinkedHashMap so the programs will be shown in the
         // same order as below
         Map<String,String> programs = new LinkedHashMap<>();
-        programs.put("DEPO", "DEPO");
-        programs.put("MOON", "MOON");
         programs.put("OL--", "OL");
+        programs.put("DEPO", "DEPO");
         programs.put("ILSL", "ILSL");
-        programs.put("ILSM", "ILSM");
-        programs.put("IRSM", "IRSM");
         programs.put("IRSR", "IRSR");
         programs.put("OR--", "OR");
-        programs.put("TEST", "TEST");
         return programs;
     }
 
@@ -252,16 +248,12 @@ public class AutonomousSubsystem extends SubsystemBase {
 
         Util.log("[auto] Registering named commands");
 
-        NamedCommands.registerCommand("TimedIntake",
-                ShootingCommands.intakeMode(led, ballPath, shooter)
-                        .withTimeout(3.5));
-
         NamedCommands.registerCommand("UntimedIntake",
                 ShootingCommands.intakeMode(led, ballPath, shooter));
 
         NamedCommands.registerCommand("Unload",
                 ShootingCommands.shootMode(led, ballPath, shooter)
-                        .withTimeout(5.7));
+                        .withTimeout(6.0));
 
         NamedCommands.registerCommand("WiggleLikeAWorm",
                 ShootingCommands.jiggle(swerve));

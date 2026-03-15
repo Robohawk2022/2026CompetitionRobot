@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "OuterRightDoNothing"
+            "pathName": "OR"
           }
         }
       ]

@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.46,
-        "y": 2.86
+        "x": 3.234,
+        "y": 2.644
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.0801840976882926,
-        "y": 2.3959897581096197
+        "x": 2.8541840976882926,
+        "y": 2.17998975810962
       },
       "isLocked": false,
       "linkedName": "RightShoot"
@@ -74,7 +74,7 @@
     "rotation": 0.2507262173255552
   },
   "reversed": false,
-  "folder": "StartRightShootRight",
+  "folder": "IRSR",
   "idealStartingState": {
     "velocity": 0,
     "rotation": -130.42210471891877

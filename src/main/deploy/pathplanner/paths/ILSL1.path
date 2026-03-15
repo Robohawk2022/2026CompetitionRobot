@@ -4,28 +4,28 @@
     {
       "anchor": {
         "x": 3.579,
-        "y": 3.03
+        "y": 5.03
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.579,
-        "y": 3.03
+        "x": 1.5790000000000002,
+        "y": 5.03
       },
       "isLocked": false,
-      "linkedName": "InnerRightStart"
+      "linkedName": "InnerLeftStart"
     },
     {
       "anchor": {
-        "x": 2.98,
-        "y": 4.03
+        "x": 3.234,
+        "y": 5.416
       },
       "prevControl": {
-        "x": 2.9390142653352354,
-        "y": 3.7180028530670475
+        "x": 2.14624095775463,
+        "y": 6.54368431712963
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "MiddleShoot"
+      "linkedName": "LeftShoot"
     }
   ],
   "rotationTargets": [],
@@ -34,7 +34,7 @@
   "eventMarkers": [],
   "globalConstraints": {
     "maxVelocity": 3.0,
-    "maxAcceleration": 2.0,
+    "maxAcceleration": 3.0,
     "maxAngularVelocity": 360.0,
     "maxAngularAcceleration": 360.0,
     "nominalVoltage": 12.0,
@@ -42,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -179.94323639800123
+    "rotation": 132.12537326402426
   },
   "reversed": false,
-  "folder": "StartRightShootMiddle",
+  "folder": "ILSL",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -179.710326200426
+    "rotation": -0.039664640345139585
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

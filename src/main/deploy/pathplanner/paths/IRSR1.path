@@ -16,12 +16,12 @@
     },
     {
       "anchor": {
-        "x": 3.46,
-        "y": 2.86
+        "x": 3.234,
+        "y": 2.644
       },
       "prevControl": {
-        "x": 2.7528932188134525,
-        "y": 2.1528932188134524
+        "x": 2.5268932188134525,
+        "y": 1.9368932188134527
       },
       "nextControl": null,
       "isLocked": false,
@@ -45,7 +45,7 @@
     "rotation": -130.42210471891877
   },
   "reversed": false,
-  "folder": "StartRightShootRight",
+  "folder": "IRSR",
   "idealStartingState": {
     "velocity": 0,
     "rotation": -179.710326200426

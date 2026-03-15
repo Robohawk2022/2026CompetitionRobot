@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "InnerRightToRightShoot"
+            "pathName": "IRSR1"
           }
         },
         {
@@ -19,7 +19,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "RightShootToRightIntake"
+            "pathName": "IRSR2"
           }
         }
       ]
