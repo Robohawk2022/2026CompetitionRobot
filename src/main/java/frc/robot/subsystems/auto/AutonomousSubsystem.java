@@ -242,6 +242,9 @@ public class AutonomousSubsystem extends SubsystemBase {
         // magic
         programs.put("BRUH", "DEPO");
         programs.put("RIZZ", "DEPB");
+
+        // Bethesda
+        programs.put("MID", "HUBSL");
         return programs;
     }
 
