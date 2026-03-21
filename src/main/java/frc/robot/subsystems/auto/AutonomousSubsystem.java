@@ -244,7 +244,7 @@ public class AutonomousSubsystem extends SubsystemBase {
         programs.put("RIZZ", "DEPB");
 
         // Bethesda
-        programs.put("MID", "HUBSL");
+        //programs.put("MID", "HUBSL");
         return programs;
     }
 
