@@ -85,12 +85,6 @@
           "data": {
             "commands": [
               {
-                "type": "wait",
-                "data": {
-                  "waitTime": 3.0
-                }
-              },
-              {
                 "type": "path",
                 "data": {
                   "pathName": "ILSL2"
