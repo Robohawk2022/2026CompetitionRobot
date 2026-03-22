@@ -55,7 +55,7 @@
               {
                 "type": "wait",
                 "data": {
-                  "waitTime": 2.5
+                  "waitTime": 1.5
                 }
               }
             ]
@@ -98,22 +98,15 @@
           "data": {
             "commands": [
               {
-                "type": "sequential",
+                "type": "named",
                 "data": {
-                  "commands": [
-                    {
-                      "type": "path",
-                      "data": {
-                        "pathName": "Balls"
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "UntimedIntake"
-                      }
-                    }
-                  ]
+                  "name": "UntimedIntake"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Balls"
                 }
               }
             ]
