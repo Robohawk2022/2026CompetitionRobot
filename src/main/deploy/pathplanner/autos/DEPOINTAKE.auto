@@ -98,22 +98,15 @@
           "data": {
             "commands": [
               {
-                "type": "parallel",
+                "type": "named",
                 "data": {
-                  "commands": [
-                    {
-                      "type": "path",
-                      "data": {
-                        "pathName": "Balls"
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "UntimedIntake"
-                      }
-                    }
-                  ]
+                  "name": "UntimedIntake"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Balls"
                 }
               }
             ]
