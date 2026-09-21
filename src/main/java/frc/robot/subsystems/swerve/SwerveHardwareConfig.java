@@ -60,7 +60,25 @@ public final class SwerveHardwareConfig {
 
     // drive motor
     public static final double DRIVE_GEAR_RATIO = SDS_MK5I_DRIVE_R2;
-    public static final double DRIVE_CURRENT_LIMIT_AMPS = 60.0;
+
+    /**
+     * Supply current limit - this is the one that protects the battery and keeps us
+     * from browning out. Phoenix 6 defaults to NO supply limit, which is how we ran
+     * all of last season. Applied to the drive motors in {@link TunerConstants}.
+     */
+    public static final double DRIVE_SUPPLY_CURRENT_LIMIT_AMPS = 60.0;
+
+    /** Sustained supply limit, applied after the limit above is exceeded for DRIVE_SUPPLY_LOWER_TIME_SEC */
+    public static final double DRIVE_SUPPLY_LOWER_LIMIT_AMPS = 40.0;
+
+    /** How long the drive motor may sit above DRIVE_SUPPLY_CURRENT_LIMIT_AMPS before dropping to the lower limit */
+    public static final double DRIVE_SUPPLY_LOWER_TIME_SEC = 1.0;
+
+    /**
+     * Stator current limit - protects the motor and caps torque at roughly the point
+     * the wheels break traction. CTRE applies this for us via withSlipCurrent().
+     */
+    public static final double DRIVE_STATOR_CURRENT_LIMIT_AMPS = 120.0;
 
     // turn motor
     public static final double TURN_GEAR_RATIO =  SDS_MK5I_TURN;

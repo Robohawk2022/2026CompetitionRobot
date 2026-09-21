@@ -4,6 +4,10 @@
 
 package frc.robot;
 
+import com.ctre.phoenix6.SignalLogger;
+
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -15,6 +19,19 @@ public class Robot extends TimedRobot {
     private Command autoCommand;
 
     public Robot() {
+
+        // persist NetworkTables telemetry and DS state to disk (a USB stick if one is
+        // plugged in, otherwise /home/lvuser/logs). without this, everything the
+        // subsystems publish is live-only and there is nothing to read back after a
+        // brownout
+        DataLogManager.start();
+        DriverStation.startDataLog(DataLogManager.getLog());
+
+        // phoenix signal logging records TalonFX supply and stator current straight off
+        // the CAN bus at full rate, into .hoot files readable in Tuner X. this is what
+        // lets us tell battery sag apart from drivetrain draw after the fact
+        SignalLogger.start();
+
         container = new RobotContainer();
     }
 

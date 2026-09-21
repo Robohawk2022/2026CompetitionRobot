@@ -51,11 +51,24 @@ public class TunerConstants {
     // Feedback type for steer motors (FusedCANcoder for best accuracy)
     private static final SteerFeedbackType kSteerFeedbackType = SteerFeedbackType.FusedCANcoder;
 
-    // Slip current - the stator current at which wheels start to slip
-    private static final Current kSlipCurrent = Amps.of(120);
+    // Slip current - the stator current at which wheels start to slip. CTRE applies
+    // this to the drive motors as their stator/torque current limit.
+    private static final Current kSlipCurrent = Amps.of(SwerveHardwareConfig.DRIVE_STATOR_CURRENT_LIMIT_AMPS);
 
     // Initial motor configs
-    private static final TalonFXConfiguration driveInitialConfigs = new TalonFXConfiguration();
+    //
+    // The supply limit below is what protects the battery. Phoenix 6 ships with no
+    // supply limit at all, and four unlimited Krakens can pull the bus down far enough
+    // to brown out the roboRIO. The stator side is handled by kSlipCurrent above, so
+    // only the supply side needs configuring here.
+    private static final TalonFXConfiguration driveInitialConfigs = new TalonFXConfiguration()
+        .withCurrentLimits(
+            new CurrentLimitsConfigs()
+                .withSupplyCurrentLimit(Amps.of(SwerveHardwareConfig.DRIVE_SUPPLY_CURRENT_LIMIT_AMPS))
+                .withSupplyCurrentLimitEnable(true)
+                .withSupplyCurrentLowerLimit(Amps.of(SwerveHardwareConfig.DRIVE_SUPPLY_LOWER_LIMIT_AMPS))
+                .withSupplyCurrentLowerTime(Seconds.of(SwerveHardwareConfig.DRIVE_SUPPLY_LOWER_TIME_SEC))
+        );
     private static final TalonFXConfiguration steerInitialConfigs = new TalonFXConfiguration()
         .withCurrentLimits(
             new CurrentLimitsConfigs()
