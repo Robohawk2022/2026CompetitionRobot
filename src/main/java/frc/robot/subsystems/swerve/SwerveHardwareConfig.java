@@ -60,11 +60,32 @@ public final class SwerveHardwareConfig {
 
     // drive motor
     public static final double DRIVE_GEAR_RATIO = SDS_MK5I_DRIVE_R2;
-    public static final double DRIVE_CURRENT_LIMIT_AMPS = 60.0;
+
+    // Drive stator ("slip") limit. This is what actually caps wheel torque.
+    // Traction limit for a ~90 lb robot on 4in wheels at 6.03:1 is roughly
+    // 55-65 A per wheel; anything above that is heat and battery sag, not
+    // thrust. Applied to the TalonFX via TunerConstants.kSlipCurrent AND
+    // handed to PathPlanner, so the two stay in sync.
+    public static final double DRIVE_CURRENT_LIMIT_AMPS = 80.0;
+
+    // Drive supply limits. Supply current is what pulls the battery down.
+    // 60 A per motor for short bursts, then 40 A once the limiter has been
+    // active for DRIVE_SUPPLY_LOWER_TIME_SEC. Phoenix 6 defaults are 70/40/1.0.
+    public static final double DRIVE_SUPPLY_LIMIT_AMPS = 60.0;
+    public static final double DRIVE_SUPPLY_LOWER_LIMIT_AMPS = 40.0;
+    public static final double DRIVE_SUPPLY_LOWER_TIME_SEC = 0.5;
+
+    // Open-loop voltage ramp (0 -> 12 V over this many seconds). Keeps a
+    // stick flick from being a 10 V step into stalled motors.
+    public static final double DRIVE_OPEN_LOOP_RAMP_SEC = 0.15;
+    public static final double DRIVE_CLOSED_LOOP_RAMP_SEC = 0.10;
 
     // turn motor
     public static final double TURN_GEAR_RATIO =  SDS_MK5I_TURN;
     public static final double TURN_CURRENT_LIMIT_AMPS = 60.0;
+    public static final double TURN_SUPPLY_LIMIT_AMPS = 40.0;
+    public static final double TURN_SUPPLY_LOWER_LIMIT_AMPS = 25.0;
+    public static final double TURN_SUPPLY_LOWER_TIME_SEC = 0.5;
 
     public static final double MAX_MOTOR_RPM = 6000.0;  // Kraken X60 free speed
     public static final double MAX_WHEEL_SPEED_MPS = (MAX_MOTOR_RPM / 60.0) * WHEEL_CIRCUMFERENCE_METERS / DRIVE_GEAR_RATIO;

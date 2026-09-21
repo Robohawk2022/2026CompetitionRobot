@@ -42,6 +42,9 @@ public class ShooterHardwareRev implements ShooterHardware {
     private SparkMax createMotor(int canId, SparkMaxConfig config) {
         SparkMax motor = new SparkMax(canId, MotorType.kBrushless);
         config.smartCurrentLimit(CURRENT_LIMIT);
+        // ramp so spin-up doesn't slam all SPARKs to their current limit at once
+        config.openLoopRampRate(0.5);
+        config.closedLoopRampRate(0.5);
         config.inverted(INVERTED);
         config.idleMode(IdleMode.kCoast);
         motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);

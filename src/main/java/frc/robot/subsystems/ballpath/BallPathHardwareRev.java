@@ -73,6 +73,9 @@ public class BallPathHardwareRev implements BallPathHardware {
     private SparkMax createMotor(int canId, SparkMaxConfig config, boolean inverted) {
         SparkMax motor = new SparkMax(canId, MotorType.kBrushless);
         config.smartCurrentLimit(CURRENT_LIMIT);
+        // ramp so spin-up doesn't slam all SPARKs to their current limit at once
+        config.openLoopRampRate(0.25);
+        config.closedLoopRampRate(0.25);
         config.inverted(inverted);
         config.idleMode(IdleMode.kCoast);
         motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
