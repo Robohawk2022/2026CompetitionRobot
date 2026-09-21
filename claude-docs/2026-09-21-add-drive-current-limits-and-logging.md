@@ -1,5 +1,11 @@
 # Session: Add Drive Current Limits and On-Robot Logging
 
+> **CORRECTION (later the same day):** the premise below is wrong. Phoenix 6 (26.1.1)
+> defaults to 120A stator and 70A supply dropping to 40A after 1s, both enabled
+> (verified from the `CurrentLimitsConfigs` bytecode), and the swerve API writes
+> `kSlipCurrent` into the drive stator limit. The drive motors were never unlimited.
+> See `2026-09-21-brownout-branch-review.md` for what was actually changed.
+
 **Date**: 2026-09-21
 **Duration**: ~30 minutes
 

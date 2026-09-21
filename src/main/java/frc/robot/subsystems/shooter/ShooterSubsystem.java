@@ -83,9 +83,8 @@ public class ShooterSubsystem extends SubsystemBase {
 //region Command factories -----------------------------------------------------
 
     /**
-     * @return a command that will run the shooter at its "idle" speed;
-     * at the beginning of the match this is 0, but as soon as it's spun up
-     * for any purpose, it will idle at intake speed
+     * @return a command that will run the shooter at its "idle" speed,
+     * which is intake speed from the moment the robot is enabled
      */
     public Command idleCommand() {
         return run(() -> {
