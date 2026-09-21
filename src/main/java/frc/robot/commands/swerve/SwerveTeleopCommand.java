@@ -2,6 +2,7 @@ package frc.robot.commands.swerve;
 
 import java.util.Objects;
 
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -47,6 +48,12 @@ public class SwerveTeleopCommand extends Command {
 
     final SwerveSubsystem swerve;
     final GameController controller;
+
+    // limits how fast the conditioned stick input (-1..1) can change, in
+    // units per second; 3.0 = zero to full in a third of a second
+    final SlewRateLimiter xLimiter = new SlewRateLimiter(3.0);
+    final SlewRateLimiter yLimiter = new SlewRateLimiter(3.0);
+
     double inputX;
     double inputY;
     double inputOmega;
@@ -83,14 +90,18 @@ public class SwerveTeleopCommand extends Command {
     @Override
     public void initialize() {
         Util.log("[swerve] entering teleop");
+        xLimiter.reset(0.0);
+        yLimiter.reset(0.0);
     }
 
     @Override
     public void execute() {
 
-        // get conditioned joystick input
-        inputX = TeleopInput.conditionInput(-controller.getLeftY());
-        inputY = TeleopInput.conditionInput(-controller.getLeftX());
+        // get conditioned joystick input, slew-limited so a stick flick
+        // can't be a full-voltage step into stalled motors (works with the
+        // TalonFX open-loop ramp in TunerConstants; belt and suspenders)
+        inputX = xLimiter.calculate(TeleopInput.conditionInput(-controller.getLeftY()));
+        inputY = yLimiter.calculate(TeleopInput.conditionInput(-controller.getLeftX()));
         inputOmega = TeleopInput.conditionInput(-controller.getRightX());
 
         // ensure that the point defined by (x, y) lies on the unit
@@ -108,9 +119,11 @@ public class SwerveTeleopCommand extends Command {
 
         speedX = inputX * maxTranslate.getAsDouble() * sf;
         speedY = inputY * maxTranslate.getAsDouble() * sf;
-        if (mode.applyFactorToRotation()) {
-            speedOmega = inputOmega * maxRotate.getAsDouble() * sf;
-        }
+        // always recompute omega; previously it was only updated when the
+        // mode applied the factor to rotation, so turning that preference
+        // off froze rotation at whatever it was last
+        speedOmega = inputOmega * maxRotate.getAsDouble()
+                * (mode.applyFactorToRotation() ? sf : 1.0);
 
         ChassisSpeeds speeds = new ChassisSpeeds(
                 Units.feetToMeters(speedX),

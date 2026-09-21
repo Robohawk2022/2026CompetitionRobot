@@ -193,12 +193,21 @@ public class DigitBoard {
      * @param text the text to display
      */
     public void display(String text) {
+        // Four blocking I2C writes every 20 ms was a measurable main-loop
+        // stall during matches. Only touch the bus when the text changes.
+        if (text.equals(lastDisplayed)) {
+            return;
+        }
+        lastDisplayed = text;
         writeToBuffer(text+"      ");
         i2c.writeBulk(OSC);
         i2c.writeBulk(BRIGHT);
         i2c.writeBulk(BLINK);
         i2c.writeBulk(buffer);
     }
+
+    /** last string sent to the display; null forces the next write */
+    private String lastDisplayed = null;
 
     /*
      * Logic for writing to the buffer

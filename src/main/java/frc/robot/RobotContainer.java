@@ -151,7 +151,10 @@ public class RobotContainer {
         driver.leftTrigger().whileTrue(ShootingCommands.intakeMode(led, ballPath, shooter));
         driver.rightTrigger().whileTrue(ShootingCommands.shootMode(led, ballPath, shooter));
         driver.b().whileTrue(ballPath.ejectCommand());
-        driver.x().whileTrue(ShootingCommands.jiggle(swerve));
+        // jiggle only when not also spinning up the shooter and intake;
+        // the two together were the worst-case current draw on the robot
+        driver.x().and(driver.rightTrigger().negate())
+                .whileTrue(ShootingCommands.jiggle(swerve));
 
         driver.start().whileTrue(swerve.driveToHeadingCommand(Rotation2d.k180deg));
 
