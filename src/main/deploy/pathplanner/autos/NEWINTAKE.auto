@@ -5,26 +5,19 @@
     "data": {
       "commands": [
         {
+          "type": "path",
+          "data": {
+            "pathName": "ILSL2"
+          }
+        },
+        {
           "type": "race",
           "data": {
             "commands": [
               {
-                "type": "sequential",
+                "type": "path",
                 "data": {
-                  "commands": [
-                    {
-                      "type": "path",
-                      "data": {
-                        "pathName": "Depot1"
-                      }
-                    },
-                    {
-                      "type": "path",
-                      "data": {
-                        "pathName": "Depot2"
-                      }
-                    }
-                  ]
+                  "pathName": "Balls"
                 }
               },
               {
@@ -39,7 +32,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Depot3"
+            "pathName": "GOHOME"
           }
         },
         {
@@ -55,7 +48,7 @@
               {
                 "type": "wait",
                 "data": {
-                  "waitTime": 2.5
+                  "waitTime": 1.5
                 }
               }
             ]
@@ -78,6 +71,12 @@
                 }
               }
             ]
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "DEP4"
           }
         }
       ]

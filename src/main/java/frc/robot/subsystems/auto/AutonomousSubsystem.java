@@ -112,7 +112,7 @@ public class AutonomousSubsystem extends SubsystemBase {
                         SwerveHardwareConfig.WHEEL_COF,
                         DCMotor.getKrakenX60(1),
                         SwerveHardwareConfig.DRIVE_GEAR_RATIO,
-                        SwerveHardwareConfig.DRIVE_CURRENT_LIMIT_AMPS,
+                        SwerveHardwareConfig.DRIVE_STATOR_CURRENT_LIMIT_AMPS,
                         1),
                     SwerveHardwareConfig.MODULE_TRANSLATIONS
             );
@@ -242,6 +242,9 @@ public class AutonomousSubsystem extends SubsystemBase {
         // magic
         programs.put("BRUH", "DEPO");
         programs.put("RIZZ", "DEPB");
+
+        // Bethesda
+        programs.put("SLAY", "DEPOINTAKE");
         return programs;
     }
 

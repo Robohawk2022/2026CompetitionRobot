@@ -48,19 +48,36 @@ public class TunerConstants {
     private static final DriveMotorArrangement kDriveMotorType = DriveMotorArrangement.TalonFX_Integrated;
     private static final SteerMotorArrangement kSteerMotorType = SteerMotorArrangement.TalonFX_Integrated;
 
-    // Feedback type for steer motors (FusedCANcoder for best accuracy)
-    private static final SteerFeedbackType kSteerFeedbackType = SteerFeedbackType.FusedCANcoder;
+    // Feedback type for steer motors. FusedCANcoder is a Phoenix Pro feature; without
+    // a license the TalonFX falls back to RemoteCANcoder and raises an unlicensed-feature
+    // fault. Switch back to FusedCANcoder if we ever buy Pro.
+    private static final SteerFeedbackType kSteerFeedbackType = SteerFeedbackType.RemoteCANcoder;
 
-    // Slip current - the stator current at which wheels start to slip
-    private static final Current kSlipCurrent = Amps.of(120);
+    // Slip current - the stator current at which wheels start to slip. CTRE applies
+    // this to the drive motors as their stator/torque current limit.
+    private static final Current kSlipCurrent = Amps.of(SwerveHardwareConfig.DRIVE_STATOR_CURRENT_LIMIT_AMPS);
 
     // Initial motor configs
-    private static final TalonFXConfiguration driveInitialConfigs = new TalonFXConfiguration();
+    //
+    // Drive: explicit supply limit (battery). The stator limit comes from kSlipCurrent
+    // above, which the swerve API writes over anything set here.
+    private static final TalonFXConfiguration driveInitialConfigs = new TalonFXConfiguration()
+        .withCurrentLimits(
+            new CurrentLimitsConfigs()
+                .withSupplyCurrentLimit(Amps.of(SwerveHardwareConfig.DRIVE_SUPPLY_CURRENT_LIMIT_AMPS))
+                .withSupplyCurrentLimitEnable(true)
+                .withSupplyCurrentLowerLimit(Amps.of(SwerveHardwareConfig.DRIVE_SUPPLY_LOWER_LIMIT_AMPS))
+                .withSupplyCurrentLowerTime(Seconds.of(SwerveHardwareConfig.DRIVE_SUPPLY_LOWER_TIME_SEC))
+        );
     private static final TalonFXConfiguration steerInitialConfigs = new TalonFXConfiguration()
         .withCurrentLimits(
             new CurrentLimitsConfigs()
                 .withStatorCurrentLimit(Amps.of(SwerveHardwareConfig.TURN_CURRENT_LIMIT_AMPS))
                 .withStatorCurrentLimitEnable(true)
+                .withSupplyCurrentLimit(Amps.of(SwerveHardwareConfig.TURN_SUPPLY_CURRENT_LIMIT_AMPS))
+                .withSupplyCurrentLimitEnable(true)
+                .withSupplyCurrentLowerLimit(Amps.of(SwerveHardwareConfig.TURN_SUPPLY_LOWER_LIMIT_AMPS))
+                .withSupplyCurrentLowerTime(Seconds.of(SwerveHardwareConfig.TURN_SUPPLY_LOWER_TIME_SEC))
         );
     private static final CANcoderConfiguration encoderInitialConfigs = new CANcoderConfiguration();
     private static final Pigeon2Configuration pigeonConfigs = null;
@@ -68,7 +85,7 @@ public class TunerConstants {
     // CAN bus configuration
     public static final CANBus kCANBus = new CANBus("", "./logs/example.hoot");
 
-    // Theoretical free speed at 12V (Kraken X60 with MK5i R3 gearing)
+    // Theoretical free speed at 12V (Kraken X60, MK5i R2 6.03:1, 4in wheel)
     public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(5.29);
 
     // Coupling ratio: every 1 rotation of azimuth results in this many drive motor turns

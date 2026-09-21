@@ -194,3 +194,7 @@ compile_commands.json
 
 # Vim temp files
 *.swp
+
+# Robot log artifacts (DataLogManager / Phoenix SignalLogger) when running in simulation
+*.wpilog
+*.hoot

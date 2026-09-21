@@ -108,9 +108,10 @@ public class SwerveTeleopCommand extends Command {
 
         speedX = inputX * maxTranslate.getAsDouble() * sf;
         speedY = inputY * maxTranslate.getAsDouble() * sf;
-        if (mode.applyFactorToRotation()) {
-            speedOmega = inputOmega * maxRotate.getAsDouble() * sf;
-        }
+        // always recompute rotation; it used to be skipped entirely when the
+        // factor didn't apply, which froze rotation at its last value
+        speedOmega = inputOmega * maxRotate.getAsDouble()
+                * (mode.applyFactorToRotation() ? sf : 1.0);
 
         ChassisSpeeds speeds = new ChassisSpeeds(
                 Units.feetToMeters(speedX),

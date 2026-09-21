@@ -31,12 +31,15 @@ public class PowerSubsystem extends SubsystemBase {
     double currentTotalCurrent;
     double currentTotalPower;
     double currentTemperature;
+    boolean brownoutFault;
+    boolean stickyBrownoutFault;
 
     /**
      * Creates a {@link PowerSubsystem}.
      *
      * @param hardware the hardware interface (required)
-     * @param channelNames map of channel number to mechanism name (e.g., 35 -> "Shooter")
+     * @param channelNames map of PDH CHANNEL NUMBER (0-23, the breaker slot on the
+     *                     PDH, NOT the motor's CAN ID) to mechanism name (e.g., 3 -> "Shooter")
      */
     public PowerSubsystem(PowerHardware hardware, Map<Integer, String> channelNames) {
         this.hardware = Objects.requireNonNull(hardware);
@@ -50,6 +53,8 @@ public class PowerSubsystem extends SubsystemBase {
             builder.addDoubleProperty("CurrentTotal", () -> currentTotalCurrent, null);
             builder.addDoubleProperty("PowerTotal", () -> currentTotalPower, null);
             builder.addDoubleProperty("Temperature", () -> currentTemperature, null);
+            builder.addBooleanProperty("BrownoutFault", () -> brownoutFault, null);
+            builder.addBooleanProperty("StickyBrownoutFault", () -> stickyBrownoutFault, null);
 
             int count = (int) topChannelCount.getAsDouble();
             for (int i = 0; i < 3; i++) {
@@ -84,6 +89,8 @@ public class PowerSubsystem extends SubsystemBase {
         currentTotalCurrent = hardware.getTotalCurrent();
         currentTotalPower = hardware.getTotalPower();
         currentTemperature = hardware.getTemperature();
+        brownoutFault = hardware.getBrownoutFault();
+        stickyBrownoutFault = hardware.getStickyBrownoutFault();
 
         // find top channels by current draw
         findTopChannels((int) topChannelCount.getAsDouble());
