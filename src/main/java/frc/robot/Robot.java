@@ -4,10 +4,15 @@
 
 package frc.robot;
 
+import com.ctre.phoenix6.SignalLogger;
+
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.util.CommandLogger;
+import frc.robot.util.PowerLog;
 
 public class Robot extends TimedRobot {
 
@@ -15,6 +20,24 @@ public class Robot extends TimedRobot {
     private Command autoCommand;
 
     public Robot() {
+
+        // Logging to disk. Before this, nothing was written to the roboRIO:
+        // every dashboard value evaporated at the end of the match.
+        //
+        // DataLogManager records every NetworkTables topic (so all the
+        // existing SmartDashboard telemetry) plus console output to a
+        // .wpilog in /home/lvuser/logs, or on a USB stick if one is plugged
+        // into the roboRIO. DriverStation.startDataLog adds enable/mode and
+        // joystick data. SignalLogger starts the CTRE .hoot log at boot
+        // rather than waiting for first enable.
+        //
+        // Retrieve with the WPILib Data Log Tool, AdvantageScope, or
+        //   scp lvuser@10.33.73.2:/home/lvuser/logs/*.wpilog .
+        DataLogManager.start();
+        DriverStation.startDataLog(DataLogManager.getLog(), true);
+        SignalLogger.start();
+        PowerLog.start();
+
         container = new RobotContainer();
     }
 
@@ -22,6 +45,7 @@ public class Robot extends TimedRobot {
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
         CommandLogger.pollButtons();
+        PowerLog.update();
     }
 
 //region Auto ------------------------------------------------------------------
