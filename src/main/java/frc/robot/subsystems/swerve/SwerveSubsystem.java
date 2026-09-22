@@ -3,6 +3,7 @@ package frc.robot.subsystems.swerve;
 import java.util.Objects;
 import java.util.function.Function;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveModule;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -67,6 +68,23 @@ public class SwerveSubsystem extends SubsystemBase {
         deadReckoner = new SwerveDeadReckoner(START_POSE);
         drivetrain.resetPose(START_POSE);
 
+        // Default status rate for current/voltage signals is 4 Hz, too
+        // coarse to see a brownout transient in the .hoot or .wpilog.
+        // 20 Hz costs a little CAN bandwidth; watch /can/utilizationPct in
+        // the wpilog before raising it further.
+        for (int i = 0; i < 4; i++) {
+            SwerveModule<?, ?, ?> module = drivetrain.getModule(i);
+            TalonFX driveMotor = (TalonFX) module.getDriveMotor();
+            TalonFX steerMotor = (TalonFX) module.getSteerMotor();
+            BaseStatusSignal.setUpdateFrequencyForAll(20,
+                    driveMotor.getSupplyCurrent(),
+                    driveMotor.getStatorCurrent(),
+                    driveMotor.getSupplyVoltage(),
+                    steerMotor.getSupplyCurrent(),
+                    steerMotor.getStatorCurrent(),
+                    steerMotor.getSupplyVoltage());
+        }
+
         // dashboard telemetry
         SmartDashboard.putData(getName(), builder -> {
 
@@ -100,6 +118,8 @@ public class SwerveSubsystem extends SubsystemBase {
                     TalonFX steerMotor = (TalonFX) module.getSteerMotor();
                     builder.addDoubleProperty("DriveAmps/" + moduleNames[i],
                             () -> driveMotor.getSupplyCurrent().getValueAsDouble(), null);
+                    builder.addDoubleProperty("DriveStatorAmps/" + moduleNames[i],
+                            () -> driveMotor.getStatorCurrent().getValueAsDouble(), null);
                     builder.addDoubleProperty("SteerAmps/" + moduleNames[i],
                             () -> steerMotor.getSupplyCurrent().getValueAsDouble(), null);
                 }

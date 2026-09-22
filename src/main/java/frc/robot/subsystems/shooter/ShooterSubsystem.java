@@ -41,7 +41,11 @@ public class ShooterSubsystem extends SubsystemBase {
         this.shooterStatus = new MotorStatus();
         this.speedUp = speedUp;
         this.shooterAtSpeed = false;
-        this.idleRpm = intakeRpm.getAsDouble();
+        // 0 until the shooter is first spun up; velocityCommand() then
+        // latches idle to intake speed. Starting at intakeRpm here meant the
+        // shooter ran at 1000 rpm from the moment the robot was enabled,
+        // including auto and test mode.
+        this.idleRpm = 0.0;
 
         SmartDashboard.putData("ShooterSubsystem", builder -> {
             shooterStatus.addToBuilder("ShooterMotor", builder);

@@ -47,6 +47,7 @@ public class SwerveTeleopCommand extends Command {
 
     final SwerveSubsystem swerve;
     final GameController controller;
+
     double inputX;
     double inputY;
     double inputOmega;
@@ -89,6 +90,9 @@ public class SwerveTeleopCommand extends Command {
     public void execute() {
 
         // get conditioned joystick input
+        // (no SlewRateLimiter here on purpose: the team tried one in 2025
+        // and it needed drive-team tuning time; the TalonFX open-loop ramp
+        // in TunerConstants does the same job with one constant)
         inputX = TeleopInput.conditionInput(-controller.getLeftY());
         inputY = TeleopInput.conditionInput(-controller.getLeftX());
         inputOmega = TeleopInput.conditionInput(-controller.getRightX());
@@ -108,9 +112,11 @@ public class SwerveTeleopCommand extends Command {
 
         speedX = inputX * maxTranslate.getAsDouble() * sf;
         speedY = inputY * maxTranslate.getAsDouble() * sf;
-        if (mode.applyFactorToRotation()) {
-            speedOmega = inputOmega * maxRotate.getAsDouble() * sf;
-        }
+        // always recompute omega; previously it was only updated when the
+        // mode applied the factor to rotation, so turning that preference
+        // off froze rotation at whatever it was last
+        speedOmega = inputOmega * maxRotate.getAsDouble()
+                * (mode.applyFactorToRotation() ? sf : 1.0);
 
         ChassisSpeeds speeds = new ChassisSpeeds(
                 Units.feetToMeters(speedX),

@@ -45,6 +45,17 @@ public class RobotContainer {
     public static final int SHOOTER_CAN_ID = 35;
     public static final int PDH_CAN_ID = 1;
 
+    /**
+     * PDH breaker slot -> mechanism name. TODO: fill in from the robot's
+     * wiring (open the PDH, read the slot numbers next to each breaker).
+     * Unlabeled slots show up as "ChN" in the dashboard and the log.
+     */
+    public static final Map<Integer, String> PDH_CHANNEL_NAMES = Map.of(
+            // 0, "FL Drive",
+            // 1, "FL Steer",
+            // ...
+    );
+
     public final GameController driver;
     public final SwerveSubsystem swerve;
     public final LimelightSubsystem limelight;
@@ -52,7 +63,7 @@ public class RobotContainer {
     public final ShooterSubsystem shooter;
     public final BallPathSubsystem ballPath;
     public final LEDSubsystem led;
-    // public final PowerSubsystem power;
+    public final PowerSubsystem power;
 
     public RobotContainer() {
 
@@ -92,15 +103,14 @@ public class RobotContainer {
         led.setDefaultCommand(led.show(() -> idleLedSignalCalculator(swerve, limelight)));
 
         // power monitoring
-        // power = new PowerSubsystem(RobotBase.isSimulation()
-        //         ? new PowerHardwareSim()
-        //         : new PowerHardwareWPILib(PDH_CAN_ID, ModuleType.kRev),
-        //         Map.of(
-        //                 SHOOTER_CAN_ID, "Shooter",
-        //                 INTAKE_CAN_ID, "Intake",
-        //                 FEEDER_CAN_ID, "Feeder",
-        //                 AGITATOR_CAN_ID, "Agitator"
-        //         ));
+        //  - publishes voltage, total current, PDH brownout faults and every
+        //    channel's current; DataLogManager records all of it to the wpilog
+        //  - PDH_CHANNEL_NAMES is keyed by PDH breaker slot (0-23), not CAN ID.
+        //    Fill it in from the wiring so the log labels make sense.
+        power = new PowerSubsystem(RobotBase.isSimulation()
+                ? new PowerHardwareSim()
+                : new PowerHardwareWPILib(PDH_CAN_ID, ModuleType.kRev),
+                PDH_CHANNEL_NAMES);
 
         auto = new AutonomousSubsystem(
                 swerve,
@@ -141,7 +151,10 @@ public class RobotContainer {
         driver.leftTrigger().whileTrue(ShootingCommands.intakeMode(led, ballPath, shooter));
         driver.rightTrigger().whileTrue(ShootingCommands.shootMode(led, ballPath, shooter));
         driver.b().whileTrue(ballPath.ejectCommand());
-        driver.x().whileTrue(ShootingCommands.jiggle(swerve));
+        // jiggle only when not also spinning up the shooter and intake;
+        // the two together were the worst-case current draw on the robot
+        driver.x().and(driver.rightTrigger().negate())
+                .whileTrue(ShootingCommands.jiggle(swerve));
 
         driver.start().whileTrue(swerve.driveToHeadingCommand(Rotation2d.k180deg));
 

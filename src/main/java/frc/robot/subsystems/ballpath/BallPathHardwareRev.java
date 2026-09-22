@@ -1,5 +1,8 @@
 package frc.robot.subsystems.ballpath;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
@@ -42,6 +45,9 @@ public class BallPathHardwareRev implements BallPathHardware {
     final SparkClosedLoopController feederController;
     final SparkClosedLoopController agitatorController;
 
+    /** last PID gains pushed to each SPARK, so we only reconfigure on change */
+    final Map<SparkMax, double[]> lastAppliedPid = new HashMap<>();
+
     public BallPathHardwareRev(int intakeId, int feederId, int agitatorId) {
 
         // create configurations
@@ -73,6 +79,9 @@ public class BallPathHardwareRev implements BallPathHardware {
     private SparkMax createMotor(int canId, SparkMaxConfig config, boolean inverted) {
         SparkMax motor = new SparkMax(canId, MotorType.kBrushless);
         config.smartCurrentLimit(CURRENT_LIMIT);
+        // ramp so spin-up doesn't slam all SPARKs to their current limit at once
+        config.openLoopRampRate(0.25);
+        config.closedLoopRampRate(0.25);
         config.inverted(inverted);
         config.idleMode(IdleMode.kCoast);
         motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -122,18 +131,39 @@ public class BallPathHardwareRev implements BallPathHardware {
         resetPid(intakeMotor, intakeConfig, intakePid);
         resetPid(feederMotor, feederConfig, feederPid);
         resetPid(agitatorMotor, agitatorConfig, agitatorPid);
-        Util.log("[ballpath] reset PID values");
     }
 
+    /**
+     * Pushes PID gains to the SPARK only if they changed since the last
+     * push. SparkMax.configure() is a blocking CAN transaction, and this
+     * used to run on every command start (including the default coast
+     * command, i.e. every trigger release), stalling the main loop exactly
+     * when the driver was shooting or intaking.
+     */
     private void resetPid(SparkMax motor, SparkMaxConfig config, PIDFConfig pidf) {
-        config.closedLoop.p(pidf.p.getAsDouble());
-        config.closedLoop.i(pidf.i.getAsDouble());
-        config.closedLoop.iZone(pidf.iz.getAsDouble());
-        config.closedLoop.d(pidf.d.getAsDouble());
-        config.closedLoop.feedForward.kV(pidf.v.getAsDouble());
+        double p = pidf.p.getAsDouble();
+        double i = pidf.i.getAsDouble();
+        double iz = pidf.iz.getAsDouble();
+        double d = pidf.d.getAsDouble();
+        double v = pidf.v.getAsDouble();
+
+        double[] last = lastAppliedPid.get(motor);
+        if (last != null
+                && last[0] == p && last[1] == i && last[2] == iz
+                && last[3] == d && last[4] == v) {
+            return;
+        }
+
+        config.closedLoop.p(p);
+        config.closedLoop.i(i);
+        config.closedLoop.iZone(iz);
+        config.closedLoop.d(d);
+        config.closedLoop.feedForward.kV(v);
         motor.configure(config,
                 ResetMode.kNoResetSafeParameters,
                 PersistMode.kNoPersistParameters);
+        lastAppliedPid.put(motor, new double[] {p, i, iz, d, v});
+        Util.log("[ballpath] applied PID gains to CAN %d", motor.getDeviceId());
     }
 
 //endregion

@@ -86,11 +86,14 @@ public class ShootingCommands {
      */
     public static Command jiggle(SwerveSubsystem swerve) {
 
-        // ~1-2 inches of travel at ~6 Hz oscillation
-        double speedMps = Units.feetToMeters(2.0); // 2 ft/s sideways
+        // Short sideways shuffle to settle balls. Every reversal drives all
+        // four drive motors to their stator limit, so this was the single
+        // worst load pattern in the code at 2 ft/s and 6 Hz. 1 ft/s at
+        // ~3 Hz still moves the robot; it just doesn't hammer the battery.
+        double speedMps = Units.feetToMeters(1.0); // 1 ft/s sideways
 
-        // full cycle = 0.16s (~6 Hz)
-        double periodSec = 0.16;
+        // full cycle = 0.33s (~3 Hz)
+        double periodSec = 0.33;
         double halfPeriod = periodSec / 2.0;
 
         Timer timer = new Timer();
