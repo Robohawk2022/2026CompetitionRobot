@@ -2,7 +2,6 @@ package frc.robot.commands.swerve;
 
 import java.util.Objects;
 
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -49,11 +48,6 @@ public class SwerveTeleopCommand extends Command {
     final SwerveSubsystem swerve;
     final GameController controller;
 
-    // limits how fast the conditioned stick input (-1..1) can change, in
-    // units per second; 3.0 = zero to full in a third of a second
-    final SlewRateLimiter xLimiter = new SlewRateLimiter(3.0);
-    final SlewRateLimiter yLimiter = new SlewRateLimiter(3.0);
-
     double inputX;
     double inputY;
     double inputOmega;
@@ -90,18 +84,17 @@ public class SwerveTeleopCommand extends Command {
     @Override
     public void initialize() {
         Util.log("[swerve] entering teleop");
-        xLimiter.reset(0.0);
-        yLimiter.reset(0.0);
     }
 
     @Override
     public void execute() {
 
-        // get conditioned joystick input, slew-limited so a stick flick
-        // can't be a full-voltage step into stalled motors (works with the
-        // TalonFX open-loop ramp in TunerConstants; belt and suspenders)
-        inputX = xLimiter.calculate(TeleopInput.conditionInput(-controller.getLeftY()));
-        inputY = yLimiter.calculate(TeleopInput.conditionInput(-controller.getLeftX()));
+        // get conditioned joystick input
+        // (no SlewRateLimiter here on purpose: the team tried one in 2025
+        // and it needed drive-team tuning time; the TalonFX open-loop ramp
+        // in TunerConstants does the same job with one constant)
+        inputX = TeleopInput.conditionInput(-controller.getLeftY());
+        inputY = TeleopInput.conditionInput(-controller.getLeftX());
         inputOmega = TeleopInput.conditionInput(-controller.getRightX());
 
         // ensure that the point defined by (x, y) lies on the unit
