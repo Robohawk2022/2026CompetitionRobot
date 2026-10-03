@@ -19,7 +19,7 @@
 - [ ] 2. Tuner X: limits correct, unlicensed-feature fault gone
 - [ ] 3. PDH slot list written down (give to Claude to put in the code)
 - [ ] 4. Teleop drive check
-- [ ] 4. Auto check (at least SLAY)
+- [ ] 4. Auto check (at least SLAY and YEET)
 
 ---
 
@@ -197,8 +197,9 @@ program. Press **B** to go forward through the list and **A** to go back:
 | 67L / 67R | shoot only |
 | BRUH / RIZZ | depot routines |
 | **SLAY** | **the Bethesda auto (most important)** |
+| **YEET** | new intake auto (`NEWINTAKE`, added Oct 3) |
 
-For each auto you might use on Oct 24, at minimum **SLAY**:
+For each auto you might use on Oct 24, at minimum **SLAY** and **YEET**:
 
 1. Put the robot in that auto's starting spot, the same place used at Bethesda.
 2. Pick it on the Digit Board.
