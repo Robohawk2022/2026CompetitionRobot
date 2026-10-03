@@ -76,7 +76,33 @@
         {
           "type": "path",
           "data": {
-            "pathName": "DEP4"
+            "pathName": "Copy of DEP4"
+          }
+        },
+        {
+          "type": "race",
+          "data": {
+            "commands": [
+              {
+                "type": "sequential",
+                "data": {
+                  "commands": [
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "Copy of Depot2"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "UntimedIntake"
+                }
+              }
+            ]
           }
         }
       ]
