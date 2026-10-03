@@ -51,4 +51,14 @@ public class PowerHardwareWPILib implements PowerHardware {
     public int getChannelCount() {
         return pdh.getNumChannels();
     }
+
+    @Override
+    public boolean getBrownoutFault() {
+        return pdh.getFaults().Brownout;
+    }
+
+    @Override
+    public boolean getStickyBrownoutFault() {
+        return pdh.getStickyFaults().Brownout;
+    }
 }
