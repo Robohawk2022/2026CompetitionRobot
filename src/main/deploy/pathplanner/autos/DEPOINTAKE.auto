@@ -55,7 +55,7 @@
               {
                 "type": "wait",
                 "data": {
-                  "waitTime": 2.5
+                  "waitTime": 1.5
                 }
               }
             ]
@@ -75,6 +75,38 @@
                 "type": "named",
                 "data": {
                   "name": "Unload"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "race",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "ILSL2"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "race",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "UntimedIntake"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Balls"
                 }
               }
             ]
