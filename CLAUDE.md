@@ -1192,6 +1192,11 @@ The `claude-docs/` folder contains session logs with implementation details. Key
 ### Controller / Input
 - [Extract GameController Class](claude-docs/2026-01-26-extract-gamecontroller-class.md) - Controller abstraction for 8BitDo, Xbox, and Logitech
 
+### Guides for New Developers
+- [PID Tuning Guide](claude-docs/pid-tuning-guide.md) - PID and feedforward explained, how to tune our mechanisms
+- [Launcher Guide](claude-docs/launcher-guide.md) - Shooter + ball path motors, testing, tuning
+- [Radio Guide](claude-docs/radio-guide.md) - Flashing and configuring the VH-109 radio
+
 ### Launcher
 - [Add Launcher Subsystem](claude-docs/2026-02-07-add-launcher-subsystem.md) - Initial launcher subsystem
 - [Update Launcher 3-Motor](claude-docs/2026-02-08-update-launcher-3-motor.md) - 3-motor launcher design
