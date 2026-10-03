@@ -78,6 +78,10 @@ and could not be merged as-is.
 
 ## Notes for Next Session
 
+Step-by-step robot checklist for the next practice:
+`2026-09-21-oct24-robot-checklist.md`. All changes above are uncommitted on Michelle's
+laptop; the user does their own commits, so never commit for them.
+
 Oct 24 is a diagnostic event: keep behavior changes minimal so the logs are readable.
 After it, compare `.hoot` drive supply current against `/power/batteryVolts` in the
 wpilog. Revisit ramps only if the logs show current spikes lining up with sags.
