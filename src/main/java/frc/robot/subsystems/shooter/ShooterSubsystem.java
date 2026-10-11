@@ -14,6 +14,7 @@ import static frc.robot.Config.Shooter.shootSpeedTolerance;
 import static frc.robot.Config.Shooter.stallSpeed;
 import static frc.robot.Config.Shooter.stallTime;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -98,6 +99,7 @@ public class ShooterSubsystem extends SubsystemBase {
      * the shooter motor at the desired speed
      */
     public Command velocityCommand(double rpm) {
+        AtomicBoolean reset = new AtomicBoolean(true);
         return startRun(
                 () -> {
 
@@ -109,7 +111,9 @@ public class ShooterSubsystem extends SubsystemBase {
                     if(shooterStatus.desiredRpm != rpm) {
                         shooterAtSpeed = false;
                     }
-                    hardware.resetPid();
+                    if (reset.getAndSet(false)) {
+                        hardware.resetPid();
+                    }
                 },
                 () -> {
                     double apply = rpm + (speedUp.getAsBoolean() ? 1000.0 : 0.0);

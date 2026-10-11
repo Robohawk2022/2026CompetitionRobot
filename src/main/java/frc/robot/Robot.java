@@ -33,9 +33,11 @@ public class Robot extends TimedRobot {
         // lets us tell battery sag apart from drivetrain draw after the fact
         SignalLogger.start();
 
+        CommandLogger.enable();
+
         // battery voltage, brownout events and CAN bus health, every loop, in the same
         // wpilog as everything else so they line up against motor currents
-        PowerLog.start();
+        // PowerLog.start();
 
         container = new RobotContainer();
     }
@@ -44,7 +46,7 @@ public class Robot extends TimedRobot {
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
         CommandLogger.pollButtons();
-        PowerLog.update();
+        // PowerLog.update();
     }
 
 //region Auto ------------------------------------------------------------------

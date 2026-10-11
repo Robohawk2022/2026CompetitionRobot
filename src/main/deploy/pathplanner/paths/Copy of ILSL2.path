@@ -8,24 +8,24 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.804893682065217,
-        "y": 6.0434525022644925
+        "x": 3.7747723362469205,
+        "y": 5.185477304968998
       },
       "isLocked": false,
       "linkedName": "LeftShoot"
     },
     {
       "anchor": {
-        "x": 4.8315987952088,
-        "y": 5.804501596290082
+        "x": 5.100963855421687,
+        "y": 5.554
       },
       "prevControl": {
-        "x": 4.46506031675289,
-        "y": 5.812874720357942
+        "x": 4.0409759036144575,
+        "y": 5.575807228915662
       },
       "nextControl": {
-        "x": 5.293706692712851,
-        "y": 5.793945305515812
+        "x": 6.693658821217095,
+        "y": 5.521233341046278
       },
       "isLocked": false,
       "linkedName": null
@@ -36,8 +36,8 @@
         "y": 5.554
       },
       "prevControl": {
-        "x": 6.0714566695601855,
-        "y": 5.4576651792644695
+        "x": 6.357828515902044,
+        "y": 5.473310755106541
       },
       "nextControl": null,
       "isLocked": false,
@@ -63,7 +63,7 @@
   "eventMarkers": [],
   "globalConstraints": {
     "maxVelocity": 3.0,
-    "maxAcceleration": 3.0,
+    "maxAcceleration": 1.0,
     "maxAngularVelocity": 360.0,
     "maxAngularAcceleration": 360.0,
     "nominalVoltage": 12.0,
@@ -79,5 +79,5 @@
     "velocity": 0,
     "rotation": -179.10288618630992
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

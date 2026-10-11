@@ -51,8 +51,8 @@ public class RobotContainer {
      * up as "ChN" in the dashboard and the log.
      */
     public static final Map<Integer, String> PDH_CHANNEL_NAMES = Map.of(
-            // 0, "FL Drive",
-            // 1, "FL Steer",
+    // 0, "FL Drive",
+    // 1, "FL Steer",
     );
 
     public final GameController driver;
@@ -62,7 +62,7 @@ public class RobotContainer {
     public final ShooterSubsystem shooter;
     public final BallPathSubsystem ballPath;
     public final LEDSubsystem led;
-    public final PowerSubsystem power;
+    // public final PowerSubsystem power;
 
     public RobotContainer() {
 
@@ -95,7 +95,7 @@ public class RobotContainer {
         ballPath.setDefaultCommand(ballPath.coast());
 
         // LED
-        //  - default command will flash when odometry drifts
+        // - default command will flash when odometry drifts
         led = new LEDSubsystem(RobotBase.isSimulation()
                 ? new LEDHardwareSim()
                 : new LEDHardwareBlinkin(LED_PWM_PORT));
@@ -103,10 +103,10 @@ public class RobotContainer {
 
         // power monitoring - voltage, total current, PDH brownout faults and every
         // channel's current. PDH_CHANNEL_NAMES is keyed by PDH breaker slot, not CAN ID
-        power = new PowerSubsystem(RobotBase.isSimulation()
-                ? new PowerHardwareSim()
-                : new PowerHardwareWPILib(PDH_CAN_ID, ModuleType.kRev),
-                PDH_CHANNEL_NAMES);
+        // power = new PowerSubsystem(RobotBase.isSimulation()
+        //         ? new PowerHardwareSim()
+        //         : new PowerHardwareWPILib(PDH_CAN_ID, ModuleType.kRev),
+        //         PDH_CHANNEL_NAMES);
 
         auto = new AutonomousSubsystem(
                 swerve,
@@ -135,7 +135,7 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-       return auto.generateCommand();
+        return auto.generateCommand();
         // return Commands.print("skipping auto (for now)");
     }
 
@@ -157,6 +157,6 @@ public class RobotContainer {
         driver.back().whileTrue(ShootingCommands.orientToShoot(led, swerve));
 
         // driver.start().onTrue(ShootingCommands.openHopper(swerve));
-       // driver.start().onTrue(getAutonomousCommand());
+        // driver.start().onTrue(getAutonomousCommand());
     }
 }
