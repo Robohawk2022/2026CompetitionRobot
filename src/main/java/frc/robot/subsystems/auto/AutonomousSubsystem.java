@@ -245,6 +245,7 @@ public class AutonomousSubsystem extends SubsystemBase {
 
         // Bethesda
         programs.put("SLAY", "DEPOINTAKE");
+        programs.put("YEET", "NEWINTAKE");
         return programs;
     }
 
