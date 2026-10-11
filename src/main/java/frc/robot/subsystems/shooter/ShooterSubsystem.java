@@ -14,6 +14,7 @@ import static frc.robot.Config.Shooter.shootSpeedTolerance;
 import static frc.robot.Config.Shooter.stallSpeed;
 import static frc.robot.Config.Shooter.stallTime;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -83,9 +84,8 @@ public class ShooterSubsystem extends SubsystemBase {
 //region Command factories -----------------------------------------------------
 
     /**
-     * @return a command that will run the shooter at its "idle" speed;
-     * at the beginning of the match this is 0, but as soon as it's spun up
-     * for any purpose, it will idle at intake speed
+     * @return a command that will run the shooter at its "idle" speed,
+     * which is intake speed from the moment the robot is enabled
      */
     public Command idleCommand() {
         return run(() -> {
@@ -99,6 +99,7 @@ public class ShooterSubsystem extends SubsystemBase {
      * the shooter motor at the desired speed
      */
     public Command velocityCommand(double rpm) {
+        AtomicBoolean reset = new AtomicBoolean(true);
         return startRun(
                 () -> {
 
@@ -110,7 +111,9 @@ public class ShooterSubsystem extends SubsystemBase {
                     if(shooterStatus.desiredRpm != rpm) {
                         shooterAtSpeed = false;
                     }
-                    hardware.resetPid();
+                    if (reset.getAndSet(false)) {
+                        hardware.resetPid();
+                    }
                 },
                 () -> {
                     double apply = rpm + (speedUp.getAsBoolean() ? 1000.0 : 0.0);

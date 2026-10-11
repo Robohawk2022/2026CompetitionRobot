@@ -60,11 +60,34 @@ public final class SwerveHardwareConfig {
 
     // drive motor
     public static final double DRIVE_GEAR_RATIO = SDS_MK5I_DRIVE_R2;
-    public static final double DRIVE_CURRENT_LIMIT_AMPS = 60.0;
+
+    // Phoenix 6 defaults (what we ran all of 2026): 120A stator, 70A supply dropping
+    // to 40A after 1s. We never set any of these deliberately. The values below were
+    // chosen for the Oct 24 brownout diagnosis; see claude-docs/2026-09-21-*.
+
+    /** Supply current limit - this is what pulls the battery down. Applied in {@link TunerConstants}. */
+    public static final double DRIVE_SUPPLY_CURRENT_LIMIT_AMPS = 60.0;
+
+    /** Sustained supply limit, applied after the limit above is exceeded for DRIVE_SUPPLY_LOWER_TIME_SEC */
+    public static final double DRIVE_SUPPLY_LOWER_LIMIT_AMPS = 40.0;
+
+    /** How long the drive motor may sit above DRIVE_SUPPLY_CURRENT_LIMIT_AMPS before dropping to the lower limit */
+    public static final double DRIVE_SUPPLY_LOWER_TIME_SEC = 0.5;
+
+    /**
+     * Stator current limit - caps wheel torque. Traction for a ~90 lb robot on 4in
+     * wheels at 6.03:1 runs out around 55-65A per wheel; above that is heat and
+     * battery sag, not thrust. CTRE applies this via withSlipCurrent(), and
+     * pathplanner/settings.json driveCurrentLimit must match it.
+     */
+    public static final double DRIVE_STATOR_CURRENT_LIMIT_AMPS = 80.0;
 
     // turn motor
     public static final double TURN_GEAR_RATIO =  SDS_MK5I_TURN;
     public static final double TURN_CURRENT_LIMIT_AMPS = 60.0;
+    public static final double TURN_SUPPLY_CURRENT_LIMIT_AMPS = 40.0;
+    public static final double TURN_SUPPLY_LOWER_LIMIT_AMPS = 25.0;
+    public static final double TURN_SUPPLY_LOWER_TIME_SEC = 0.5;
 
     public static final double MAX_MOTOR_RPM = 6000.0;  // Kraken X60 free speed
     public static final double MAX_WHEEL_SPEED_MPS = (MAX_MOTOR_RPM / 60.0) * WHEEL_CIRCUMFERENCE_METERS / DRIVE_GEAR_RATIO;

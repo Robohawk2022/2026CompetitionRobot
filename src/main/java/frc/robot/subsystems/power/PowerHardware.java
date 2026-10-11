@@ -22,4 +22,10 @@ public interface PowerHardware {
 
     /** @return number of channels (24 for REV PDH, 16 for CTRE PDP) */
     int getChannelCount();
+
+    /** @return true if the PDH is currently reporting a brownout fault */
+    boolean getBrownoutFault();
+
+    /** @return true if the PDH has reported a brownout since last cleared */
+    boolean getStickyBrownoutFault();
 }

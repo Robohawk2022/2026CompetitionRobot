@@ -45,6 +45,16 @@ public class RobotContainer {
     public static final int SHOOTER_CAN_ID = 35;
     public static final int PDH_CAN_ID = 1;
 
+    /**
+     * PDH breaker slot (0-23) -> mechanism name. TODO: fill in from the robot's
+     * wiring (read the slot numbers next to each breaker). Unlabeled slots show
+     * up as "ChN" in the dashboard and the log.
+     */
+    public static final Map<Integer, String> PDH_CHANNEL_NAMES = Map.of(
+    // 0, "FL Drive",
+    // 1, "FL Steer",
+    );
+
     public final GameController driver;
     public final SwerveSubsystem swerve;
     public final LimelightSubsystem limelight;
@@ -85,22 +95,18 @@ public class RobotContainer {
         ballPath.setDefaultCommand(ballPath.coast());
 
         // LED
-        //  - default command will flash when odometry drifts
+        // - default command will flash when odometry drifts
         led = new LEDSubsystem(RobotBase.isSimulation()
                 ? new LEDHardwareSim()
                 : new LEDHardwareBlinkin(LED_PWM_PORT));
         led.setDefaultCommand(led.show(() -> idleLedSignalCalculator(swerve, limelight)));
 
-        // power monitoring
+        // power monitoring - voltage, total current, PDH brownout faults and every
+        // channel's current. PDH_CHANNEL_NAMES is keyed by PDH breaker slot, not CAN ID
         // power = new PowerSubsystem(RobotBase.isSimulation()
         //         ? new PowerHardwareSim()
         //         : new PowerHardwareWPILib(PDH_CAN_ID, ModuleType.kRev),
-        //         Map.of(
-        //                 SHOOTER_CAN_ID, "Shooter",
-        //                 INTAKE_CAN_ID, "Intake",
-        //                 FEEDER_CAN_ID, "Feeder",
-        //                 AGITATOR_CAN_ID, "Agitator"
-        //         ));
+        //         PDH_CHANNEL_NAMES);
 
         auto = new AutonomousSubsystem(
                 swerve,
@@ -129,7 +135,7 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-       return auto.generateCommand();
+        return auto.generateCommand();
         // return Commands.print("skipping auto (for now)");
     }
 
@@ -151,6 +157,6 @@ public class RobotContainer {
         driver.back().whileTrue(ShootingCommands.orientToShoot(led, swerve));
 
         // driver.start().onTrue(ShootingCommands.openHopper(swerve));
-       // driver.start().onTrue(getAutonomousCommand());
+        // driver.start().onTrue(getAutonomousCommand());
     }
 }

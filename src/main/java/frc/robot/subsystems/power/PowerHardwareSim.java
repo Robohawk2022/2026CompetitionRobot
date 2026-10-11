@@ -36,4 +36,14 @@ public class PowerHardwareSim implements PowerHardware {
     public int getChannelCount() {
         return CHANNEL_COUNT;
     }
+
+    @Override
+    public boolean getBrownoutFault() {
+        return false;
+    }
+
+    @Override
+    public boolean getStickyBrownoutFault() {
+        return false;
+    }
 }
