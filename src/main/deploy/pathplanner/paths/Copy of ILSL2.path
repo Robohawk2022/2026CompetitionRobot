@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.579,
-        "y": 5.03
+        "x": 2.5381740370898713,
+        "y": 4.455506419400857
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.7747723362469205,
-        "y": 5.185477304968998
+        "x": 2.7339463733367917,
+        "y": 4.610983724369855
       },
       "isLocked": false,
       "linkedName": "LeftShoot"
@@ -77,7 +77,7 @@
   "folder": "ILSL",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -179.10288618630992
+    "rotation": 165.52970589993407
   },
   "useDefaultConstraints": false
 }
