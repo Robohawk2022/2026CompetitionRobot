@@ -16,12 +16,12 @@
     },
     {
       "anchor": {
-        "x": 3.234,
-        "y": 5.416
+        "x": 3.579,
+        "y": 5.03
       },
       "prevControl": {
-        "x": 3.484,
-        "y": 5.416
+        "x": 3.829,
+        "y": 5.03
       },
       "nextControl": null,
       "isLocked": false,
@@ -42,7 +42,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 132.12537326402426
+    "rotation": -179.10288618630992
   },
   "reversed": false,
   "folder": "DEPO",
